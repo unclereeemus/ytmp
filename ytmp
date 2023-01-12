@@ -98,7 +98,7 @@ v view queue;
 	   left-click:play entry; right-click:move entry to after currently playing;
 	   ctrl-alt-j:jump; ctrl-s:search query in background
 	   ctrl-e: search query in background with ytmp S
-	   ctrl-z: download selection
+	   ctrl-z: download selection ctrl-r: reload queue
 
 vv view queue with details about the video (same keybinds as v option)
 
@@ -261,7 +261,7 @@ album () {
 search_exact () {
 	songs_dir_ls=$( ls $songs_dir | cut -d' ' -f2- | sed 's/\.webm//g' )
 	entries=$( cat $search_history $played_titles $played_artists )
-	[ -n "$( echo $* | cut -s -d' ' -f3 )" ] && query=$( echo "$*" | cut -d' ' -f2- ) || query=$( echo "$entries $songs_dir_ls" | fzf -m --bind='ctrl-alt-s:execute-silent(setsid -f ytmp {q}),ctrl-alt-e:execute-silent(setsid -f ytmp {+} {q} ),alt-a:beginning-of-line,alt-e:end-of-line,ctrl-e:execute-silent(setsid -f ytmp S {+} {q} ),tab:select+clear-query,return:accept,ctrl-a:replace-query,ctrl-/:print-query,ctrl-s:execute-silent(setsid -f ytmp S {q})' )
+	[ -n "$( echo $* | cut -s -d' ' -f3 )" ] && query=$( echo "$*" | cut -d' ' -f2- ) || query=$( echo "$entries $songs_dir_ls" | fzf --layout=reverse --height 40% -m --bind='ctrl-alt-s:execute-silent(setsid -f ytmp {q}),ctrl-alt-e:execute-silent(setsid -f ytmp {+} {q} ),alt-a:beginning-of-line,alt-e:end-of-line,ctrl-e:execute-silent(setsid -f ytmp S {+} {q} ),tab:select+clear-query,return:accept,ctrl-a:replace-query,ctrl-/:print-query,ctrl-s:execute-silent(setsid -f ytmp S {q})' )
 	query=$( echo "$query" | tr "\n" ' ' | sed -e 's/[ \t]*$//' )
 	[ -z "$query" ] && return
 	( ! grep -q "$query" $queue ) && ( ls $songs_dir/*"${query}"* ) && find $songs_dir -name "*${query}*" -type f -print | xargs -d '\n' -n 1 basename | sed 's/\.webm//g' >> $queue || id=$( yt-dlp --get-id ytsearch1:"$query" )
@@ -274,7 +274,7 @@ search_youtube () {
 	songs_dir_ls=$( ls $songs_dir | cut -d' ' -f2- | sed 's/\.webm//g' )
 	entries=$( cat $search_history $played_titles $played_artists )
 	# if no arguements are passed but just words, search with the words
-	[ "$1" = 'ss' ] && query=$( echo "$*" | cut -d' ' -f2- ) || query=$( echo "$entries $songs_dir_ls" | fzf -m --bind='ctrl-alt-s:execute-silent(setsid -f ytmp S {q}),ctrl-alt-e:execute-silent(setsid -f ytmp S {+} {q} ),alt-a:beginning-of-line,alt-e:end-of-line,ctrl-e:execute-silent(setsid -f ytmp {+} {q}),tab:select+clear-query,return:accept,ctrl-a:replace-query,ctrl-/:print-query,ctrl-s:execute-silent(setsid -f ytmp {q})' )
+	[ "$1" = 'ss' ] && query=$( echo "$*" | cut -d' ' -f2- ) || query=$( echo "$entries $songs_dir_ls" | fzf --layout=reverse --height 40% -m --bind='ctrl-alt-s:execute-silent(setsid -f ytmp S {q}),ctrl-alt-e:execute-silent(setsid -f ytmp S {+} {q} ),alt-a:beginning-of-line,alt-e:end-of-line,ctrl-e:execute-silent(setsid -f ytmp {+} {q}),tab:select+clear-query,return:accept,ctrl-a:replace-query,ctrl-/:print-query,ctrl-s:execute-silent(setsid -f ytmp {q})' )
 	query=$( echo "$query" | tr "\n" ' ' | sed -e 's/[ \t]*$//' )
 	( ! grep -Fxq "$query" $search_history ) && ( ! echo "$songs_dir_ls" | grep -Fq "$query" ) && echo "$query" >> $search_history
 
@@ -289,7 +289,7 @@ search_youtube () {
 		titles=$( echo "$ids_titles" | sed -n 'p;n' | grep -n '' )
 		# sel=$( printf "$titles" | fzf -m )
 		# sel=$( printf "$titles" | fzf -m --preview="echo {n}+1 | bc | xargs -I ',,' sed -n ,,p /tmp/ytmpids | xargs -I ',,' pipe-viewer --extract 'NOM\t*TITLE*\nCNL\t*AUTHOR*\nPUB\t*PUBLISHED*\nDUR\t*TIME*\nURL\t*URL*\n\n\tDESCRIPTION\n*DESCRIPTION*' -id ,," --height 60% --preview-window='right,70%' )
-		sel=$( printf '%b' "$titles" | fzf -m --preview="echo {n}+1 | bc | xargs -I ',,' sed -n ,,p /tmp/ytmpids | xargs -I ',,' yt-dlp --print title --print duration_string --print description ,," --height 60% --preview-window='right,70%' )
+		sel=$( printf '%b' "$titles" | fzf --layout=reverse --height 40% -m --preview="echo {n}+1 | bc | xargs -I ',,' sed -n ,,p /tmp/ytmpids | xargs -I ',,' yt-dlp --print title --print duration_string --print description ,," --height 60% --preview-window='right,70%' )
 
 		echo "$sel" | while read -r one; do
 			num=$( printf '%b' "$titles" | grep -Fx "$one" | cut -d':' -f1 )
@@ -306,7 +306,7 @@ search_youtube () {
 		echo "$ids" > /tmp/ytmpids
 		# sel=$( printf "$titles" | fzf -m )
 		# sel=$( printf "$titles" | fzf -m --preview="echo {n}+1 | bc | xargs -I ',,' sed -n ,,p /tmp/ytmpids | xargs -I ',,' pipe-viewer --extract 'NOM\t*TITLE*\nCNL\t*AUTHOR*\nPUB\t*PUBLISHED*\nDUR\t*TIME*\nURL\t*URL*\n\n\tDESCRIPTION\n*DESCRIPTION*' -id ,," --height 60% --preview-window='right,70%' )
-		sel=$( printf '%b' "$titles" | fzf -m --preview="echo {n}+1 | bc | xargs -I ',,' sed -n ,,p /tmp/ytmpids | xargs -I ',,' yt-dlp --print title --print duration_string --print description ,," --height 60% --preview-window='right,70%' )
+		sel=$( printf '%b' "$titles" | fzf --layout=reverse --height 40% -m --preview="echo {n}+1 | bc | xargs -I ',,' sed -n ,,p /tmp/ytmpids | xargs -I ',,' yt-dlp --print title --print duration_string --print description ,," --height 60% --preview-window='right,70%' )
 
 		echo "$sel" | while read -r one; do
 			num=$( printf '%b' "$titles" | grep -Fx "$one" | cut -d':' -f1 )
@@ -407,7 +407,7 @@ queue_manager () {
 	# presents a list of the current queue.
 	if [ "$1" = 'v' ]; then
 		cmd="cat $queue | cut -d' ' -f2-"
-		cat $queue | cut -d' ' -f2- | fzf --cycle --bind="ctrl-z:execute-silent(ytmp -dl {n} f),ctrl-e:execute-silent(setsid -f ytmp S {q}),ctrl-s:execute-silent(setsid -f ytmp {q}),ctrl-j:down,ctrl-alt-j:jump,ctrl-]:first,ctrl-/:last,shift-left:execute-silent(ytmp dd {n})+reload($cmd),shift-up:execute-silent(ytmp up {n})+reload($cmd)+up,shift-down:execute-silent(ytmp dn {n})+reload($cmd)+down,return:execute-silent(ytmp e f {n})+abort,shift-right:execute-silent(ytmp e f {n})+reload($cmd),pgdn:execute-silent(ytmp nn {n})+reload($cmd),pgup:execute-silent(ytmp pp {n})+reload($cmd),ctrl-n:page-down,ctrl-p:page-up,ctrl-alt-p:half-page-up,ctrl-alt-n:half-page-down,left-click:execute-silent(ytmp e f {n})+abort,right-click:execute-silent(ytmp nn {n})+reload($cmd),ctrl-^:execute-silent(ytmp mln)+reload($cmd),ctrl-\:execute(ytmp E)+reload($cmd),ctrl-x:execute(ytmp fct {n})+reload($cmd),ctrl-o:execute-silent(ytmp opinbrwsr {n})"
+		cat $queue | cut -d' ' -f2- | fzf --layout=reverse --height 40% --cycle --bind="ctrl-r:reload(cat '$queue'),ctrl-z:execute-silent(ytmp -dl {n} f),ctrl-e:execute-silent(setsid -f ytmp S {q}),ctrl-s:execute-silent(setsid -f ytmp {q}),ctrl-j:down,ctrl-alt-j:jump,ctrl-]:first,ctrl-/:last,shift-left:execute-silent(ytmp dd {n})+reload($cmd),shift-up:execute-silent(ytmp up {n})+reload($cmd)+up,shift-down:execute-silent(ytmp dn {n})+reload($cmd)+down,return:execute-silent(ytmp e f {n})+abort,shift-right:execute-silent(ytmp e f {n})+reload($cmd),pgdn:execute-silent(ytmp nn {n})+reload($cmd),pgup:execute-silent(ytmp pp {n})+reload($cmd),ctrl-n:page-down,ctrl-p:page-up,ctrl-alt-p:half-page-up,ctrl-alt-n:half-page-down,left-click:execute-silent(ytmp e f {n})+abort,right-click:execute-silent(ytmp nn {n})+reload($cmd),ctrl-^:execute-silent(ytmp mln)+reload($cmd),ctrl-\:execute(ytmp E)+reload($cmd),ctrl-x:execute(ytmp fct {n})+reload($cmd),ctrl-o:execute-silent(ytmp opinbrwsr {n})"
 
 	elif [ "$1" = 'fct' ]; then
 		# read -p "custom move; +/- means up or down while without a sign means an exact position; l means last, p means currently playing - one can use <p/l><+/->#: " place
@@ -507,13 +507,11 @@ pcw () {
 }
 
 play_last () {
-	# [ "$1" = 's' ] && cat "$played_urls" | fzf --tac | cut -d' ' -f1 | xargs -I '{}' ytmp P '{}' && exit
-	# echo "$1" | grep -qxE '[0-9]*' && tail "-$1" "$played_urls" | head -1 | cut -d' ' -f1 | xargs -I '{}' ytmp P '{}' || tail -2 "$played_urls" | head -1 | cut -d' ' -f1 | xargs -I '{}' ytmp P '{}'
 	[ -z "$1" ] && tail -2 "$played_urls" | head -1 | cut -d' ' -f1 | xargs -I '{}' ytmp P '{}' && return
 	if ( echo "$1" | grep -qxE '[0-9]*' ); then
 		tail "-$1" "$played_urls" | head -1 | cut -d' ' -f1 | xargs -I '{}' ytmp P '{}'
 	elif [ "$1" = 's' ]; then
-		cat "$played_urls" | fzf --tac | cut -d' ' -f1 | xargs -I '{}' ytmp P '{}'
+		cat "$played_urls" | fzf --layout=reverse --height 40% --tac | cut -d' ' -f1 | xargs -I '{}' ytmp P '{}'
 	else
 		tail -2 "$played_urls" | head -1 | cut -d' ' -f1 | xargs -I '{}' ytmp P '{}'
 	fi
@@ -551,11 +549,11 @@ case "${1}" in
 	pl) playlist ee a "$(  grep -c '.' "$queue" )" ;;
 	-p) echo cycle pause | socat - /tmp/mpvsocketytmp >/dev/null 2>&1 ;;
 	v) queue_manager v ;;
-	vv) cat "$queue" | fzf --cycle --bind="ctrl-z:execute-silent(ytmp -dl {n} f),ctrl-a:replace-query,ctrl-e:execute-silent(setsid -f ytmp S {q}),ctrl-s:execute-silent(setsid -f ytmp {q}),ctrl-j:down,ctrl-alt-j:jump,ctrl-]:first,ctrl-/:last,shift-left:execute-silent(ytmp dd {n})+reload(cat '$queue'),shift-up:execute-silent(ytmp up {n})+reload(cat '$queue')+up,shift-down:execute-silent(ytmp dn {n})+reload(cat '$queue')+down,return:execute-silent(ytmp e f {n})+abort,shift-right:execute-silent(ytmp e f {n})+reload(cat '$queue'),pgdn:execute-silent(ytmp nn {n})+reload(cat '$queue'),pgup:execute-silent(ytmp pp {n})+reload(cat '$queue'),ctrl-n:page-down,ctrl-p:page-up,ctrl-alt-p:half-page-up,ctrl-alt-n:half-page-down,left-click:execute-silent(ytmp e f {n})+abort,right-click:execute-silent(ytmp nn {n})+reload(cat '$queue'),ctrl-^:execute-silent(ytmp mln)+reload(cat '$queue'),ctrl-\:execute(ytmp E)+reload(cat '$queue'),ctrl-x:execute(ytmp fct {n})+reload(cat '$queue'),ctrl-o:execute-silent(ytmp opinbrwsr {n})" --height 100% --preview='( printf "#"; echo "{n}+1" | bc ) | tr -d "\n"; printf "\n"; echo {} | cut -s -d" " -f1 | xargs -I "{}" yt-dlp --print title --print duration_string --print description "{}"' --preview-window='right,50%' ;;
+	vv) cat "$queue" | fzf --layout=reverse --height 40% --cycle --bind="ctrl-r:reload(cat '$queue'),ctrl-z:execute-silent(ytmp -dl {n} f),ctrl-a:replace-query,ctrl-e:execute-silent(setsid -f ytmp S {q}),ctrl-s:execute-silent(setsid -f ytmp {q}),ctrl-j:down,ctrl-alt-j:jump,ctrl-]:first,ctrl-/:last,shift-left:execute-silent(ytmp dd {n})+reload(cat '$queue'),shift-up:execute-silent(ytmp up {n})+reload(cat '$queue')+up,shift-down:execute-silent(ytmp dn {n})+reload(cat '$queue')+down,return:execute-silent(ytmp e f {n})+abort,shift-right:execute-silent(ytmp e f {n})+reload(cat '$queue'),pgdn:execute-silent(ytmp nn {n})+reload(cat '$queue'),pgup:execute-silent(ytmp pp {n})+reload(cat '$queue'),ctrl-n:page-down,ctrl-p:page-up,ctrl-alt-p:half-page-up,ctrl-alt-n:half-page-down,left-click:execute-silent(ytmp e f {n})+abort,right-click:execute-silent(ytmp nn {n})+reload(cat '$queue'),ctrl-^:execute-silent(ytmp mln)+reload(cat '$queue'),ctrl-\:execute(ytmp E)+reload(cat '$queue'),ctrl-x:execute(ytmp fct {n})+reload(cat '$queue'),ctrl-o:execute-silent(ytmp opinbrwsr {n})" --height 100% --preview='( printf "#"; echo "{n}+1" | bc ) | tr -d "\n"; printf "\n"; echo {} | cut -s -d" " -f1 | xargs -I "{}" yt-dlp --print title --print duration_string --print description "{}"' --preview-window='right,50%' ;;
 	s) search_youtube s "$2" ;;
 	se) search_youtube se "$2" ;;
 	S) search_exact "$*" ;;
-	sp) [ -z "$2" ] && echo 'provide a search string as arguement' || ( query=$( echo "$*" | cut -s -d' ' -f2- ) && pipe-viewer --no-interactive --results=50 -sp --custom-playlist-layout='*VIDEOS*VIDS *TITLE* *URL*' "$query" | fzf --bind='alt-a:beginning-of-line,alt-e:end-of-line,ctrl-a:execute(echo {} | awk "{print $NF}" | xargs -0 -I ",," pipe-viewer --results=50 --custom-layout="*AUTHOR* *TIME* *TITLE*" --no-interactive ",," | fzf)' | awk '{print $NF}' | xargs -r -0 setsid -f ytmp a >/dev/null 2>&1 ) ;;
+	sp) [ -z "$2" ] && echo 'provide a search string as arguement' || ( query=$( echo "$*" | cut -s -d' ' -f2- ) && pipe-viewer --no-interactive --results=50 -sp --custom-playlist-layout='*VIDEOS*VIDS *TITLE* *URL*' "$query" | fzf --layout=reverse --height 40% --bind='alt-a:beginning-of-line,alt-e:end-of-line,ctrl-a:execute(echo {} | awk "{print $NF}" | xargs -0 -I ",," pipe-viewer --results=50 --custom-layout="*AUTHOR* *TIME* *TITLE*" --no-interactive ",," | fzf)' | awk '{print $NF}' | xargs -r -0 setsid -f ytmp a >/dev/null 2>&1 ) ;;
 	a) album "$*" ;;
 	n) playlist c n ;;
 	p) playlist c p ;;
