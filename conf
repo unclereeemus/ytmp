@@ -6,7 +6,7 @@ daemonize="0" #0=true;1/anything else=false
 
 # maximum amount of times to play a song before downloading it
 # set to a big number if not wanting this feature
-max_stream_amount=2
+max_stream_amount=3
 # the maximum a length a file can be (in seconds) if it's to be downloaded
 max_len_for_dl='600'
 
@@ -24,6 +24,7 @@ played_titles="$prefix/played_titles"
 search_history="$prefix/search_history"
 
 # queue="/home/$USER/Music/ytmp/altqueue"
+queue="/home/$USER/Music/ytmp/queue"
 
 # this is run on everytime a song is played so if you want certain
 # mpv settings to remain consistent (volume, loop, seek, etc), then put them in this file
