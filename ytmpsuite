@@ -12,7 +12,7 @@ case "$1" in
 	T) ( grep -q '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT ALT$' "$run_on_next" ) && index="$( grep -n '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT ALT$' "$run_on_next" | cut -d':' -f1 | xargs -I ',' echo ',+1' | bc )"; ( sed -n "${index}p" "$run_on_next" | grep '^# ' ) && ( sed -i "${index}s/^# //" "$run_on_next"; echo "ON" ) || ( sed -i "${index}s/^/# /" "$run_on_next"; echo "OFF" ) ;;
 	gT) ( grep -q '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT ALT$' "$run_on_next" ) && index="$( grep -n '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT ALT$' "$run_on_next" | cut -d':' -f1 | xargs -I ',' echo ',+1' | bc )" && ( sed -n "${index}p" "$run_on_next" | grep '^# ' && echo "OFF" || echo "ON" ) ;;
 	q) xplr "$prefix/playlists" | xargs -r -I ',,' sed -i "s@^queue=.*@queue=\",,\"@" $conf ;;
-	fq) fd -E 'temp' -E 'chunks' . "$prefix/playlists" | fzf | xargs -r -I ',,' sed -i "s@^queue=.*@queue=\",,\"@" $conf ;;
+	fq) fd . "$prefix/playlists" | fzf | xargs -r -I ',,' sed -i "s@^queue=.*@queue=\",,\"@" $conf ;;
 	oq) sed -i "s@^queue=.*@queue=\"$prefix/queue\"@" $conf ;;
 	cq) sed -i "s@^queue=.*@#&@" $conf ;;
 	pq) grep -x 'queue=.*' "$conf" ;;
