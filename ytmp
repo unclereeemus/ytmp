@@ -37,7 +37,7 @@ conf="/home/$USER/Music/ytmp/conf"
 # mpv settings to remain consistent (volume, loop, seek, etc), then put them in this file
 [ -z "$run_on_next" ] && run_on_next="/home/$USER/Music/ytmp/run_on_next"
 
-mkdir -p "$prefix" "$dl_dir" "$songs_dir" "$thumb_dir"
+# mkdir -p "$prefix" "$dl_dir" "$songs_dir" "$thumb_dir"
 
 helper () {
 cat >&2 << CAT_EOF
