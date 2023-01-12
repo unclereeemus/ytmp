@@ -1,0 +1,26 @@
+rm /tmp/current_mpvsockets
+for i in `ls /tmp/mpvsocket*`; do
+	if [ -n "$( echo '{ "command": ["get_property", "pid" ] }' | socat - "$i" )" ]; then
+		echo "$i" >> /tmp/current_mpvsockets
+		echo "$i added"
+	else
+		rm "$i"
+		echo "$i removed"
+	fi
+done
+[ -z "$1" ] && cat /tmp/current_mpvsockets | dmenu -i -l 5 > /tmp/active_mpvsocket
+[ "$1" = "s" ] && mpv_socket_commands a g media-title | sed -n '/data/,$p' | jq -r .data | grep -n '' | dmenu -i -l 10 | cut -d':' -f1 | xargs -I '{}' sed -n '{}p' /tmp/current_mpvsockets > /tmp/active_mpvsocket
+
+if [ "$1" = "n" ]; then
+	line=$( grep -Fxn "$( cat /tmp/active_mpvsocket )" '/tmp/current_mpvsockets' | cut -d':' -f1 )
+	line=$(( line+1 ))
+	[ "$line" -gt "$( grep -c '' /tmp/current_mpvsockets )" ] && line='1'
+	sed -n "${line}p" /tmp/current_mpvsockets > /tmp/active_mpvsocket
+	notify-send `cat /tmp/active_mpvsocket`
+elif [ "$1" = "p" ]; then
+	line=$( grep -Fxn "$( cat /tmp/active_mpvsocket )" '/tmp/current_mpvsockets' | cut -d':' -f1 )
+	line=$(( line-1 ))
+	[ "$line" -lt "1" ] && line="$( grep -c '' /tmp/current_mpvsockets )"
+	sed -n "${line}p" /tmp/current_mpvsockets > /tmp/active_mpvsocket
+	notify-send `cat /tmp/active_mpvsocket`
+fi

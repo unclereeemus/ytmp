@@ -1,0 +1,30 @@
+#!/bin/sh
+# this file is looked for in /home/$USER/Music/ytmp/ by default and it is prioritized over source settings. change the path to something else in source if necessary.
+
+# if to play one song after another by default
+daemonize="0" #0=true;1/anything else=false
+
+# maximum amount of times to play a song before downloading it
+# set to a big number if not wanting this feature
+max_stream_amount=2
+# the maximum a length a file can be (in seconds) if it's to be downloaded
+max_len_for_dl='600'
+
+download_thumbnails="1" #0=true;1/anything else=false
+notifications="0" #0=true;1/anything else=false
+
+prefix="/home/$USER/Music/ytmp"
+
+dl_dir="$prefix/downloads"
+songs_dir="$dl_dir/songs"
+thumb_dir="$dl_dir/thumbnails"
+played_urls="$prefix/played_urls"
+played_artists="$prefix/played_artists"
+played_titles="$prefix/played_titles"
+search_history="$prefix/search_history"
+
+# queue="/home/$USER/Music/ytmp/altqueue"
+
+# this is run on everytime a song is played so if you want certain
+# mpv settings to remain consistent (volume, loop, seek, etc), then put them in this file
+run_on_next="/home/$USER/Music/ytmp/run_on_next"

@@ -1,0 +1,29 @@
+#!/bin/sh
+
+conf="$prefix/conf"
+. $conf
+prefix="/home/$USER/Music/ytmp"
+run_on_next="$prefix/run_on_next"
+
+case "$1" in
+	k) mpv_socket_commands e quit st /tmp/mpvsocketytmp ;;
+	t) ( grep -q '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT$' "$run_on_next" ) && index="$( grep -n '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT$' "$run_on_next" | cut -d':' -f1 | xargs -I ',' echo ',+1' | bc )"; ( sed -n "${index}p" "$run_on_next" | grep '^# ' ) && ( sed -i "${index}s/^# //" "$run_on_next"; echo "ON" ) || ( sed -i "${index}s/^/# /" "$run_on_next"; echo "OFF" ) ;;
+	gt) ( grep -q '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT$' "$run_on_next" ) && index="$( grep -n '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT$' "$run_on_next" | cut -d':' -f1 | xargs -I ',' echo ',+1' | bc )" && ( sed -n "${index}p" "$run_on_next" | grep '^# ' && echo "OFF" || echo "ON" ) ;;
+	T) ( grep -q '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT ALT$' "$run_on_next" ) && index="$( grep -n '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT ALT$' "$run_on_next" | cut -d':' -f1 | xargs -I ',' echo ',+1' | bc )"; ( sed -n "${index}p" "$run_on_next" | grep '^# ' ) && ( sed -i "${index}s/^# //" "$run_on_next"; echo "ON" ) || ( sed -i "${index}s/^/# /" "$run_on_next"; echo "OFF" ) ;;
+	gT) ( grep -q '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT ALT$' "$run_on_next" ) && index="$( grep -n '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT ALT$' "$run_on_next" | cut -d':' -f1 | xargs -I ',' echo ',+1' | bc )" && ( sed -n "${index}p" "$run_on_next" | grep '^# ' && echo "OFF" || echo "ON" ) ;;
+	q) xplr "$prefix/playlists" | xargs -r -I ',,' sed -i "s@^queue=.*@queue=\",,\"@" $conf ;;
+	fq) fd -E 'temp' -E 'chunks' . "$prefix/playlists" | fzf | xargs -r -I ',,' sed -i "s@^queue=.*@queue=\",,\"@" $conf ;;
+	oq) sed -i "s@^queue=.*@queue=\"$prefix/queue\"@" $conf ;;
+	cq) sed -i "s@^queue=.*@#&@" $conf ;;
+	pq) grep -x 'queue=.*' "$conf" ;;
+	lq) lf "$prefix/playlists" ;;
+	ra) sed -i '/\*\*\*$/s/\*\*\*//g' "$queue" ;;
+	l) sed -i "s;^vol=.*$;vol=${2};" "$run_on_next" ;;
+	oc) nvim "$conf" ;;
+	or) nvim "$run_on_next" ;;
+	ld) echo '' | dmenu | xargs -r -I ',,' sed -i 's@^vol=.*$@vol=,,@' "$run_on_next" ;;
+	v) mpv_socket_commands s volume $2 st /tmp/mpvsocketytmp ;;
+	rv) mpv_socket_commands s volume 100 st /tmp/mpvsocketytmp ;;
+	sp) [ -n "$3" ] && query="$2" && pipe-viewer --results=50 --no-interactive -sp --custom-playlist-layout='*VIDEOS*VIDS *TITLE* *URL*' "$query" | fzf --bind='alt-a:beginning-of-line,alt-e:end-of-line,ctrl-a:execute(echo {} | awk "{print $NF}" | xargs -0 -I ",," pipe-viewer --results=50 --custom-layout="*AUTHOR* *TIME* *TITLE*" --no-interactive ",," | fzf)' | awk '{print $NF}' | xargs -r -0 -I ',,' yt-dlp --print id --print title ',,' | paste -s -d ' \n' > $prefix/playlists/"$3" ;;
+	ap) [ -n "$3" ] && yt-dlp --print id --print title "$2" | paste -s -d ' \n' > $prefix/playlists/"$3" ;;
+esac

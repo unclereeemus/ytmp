@@ -1,0 +1,62 @@
+( echo "$*" | grep -q ' st ' ) && socket=`echo $* | awk '{ print $2 }' FS=' st '` && oldsocket=`cat /tmp/active_mpvsocket` || socket=`cat /tmp/active_mpvsocket`
+
+kill () {
+	[ "$2" = 'e' ] && nvim /tmp/order_mpvsockets && exit
+	rm /tmp/current_mpvsockets
+	for i in `ls /tmp/mpvsocket*`; do
+		if [ -n "$( echo '{ "command": ["get_property", "pid" ] }' | socat - "$i" )" ]; then
+			echo "$i" >> /tmp/current_mpvsockets
+			echo "$i added"
+		else
+			rm "$i"
+			echo "$i removed"
+		fi
+	done
+	fi
+}
+
+sendtoall () {
+	kill
+	if [ "$1" = "ac" ]; then
+		oldsocket="`cat /tmp/active_mpvsocket`"
+		for s in $socket; do
+			sed -i "\~$s~d" /tmp/current_mpvsockets
+		done
+	fi
+	for i in `cat /tmp/current_mpvsockets`; do
+		# echo "$i" | tee /tmp/active_mpvsocket
+		echo "$i" > /tmp/active_mpvsocket
+		mpv_socket_commands $2 $3 $4 $5
+	done
+	kill
+	[ -n "$oldsocket" ] && echo "$oldsocket" > /tmp/active_mpvsocket || echo "$socket" > /tmp/active_mpvsocket
+}
+
+notifyinfo () {
+	kill
+	for i in `cat /tmp/current_mpvsockets`; do
+		echo "$i" > /tmp/active_mpvsocket
+		notify-send Playing "$( mpv_socket_commands g media-title | jq .data )\n$( /home/$USER/.config/eww/old_scripts/mus statusicon ) $( mpv_socket_commands g percent-pos | jq -r .data | cut -d. -f1 )% | 墳 $( mpv_socket_commands g volume | jq -r .data ) | $( /home/$USER/.config/eww/old_scripts/mus loopstate )\n$( cat /tmp/active_mpvsocket )"
+	done
+	echo $socket > /tmp/active_mpvsocket
+}
+
+case "$1" in
+	"g") echo "{ \"command\": [\"get_property\", \"${2}\"] }" | socat - "$socket" ;;
+	"s") echo "{ \"command\": [\"set_property\", \"${2}\", ${3}] }" | socat - "$socket" ;;
+	"c") echo "{ \"command\": [\"${2}\", \"${3}\"] }" | socat - "$socket" ;;
+	"cc") echo "{ \"command\": [\"${2}\", \"${3}\", \"${4}\"] }" | socat - "$socket" ;;
+	"e") echo "$2" "$3" | socat - "$socket" ;;
+	"a") sendtoall $* ;;
+	"ac") sendtoall $* ;;
+	"n") notifyinfo ;;
+	"k") kill ;;
+	*) echo "g - get_property; s - set_property; c - command; cc - same as 'c' except accepts one more arguement; e - echo;
+		a - do something on all sockets. example: mpv_socket_commands a [g/s/c/cc/e] <property> <value>
+		ac - do something on all but current socket.
+		n - send a notification of containing info of all socket's loop state, position, and name.
+		k - update /tmp/current_mpvsockets - remove unused sockets.
+		to act on a socket that is not the current active one, pass st <socket> as last arguments. further, one can
+		exclude multiple sockets when using the 'ac' option by adding all the desriable sockets after the st agruement.
+		sockets must be named as /tmp/mpvsocket<name> to be detected by the script." ;;
+esac

@@ -1,0 +1,26 @@
+#!/bin/sh
+vol=35
+
+while true; do [ -n "$( echo '{ "command": ["get_property", "pid"] }' | socat - /tmp/mpvsocketytmp )" ] && break; done >/dev/null 2>&1
+
+# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT
+# mpv_socket_commands s volume $vol st /tmp/mpvsocketytmp && exit
+
+# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT ALT
+# mpv_socket_commands s volume $vol st /tmp/mpvsocketytmp && mpv_socket_commands s loop true && exit
+
+[ "`cat /tmp/active_mpvsocket`" = '/tmp/mpvsocketytmp' ] || ( mpv_socket_commands k; [ "`grep -c . /tmp/current_mpvsockets`" = '1' ] && echo '/tmp/mpvsocketytmp' > /tmp/active_mpvsocket )
+
+ifytmpactive () {
+	if [ "`cat /tmp/active_mpvsocket`" = '/tmp/mpvsocketytmp' ]; then
+		break
+	else
+		mpv_socket_commands s volume $vol st /tmp/mpvsocketytmp
+		# ( echo '{ "command": ["set_property", "volume", $vol ] }' | socat - /tmp/mpvsocketytmp )
+	fi
+}
+
+( ! pgrep -fa 'ytmp -d' ) && ( ! pgrep -fa 'ytmp -r' ) && echo '{ "command": ["set_property", "loop", true ] }' | socat - /tmp/mpvsocketytmp || echo '{ "command": ["set_property", "loop", false ] }' | socat - /tmp/mpvsocketytmp
+# mpv_socket_commands s volume $vol st /tmp/mpvsocketytmp && exit || ifytmpactive
+ifytmpactive
+# echo '{ "command": ["set_property", "loop", true ] }' | socat - /tmp/mpvsocketytmp
