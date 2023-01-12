@@ -37,7 +37,7 @@ conf="/home/$USER/Music/ytmp/conf"
 # mpv settings to remain consistent (volume, loop, seek, etc), then put them in this file
 [ -z "$run_on_next" ] && run_on_next="/home/$USER/Music/ytmp/run_on_next"
 
-# mkdir -p "$prefix" "$dl_dir" "$songs_dir" "$thumb_dir"
+mkdir -p "$prefix" "$dl_dir" "$songs_dir" "$thumb_dir"
 
 helper () {
 cat >&2 << CAT_EOF
@@ -535,6 +535,7 @@ download_song () {
 	sel="$( echo $2 | sed s/p/"$( grep -n '\*\*\*$' "$queue" | head -1 | cut -d':' -f1 )"/ | sed s/l/"$( grep -c '.' "$queue" )"/ | bc )"
 	[ "$3" = 'f' ] && sel=$(( sel + 1 ))
 	id="$( sed -n ${sel}p "$queue" | cut -d' ' -f1 )"
+	[ "$( printf "$id" | wc -m )" != '11' ] && return
 	len=$( yt-dlp --get-duration "https://www.youtube.com/watch?v=$id" | sed -E 's/(.*):(.+):(.+)/\1*3600+\2*60+\3/;s/(.+):(.+)/\1*60+\2/' | bc )
 	( ! ls $songs_dir/*"${id}"* ) && [ $len -lt $max_len_for_dl ] && setsid -f yt-dlp -f bestaudio -o "$songs_dir/%(id)s %(title)s.%(ext)s" "https://www.youtube.com/watch?v=$id" >/dev/null 2>&1 && echo "Downloading #$sel $id"
 }
