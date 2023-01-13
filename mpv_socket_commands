@@ -1,7 +1,6 @@
 ( echo "$*" | grep -q ' st ' ) && socket=`echo $* | awk '{ print $2 }' FS=' st '` && oldsocket=`cat /tmp/active_mpvsocket` || socket=`cat /tmp/active_mpvsocket`
 
 kill () {
-	[ "$2" = 'e' ] && nvim /tmp/order_mpvsockets && exit
 	rm /tmp/current_mpvsockets
 	for i in `ls /tmp/mpvsocket*`; do
 		if [ -n "$( echo '{ "command": ["get_property", "pid" ] }' | socat - "$i" )" ]; then
@@ -46,7 +45,7 @@ case "$1" in
 	"s") echo "{ \"command\": [\"set_property\", \"${2}\", ${3}] }" | socat - "$socket" ;;
 	"c") echo "{ \"command\": [\"${2}\", \"${3}\"] }" | socat - "$socket" ;;
 	"cc") echo "{ \"command\": [\"${2}\", \"${3}\", \"${4}\"] }" | socat - "$socket" ;;
-	"e") echo "$2" "$3" | socat - "$socket" ;;
+	"e") echo "$( echo $* | cut -s -d' ' -f2- | sed 's/ st .*//' )" | socat - "$socket" ;;
 	"a") sendtoall $* ;;
 	"ac") sendtoall $* ;;
 	"n") notifyinfo ;;
