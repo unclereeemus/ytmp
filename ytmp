@@ -1,4 +1,4 @@
-#!/bin/dash
+#!/bin/sh
 # DEPS: yt-dlp, mpv, socat, fzf, xargs, find, sed, bc, coreutils, (n/vim), (pipe-viewer and awk for playlist search), (curl for thumbnails)
 # YTMP: a shell script that plays (and downloads) music from youtube with an extensive queue manager using fzf, vim, or cli
 
