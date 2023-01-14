@@ -9,7 +9,7 @@ an old demo: https://www.reddit.com/r/unixporn/comments/woasvu/oc_ytmp_youtube_m
   - Keyboard centered
   - Search regular youtube or youtube music (kind of... in a round about way. see `ytmp h` for explanation)
   - Download songs after they have been played a chosen amount of times (and play the download in the future)
-  - Add youtube playlists to the queue
+  - Search and add youtube playlists to the queue
   - Add local files/directories
   - Select from multiple search results
   - Manage queue from cli, nvim, fzf
