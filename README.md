@@ -5,6 +5,7 @@ ADDED:
  		with the 'a' option (urls work with the option still too)
 - increased posix compliance (dash shell) (so far as the scripts shellcheck and checkbashisms can detect)
 - some options have been renamed: dmnz - '-d', ntfy - '-n', L - l (among others)
+- ability to download entries
 
 BUG FIXES:
 - resolved the possibility of multiple daemons being spawned unwarranted
