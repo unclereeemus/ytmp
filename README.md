@@ -46,7 +46,7 @@ as the search or ctrl-s/ctrl-e to background the search so you can make a new se
 ## eww setup
 `chmod +x mus`
 
-`eww -c . open/close musicplayer` or `mv {eww.scss,eww.yuck,mus} ~/.config/eww`; `eww open/close musicplayer`
+`eww -c . open/close musicplayer` or `mv {eww.scss,eww.yuck,mus} ~/.config/eww; eww open/close musicplayer`
 
 the thumbnail is located at /tmp/muscover.webp
 
@@ -83,7 +83,7 @@ the thumbnail is located at /tmp/muscover.webp
 - you can make a scratchpad (i recommend tdrop if your wm doesn't support them) of `ytmp E` which can be your one stop for music management (you can invoke ytmp with keybindings by using the vim config provided)
 
 # credit
-https://github.com/Gwynsav/messydots -- for eww config
+https://github.com/Gwynsav/messydots for eww config
 
 # note
 feedback welcome :)!
