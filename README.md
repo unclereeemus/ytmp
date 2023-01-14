@@ -1,5 +1,3 @@
-# this is a fork of the now deleted repository ifeelalright1970/ytmp with additional features and bug fixes
-
 # ytmp
 a shell script that plays (and downloads) music from youtube with an extensive queue manager using fzf, vim, or cli
 
@@ -86,4 +84,4 @@ the thumbnail is located at /tmp/muscover.webp
 https://github.com/Gwynsav/messydots for eww config
 
 # note
-feedback welcome :)!
+this is a fork of the now deleted repository ifeelalright1970/ytmp with additional features and bug fixes. feedback welcome :)!
