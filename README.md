@@ -21,7 +21,6 @@ an old demo: https://www.reddit.com/r/unixporn/comments/woasvu/oc_ytmp_youtube_m
 - moving songs next/previous to currently playing when using fzf or cli options
 		moves them one/two up/down instead of directly above or below.
 		the workaround is to just use vim.
-- sometimes thumbnails don't update
 
 # DEPS: fzf, yt-dlp, mpv, socat, (n/vim, pipe-viewer(https://github.com/trizen/pipe-viewer/))
 # setup
