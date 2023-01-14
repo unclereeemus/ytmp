@@ -18,7 +18,7 @@ an old demo: https://www.reddit.com/r/unixporn/comments/woasvu/oc_ytmp_youtube_m
   - Integration with eww widgets (through mpvsocket)
 
 **BUGS:**
-- moving songs next/previous to currently playing when using fzf or 'm' sometimes
+- moving songs next/previous to currently playing when using fzf or cli options
 		moves them one/two up/down instead of directly above or below.
 		the workaround is to just use vim.
 - sometimes thumbnails don't update
