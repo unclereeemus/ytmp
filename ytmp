@@ -346,7 +346,8 @@ play () {
 		setsid -f mpv --x11-name='ytmp_mpv_pcw' --no-terminal --vid=no --input-ipc-server=/tmp/mpvsocketytmp --ytdl-format='bestaudio' "https://www.youtube.com/watch?v=$id"
 		dl_thumbnail
 	fi
-	sh "$run_on_next"
+	sh "$run_on_next" >/dev/null 2>&1
+	echo "Playing '$( sed -n '/\*\*\*$/s/\*\*\*//pg' "$queue" | cut -s -d' ' -f2- )'"
 	[ "$notifications" = '0' ] && notify-send 'Now Playing' "$( sed -n '/\*\*\*$/s/\*\*\*//pg' "$queue" | cut -s -d' ' -f2- )"
 	upd_amnt_played
 }
@@ -479,7 +480,7 @@ ED_END
 fuzzy_play () {
 	query=$( echo "$*" | cut -d' ' -f2 )
 	match=$( cat "$queue" | fzf -f "$query" | head -1 | cut -d' ' -f2- )
-	[ -n "$match" ] && playlist e "$match" && echo "playing $match" || echo 'match not found'
+	[ -n "$match" ] && playlist e "$match" || echo 'match not found'
 	# [ -n "$match" ] && playlist e "$match" || echo 'match not found'
 }
 
