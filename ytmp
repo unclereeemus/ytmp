@@ -29,15 +29,13 @@ conf="/home/$USER/Music/ytmp/conf"
 [ -z "$played_titles" ] && played_titles="$prefix/played_titles"
 [ -z "$search_history" ] && search_history="$prefix/search_history"
 
-# [ -e /tmp/ytmpqloc ] && queue="$( cat /tmp/ytmpqloc )" || queue="$prefix/queue"
 [ -z "$queue" ] && queue="$prefix/queue"
-# [ -z "$queue" ] && [ -s "$queue" ] || queue="$prefix/queue"
 
 # this is run on everytime a song is played so if you want certain
 # mpv settings to remain consistent (volume, loop, seek, etc), then put them in this file
 [ -z "$run_on_next" ] && run_on_next="/home/$USER/Music/ytmp/run_on_next"
 
-# mkdir -p "$prefix" "$dl_dir" "$songs_dir" "$thumb_dir"
+mkdir -p "$prefix" "$dl_dir" "$songs_dir" "$thumb_dir"
 
 helper () {
 cat >&2 << CAT_EOF
