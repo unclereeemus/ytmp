@@ -20,8 +20,8 @@ an old demo: https://www.reddit.com/r/unixporn/comments/woasvu/oc_ytmp_youtube_m
 		moves them one/two up/down instead of directly above or below.
 		the workaround is to just use vim.
 
-# DEPS: fzf, yt-dlp, mpv, socat, (n/vim, pipe-viewer(https://github.com/trizen/pipe-viewer/))
 # setup
+## DEPS: fzf, yt-dlp, mpv, socat, (n/vim, pipe-viewer(https://github.com/trizen/pipe-viewer/))
 `git clone --depth 1 'https://github.com/unclereeemus/ytmp/'`
 
 `cd ytmp`
