@@ -63,7 +63,7 @@ the thumbnail is located at /tmp/muscover.webp
 
 **ytmp.vim** a vim config that has useful keybinds (would recommend over using fzf due to speed/reliability)
 
-**ytmpsuite** various helpful operations like toggling lines in run_on_next, selecting queues, creating playlists, etc.
+**ytmpsuite** for helpful things like toggling lines in run_on_next, selecting queues, creating playlists, etc.
 
 # tips
 - convert spotify playlists to something ytmp can use: export the playlist to csv with https://github.com/watsonbox/exportify then run `cut -d'"' --output-delimiter=' ' -f4,8 PLAYLIST_PATH.csv | sed -n 1d | sed -E -e 's/[_[:alnum:]]* ?\(?R?r?emaster[ed]?\)? ?[_[:alnum:]]*//g' -e 's/ ?- ?/ /g' -e 's/  //g' | xargs -d '\n' -I ',,' yt-dlp --print id --print title ytsearch1:",, auto-generated provided to youtube" | paste -s -d ' \n' > file`
