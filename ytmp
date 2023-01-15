@@ -363,7 +363,6 @@ playlist () {
 		[ "$index" = 0 ] && index="$lncount"
 		[ "$index" -gt "$lncount" ] && index=1
 		title=$( sed -n ${index}p $queue | cut -d' ' -f2- | sed -e 's`[][\\/.*^$&]`\\&`g' )
-		echo "Now playing: $title"
 		sed -i "${index}s/$title/\*\*\*$title\*\*\*/g" "$queue"
 		echo quit | socat - /tmp/mpvsocketytmp
 		play
