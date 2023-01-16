@@ -2,7 +2,7 @@
 # this file is looked for in /home/$USER/Music/ytmp/ by default and it is prioritized over source settings. change the path to something else in source if necessary.
 
 # if to play one song after another by default
-daemonize="0" #0=true;1/anything else=false
+daemonize=1 # 1 = true; 0/anything else = false
 
 # maximum amount of times to play a song before downloading it
 # set to a big number if not wanting this feature
@@ -10,8 +10,8 @@ max_stream_amount=3
 # the maximum a length a file can be (in seconds) if it's to be downloaded
 max_len_for_dl='600'
 
-download_thumbnails="1" #0=true;1/anything else=false
-notifications="0" #0=true;1/anything else=false
+download_thumbnails="0" # 1 = true; 0/anything else = false
+notifications="1" # 1 = true; 0/anything else = false
 
 prefix="/home/$USER/Music/ytmp"
 
