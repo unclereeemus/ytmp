@@ -1,3 +1,4 @@
+#!/bin/sh
 ( echo "$*" | grep -q ' st ' ) && socket=`echo $* | awk '{ print $2 }' FS=' st '` && oldsocket=`cat /tmp/active_mpvsocket` || socket=`cat /tmp/active_mpvsocket`
 
 kill () {
