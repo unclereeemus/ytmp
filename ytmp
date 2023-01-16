@@ -8,7 +8,7 @@ conf="/home/$USER/Music/ytmp/conf"
 [ -e "$conf" ] && . "$conf"
 
 # if to play one song after another by default
-[ -z "$daemonize" ] && daemonize=0 #0=true;1/anything else=false
+[ -z "$daemonize" ] && daemonize="1" # 1=true; 0/anything else=false
 
 # maximum amount of times to play a song before downloading it
 # set to a big number if not wanting this feature
@@ -16,8 +16,8 @@ conf="/home/$USER/Music/ytmp/conf"
 # the maximum a length a file can be (in seconds) if it's to be downloaded
 [ -z "$max_len_for_dl" ] && max_len_for_dl='600'
 
-[ -z "$download_thumbnails" ] && download_thumbnails="0" #0=true;1/anything else=false
-[ -z "$notifications" ] && notifications="0" #0=true;1/anything else=false
+[ -z "$download_thumbnails" ] && download_thumbnails="0" # 1=true; 0/anything else=false
+[ -z "$notifications" ] && notifications="1" # 1=true; 0/anything else=false
 
 [ -z "$prefix" ] && prefix="/home/$USER/Music/ytmp"
 
@@ -156,7 +156,7 @@ exit
 }
 
 dl_thumbnail () {
-	if [ "$download_thumbnails" = '0' ]; then
+	if [ "$download_thumbnails" = '1' ]; then
 		id=$( grep '\*\*\*.*\*\*\*$' $queue | cut -d' ' -f1 )
 		[ "$( printf "$id" | wc -m )" != '11' ] && return
 		if ( ! ls $thumb_dir/*"${id}"* >/dev/null 2>&1 ); then
@@ -345,7 +345,7 @@ play () {
 	fi
 	sh "$run_on_next" >/dev/null 2>&1
 	echo "Playing '$( sed -n '/\*\*\*.*\*\*\*$/s/\*\*\*//pg' "$queue" | cut -s -d' ' -f2- )'"
-	[ "$notifications" = '0' ] && notify-send 'Now Playing' "$( sed -n '/\*\*\*.*\*\*\*$/s/\*\*\*//pg' "$queue" | cut -s -d' ' -f2- )"
+	[ "$notifications" = '1' ] && notify-send 'Now Playing' "$( sed -n '/\*\*\*.*\*\*\*$/s/\*\*\*//pg' "$queue" | cut -s -d' ' -f2- )"
 	upd_amnt_played
 }
 
@@ -576,4 +576,4 @@ esac
 
 [ -z "$1" ] && search_youtube
 
-[ "$daemonize" = 0 ] && ! pgrep -fa 'ytmp -d' && setsid -f ytmp -d >/dev/null 2>&1
+[ "$daemonize" = 1 ] && ! pgrep -fa 'ytmp -d' && setsid -f ytmp -d >/dev/null 2>&1
