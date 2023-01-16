@@ -28,7 +28,6 @@ conf="/home/$USER/Music/ytmp/conf"
 [ -z "$played_artists" ] && played_artists="$prefix/played_artists"
 [ -z "$played_titles" ] && played_titles="$prefix/played_titles"
 [ -z "$search_history" ] && search_history="$prefix/search_history"
-
 [ -z "$queue" ] && queue="$prefix/queue"
 
 # this is run on everytime a song is played so if you want certain
@@ -39,7 +38,7 @@ mkdir -p "$prefix" "$dl_dir" "$songs_dir" "$thumb_dir"
 
 helper () {
 cat >&2 << CAT_EOF
-Usage: ytmp [<search>]/s [# of results]/se [# of results]/S [<search>]/sp <search>/a [local path/dir][<url>]/ee # OR v/ls/m [p|l[+|-]#|# p|l[+|-]#|/-]#/E OR -l/-p OR n/p/pl/pf/mln/mfn/l [#|s]/P OR -r/-d
+Usage: ytmp [<search>]/s [# of results]/se [# of results]/S [<search>]/sp <search>/a <local path/dir/url>/ee # OR v/ls/m [p|l[+|-]#|# p|l[+|-]#|/-]#/E OR -l/-p OR n/p/pl/pf/mln/mfn/l [#|s]/P OR -r/-d
 
 On first installing ytmp, there won't be any history to select from so either pass arguements from the cli with ytmp [S] <search> or to search what's in the input field press ctrl-/ or to background search press ctrl-a / ctrl-e (difference explained below)
 
@@ -158,10 +157,10 @@ exit
 
 dl_thumbnail () {
 	if [ "$download_thumbnails" = '0' ]; then
-		id=$( grep '\*\*\*$' $queue | cut -d' ' -f1 )
+		id=$( grep '\*\*\*.*\*\*\*$' $queue | cut -d' ' -f1 )
 		[ "$( printf "$id" | wc -m )" != '11' ] && return
 		if ( ! ls $thumb_dir/*"${id}"* >/dev/null 2>&1 ); then
-			title=$( sed -n '/\*\*\*$/s/\*\*\*//pg' "$queue" | cut -s -d' ' -f2- )
+			title=$( sed -n '/\*\*\*.*\*\*\*$/s/\*\*\*//pg' "$queue" | cut -s -d' ' -f2- )
 			yt-dlp --get-thumbnail "https://www.youtube.com/watch?v=$id" | xargs curl --output "$thumb_dir/$id $title.webp"
 			ln -fs $thumb_dir/*"${id}"* /tmp/muscover.webp
 		else
@@ -173,8 +172,8 @@ dl_thumbnail () {
 # updates how many times an id has been played in $played_urls. $played_urls has the format: id amount_played date_played 'dl'(if downloaded) title
 # also downloads the file once it exceeds $max_stream_amount and it can't be found in the $songs_dir
 upd_amnt_played () {
-	[ -n "$1" ] && id="$1" || id=$( grep '\*\*\*$' $queue | cut -d' ' -f1 )
-	[ -n "$1" ] && title=$( echo "$*" | cut -d' ' -f2- ) || title=$( sed -n '/\*\*\*$/s/\*\*\*//pg' "$queue" | cut -s -d' ' -f2- )
+	[ -n "$1" ] && id="$1" || id=$( grep '\*\*\*.*\*\*\*$' $queue | cut -d' ' -f1 )
+	[ -n "$1" ] && title=$( echo "$*" | cut -d' ' -f2- ) || title=$( sed -n '/\*\*\*.*\*\*\*$/s/\*\*\*//pg' "$queue" | cut -s -d' ' -f2- )
 	dt="$( date +'%m/%d/%y+%T' )"
 	# [ grep $id $played_urls | head -1 | cut -d' ' -f4 != 'dl' ] && date_added="$( grep $id $played_urls | head -1 | cut -d' ' -f4 )"
 	amnt_played="$( grep $id $played_urls | head -1 | cut -d' ' -f2 )"
@@ -327,7 +326,7 @@ search_youtube () {
 
 # plays the $id passed to it. if no arguements, it sets id to whatever is surrounded by ***
 play () {
-	[ -n "$1" ] && id="$1" || id=$( grep '\*\*\*$' $queue | cut -d' ' -f1 )
+	[ -n "$1" ] && id="$1" || id=$( grep '\*\*\*.*\*\*\*$' $queue | cut -d' ' -f1 )
 	[ -z "$id" ] && return
 	# if the length of id (first field) is 12 then it is a checksum of a local file and not a youtube id so play it and exit
 	if [ "$( printf "$id" | wc -m )" = '12' ]; then
@@ -345,8 +344,8 @@ play () {
 		dl_thumbnail
 	fi
 	sh "$run_on_next" >/dev/null 2>&1
-	echo "Playing '$( sed -n '/\*\*\*$/s/\*\*\*//pg' "$queue" | cut -s -d' ' -f2- )'"
-	[ "$notifications" = '0' ] && notify-send 'Now Playing' "$( sed -n '/\*\*\*$/s/\*\*\*//pg' "$queue" | cut -s -d' ' -f2- )"
+	echo "Playing '$( sed -n '/\*\*\*.*\*\*\*$/s/\*\*\*//pg' "$queue" | cut -s -d' ' -f2- )'"
+	[ "$notifications" = '0' ] && notify-send 'Now Playing' "$( sed -n '/\*\*\*.*\*\*\*$/s/\*\*\*//pg' "$queue" | cut -s -d' ' -f2- )"
 	upd_amnt_played
 }
 
@@ -354,9 +353,9 @@ play () {
 playlist () {
 	# plays next or previous song to currently playing
 	if [ "$1" = 'c' ]; then
-		index=$( grep -n '\*\*\*$' "$queue" | head -1 | cut -d':' -f1 )
+		index=$( grep -n '\*\*\*.*\*\*\*$' "$queue" | head -1 | cut -d':' -f1 )
 		sed -i "${index}s/\*\*\*//g" "$queue"
-		sed -i '/\*\*\*$/s/\*\*\*//g' "$queue"
+		sed -i '/\*\*\*.*\*\*\*$/s/\*\*\*//g' "$queue"
 		[ "$2" = "n" ] && index=$(( index + 1 ))
 		[ "$2" = "p" ] && index=$(( index - 1 ))
 		lncount=$( grep -c '.' "$queue" )
@@ -369,14 +368,14 @@ playlist () {
 	# puts stars around exact title and removes stars from any other lines
 	elif [ "$1" = 'e' ]; then
 		title="$( echo "$2" | sed -e 's`[][\\/.*^$&]`\\&`g' )"
-		sed -i '/\*\*\*$/s/\*\*\*//g' "$queue"
+		sed -i '/\*\*\*.*\*\*\*$/s/\*\*\*//g' "$queue"
 		sed -i "s/${title}$/\*\*\*${title}\*\*\*/g" $queue
 		echo quit | socat - /tmp/mpvsocketytmp
 		play
 	# puts stars around line # and removes stars from any other lines
 	elif [ "$1" = 'ee' ]; then
 		[ "$3" = 'f' ] && line=$(( $4 + 1 )) || line="$3"
-		sed -i '/\*\*\*$/s/\*\*\*//g' "$queue"
+		sed -i '/\*\*\*.*\*\*\*$/s/\*\*\*//g' "$queue"
 		title="$( sed -n "${line}p" "$queue" | cut -d' ' -f2- | sed -e 's`[][\\/.*^$&]`\\&`g' )"
 		sed -i "${line}s/${title}$/\*\*\*${title}\*\*\*/g" $queue
 		echo quit | socat - /tmp/mpvsocketytmp
@@ -387,7 +386,7 @@ playlist () {
 	elif [ -z "$1" ]; then
 		while true; do
 			if [ "$( grep -c '.' $queue )" -gt 0 ]; then
-				if ! grep -q '\*\*\*$' $queue; then
+				if ! grep -q '\*\*\*.*\*\*\*$' $queue; then
 					id="$( head -1 "$queue" | cut -d' ' -f1 )"
 					title="$( head -1 "$queue" | cut -d' ' -f2- | sed -e 's`[][\\/.*^$&]`\\&`g' )"
 					sed -ie "s/$title/\*\*\*$title\*\*\*/g" "$queue"
@@ -421,8 +420,8 @@ queue_manager () {
 			sel="$2"
 		fi
 
-		sel="$( echo "$sel" | sed s/p/"$( grep -n '\*\*\*$' "$queue" | head -1 | cut -d':' -f1 )"/ | sed s/l/"$( grep -c '.' "$queue" )"/ | bc )"
-		place="$( echo "$place" | sed s/p/"$( grep -n '\*\*\*$' "$queue" | head -1 | cut -d':' -f1 )"/ | sed s/l/"$( grep -c '.' "$queue" )"/ | bc )"
+		sel="$( echo "$sel" | sed s/p/"$( grep -n '\*\*\*.*\*\*\*$' "$queue" | head -1 | cut -d':' -f1 )"/ | sed s/l/"$( grep -c '.' "$queue" )"/ | bc )"
+		place="$( echo "$place" | sed s/p/"$( grep -n '\*\*\*.*\*\*\*$' "$queue" | head -1 | cut -d':' -f1 )"/ | sed s/l/"$( grep -c '.' "$queue" )"/ | bc )"
 		line="$( sed -n ${sel}p $queue )"
 		if ( echo "$place" | grep -qE '\+|-' ); then
 			index="$( echo "${sel}${place}" | bc )"
@@ -519,7 +518,7 @@ rand_daemon () {
 }
 
 download_song () {
-	sel="$( echo $2 | sed s/p/"$( grep -n '\*\*\*$' "$queue" | head -1 | cut -d':' -f1 )"/ | sed s/l/"$( grep -c '.' "$queue" )"/ | bc )"
+	sel="$( echo $2 | sed s/p/"$( grep -n '\*\*\*.*\*\*\*$' "$queue" | head -1 | cut -d':' -f1 )"/ | sed s/l/"$( grep -c '.' "$queue" )"/ | bc )"
 	[ "$3" = 'f' ] && sel=$(( sel + 1 ))
 	id="$( sed -n ${sel}p "$queue" | cut -d' ' -f1 )"
 	[ "$( printf "$id" | wc -m )" != '11' ] && return
