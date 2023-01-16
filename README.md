@@ -82,6 +82,3 @@ the thumbnail is located at /tmp/muscover.webp
 
 # credit
 https://github.com/Gwynsav/messydots for eww config
-
-# note
-this is a fork of the now deleted repository ifeelalright1970/ytmp with additional features and bug fixes. feedback welcome :)!
