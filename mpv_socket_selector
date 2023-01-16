@@ -1,3 +1,4 @@
+#!/bin/sh
 rm /tmp/current_mpvsockets
 for i in `ls /tmp/mpvsocket*`; do
 	if [ -n "$( echo '{ "command": ["get_property", "pid" ] }' | socat - "$i" )" ]; then
