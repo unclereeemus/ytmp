@@ -372,7 +372,7 @@ playlist () {
 	# puts stars around line # and removes stars from any other lines
 	elif [ "$1" = 'ee' ]; then
 		[ "$3" = 'f' ] && line=$(( $4 + 1 )) || line="$3"
-		sed -i -e "/$playing_regex/s/$playing_marker_regex/\1\2 /" -e 's/\*\*\*$//p' "$queue"
+		sed -i -e "/$playing_regex/s/$playing_marker_regex/\1\2 /" -e 's/\*\*\*$//' "$queue"
 		title="$( sed -n "${line}p" "$queue" | cut -d' ' -f2- | sed -e 's`[][\\/.*^$&]`\\&`g' )"
 		sed -i "${line}s/${title}$/\*\*\*${title}\*\*\*/g" $queue
 		echo quit | socat - /tmp/mpvsocketytmp
