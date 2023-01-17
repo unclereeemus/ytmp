@@ -282,7 +282,7 @@ search_youtube () {
 	# if no arguements are passed but just words, search with the words
 	[ "$1" = 'ss' ] && query=$( echo "$*" | cut -d' ' -f2- ) || query=$( echo "$entries $songs_dir_ls" | fzf --layout=reverse --height 40% -m --bind='ctrl-alt-s:execute-silent(setsid -f ytmp S {q}),ctrl-alt-e:execute-silent(setsid -f ytmp S {+} {q} ),alt-a:beginning-of-line,alt-e:end-of-line,ctrl-e:execute-silent(setsid -f ytmp {+} {q}),tab:select+clear-query,return:accept,ctrl-a:replace-query,ctrl-/:print-query,ctrl-s:execute-silent(setsid -f ytmp {q})' )
 	query=$( echo "$query" | tr "\n" ' ' | sed -e 's/[ \t]*$//' )
-	echo "Searching for '$query'"
+	[ -n "$query" ] && echo "Searching for '$query'"
 	( ! grep -Fxq "$query" $search_history ) && ( ! echo "$songs_dir_ls" | grep -Fq "$query" ) && echo "$query" >> $search_history
 
 	# allows user to browse search results and select
