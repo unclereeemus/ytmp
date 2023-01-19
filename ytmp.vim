@@ -34,7 +34,6 @@ nnoremap r :e!<Enter>
 nnoremap R /\*\*\*$/<Esc>:s/\*\*\*//g<Enter>:w<Enter>
 nnoremap W :w!<Enter>
 nnoremap J /\*\*\*$/<Esc>mp
-nnoremap ? :vimgrep //f %<Left><Left><Left><Left>
 
 nnoremap <C-s> :te ytmp v<Enter>i
 nnoremap <C-t> :te <Enter>i
