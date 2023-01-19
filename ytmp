@@ -427,9 +427,11 @@ queue_manager () {
 		[ -z "$place" ] && return
 		sel="$( echo "$sel" | sed s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ | sed s/l/"$( grep -c '.' "$queue" )"/ | bc )"
 		place="$( echo "$place" | sed s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ | sed s/l/"$( grep -c '.' "$queue" )"/ | bc )"
-		line="$( sed -n ${sel}p $queue )"
-		sed -i "${sel}"d $queue
-		sed -i "${place}i ${line}" $queue
+
+		ed -s "$queue" >/dev/null <<ED_END
+${sel}m${place}
+wq
+ED_END
 
 	# move entry to right after whats currently being played (in ***)
 	elif [ "$1" = 'nn' ]; then
