@@ -32,9 +32,8 @@ an old demo: https://www.reddit.com/r/unixporn/comments/woasvu/oc_ytmp_youtube_m
 the mpv ipc socket is opened at /tmp/mpvsocketytmp
 
 ## on first run
-the first time you run ytmp there won't be any history to select from when you enter fzf so you can pass your search from the cli like
-`ytmp <search>` or `ytmp S <search>` (look at `ytmp h` for the difference) or you can enter fzf and press ctrl-/ to pass your input field
-as the search or ctrl-s/ctrl-e to background the search so you can make a new search.
+
+On first installing ytmp, there won't be any history to select from when you enter ytmp so either pass arguements from the cli with ytmp [S] <search> or to search what's on the fzf input field press ctrl-x or to background search press ctrl-s / ctrl-z (difference explained in `ytmp h`)
 
 ## eww setup
 `chmod +x mus`
