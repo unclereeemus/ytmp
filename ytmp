@@ -44,7 +44,7 @@ helper () {
 cat >&2 << CAT_EOF
 Usage: ytmp [<search>]/s [# of results]/se [# of results]/S [<search>]/sp <search>/a <local path/dir/url>/ee # OR v/ls/m [p|l|#[+|-#]] [p|l|#[+|-#]]/E OR -l/-p OR n/p/pl/pf/mln/mfn/l [#|s]/P OR -r/-d
 
-On first installing ytmp, there won't be any history to select from so either pass arguements from the cli with ytmp [S] <search> or to search what's in the input field press ctrl-/ or to background search press ctrl-a / ctrl-e (difference explained below)
+On first installing ytmp, there won't be any history to select from when you enter ytmp so either pass arguements from the cli with ytmp [S] <search> or to search what's on the fzf input field press ctrl-x or to background search press ctrl-s / ctrl-z (difference explained below)
 
 The difference between s and se/S: se/S searches without the added jargon 'auto-generated provided to youtube' which usually fetches results from youtube music. If you just pass the query from the command line or just run ytmp without options, it will add the jargon to your search. ytmp and ytmp S also accept arguements as search if you don't want to enter fzf for search.
 
