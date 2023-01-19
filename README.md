@@ -7,18 +7,13 @@ an old demo: https://www.reddit.com/r/unixporn/comments/woasvu/oc_ytmp_youtube_m
   - Keyboard centered
   - Search regular youtube or youtube music (kind of... in a round about way. see `ytmp h` for explanation)
   - Download songs after they have been played a chosen amount of times (and play the download in the future)
-  - Search and add youtube playlists to the queue
   - Add local files/directories
   - Select from multiple search results
-  - Manage queue from cli, nvim, fzf
+  - Search and add youtube playlists to the queue
+  - Manage the queue from cli, nvim, fzf
   - Keep track of listen history/amount
-  - Everything is a plain text file!
+  - Everything is a plain text file
   - Integration with eww widgets (through mpvsocket)
-
-**BUGS:**
-- moving songs next/previous to currently playing when using fzf or cli options
-		moves them one/two up/down instead of directly above or below.
-		the workaround is to just use vim.
 
 # setup
 ## DEPS: fzf, yt-dlp, mpv, socat, (n/vim, pipe-viewer(https://github.com/trizen/pipe-viewer/))
@@ -81,5 +76,5 @@ the thumbnail is located at /tmp/muscover.webp
 - you can make a scratchpad (i recommend tdrop if your wm doesn't support them) of `ytmp E` which can be your one stop for music management (you can invoke ytmp with keybindings by using the vim config provided)
 
 # credit
-the now deleted ifeelalright1970/ytmp of which this is a fork
-https://github.com/Gwynsav/messydots for eww config
+- this is a fork the now deleted repo ifeelalright1970/ytmp
+- https://github.com/Gwynsav/messydots for eww config
