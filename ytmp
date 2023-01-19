@@ -103,7 +103,7 @@ v view queue; keybinds:
 	   alt-j: jump; ctrl-s: search query in background
 	   alt-s: search query in background with ytmp S
 	   ctrl-alt-d: download selection; alt-r: reload queue
-	   ctrl-o: open song in web browser
+	   ctrl-o: open entry in web browser
 
 vv view queue with details about the video (same keybinds as v option)
 
