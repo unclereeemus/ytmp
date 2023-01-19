@@ -31,6 +31,7 @@ conf="/home/$USER/Music/ytmp/conf"
 # this is run on everytime a song is played so if you want certain
 # mpv settings to remain consistent (volume, loop, seek, etc), then put them in this file
 [ -z "$run_on_next" ] && run_on_next="/home/$USER/Music/ytmp/run_on_next"
+
 mkdir -p "$prefix" "$dl_dir" "$songs_dir" "$thumb_dir"
 
 # regex to match what's currently playing
@@ -432,40 +433,34 @@ queue_manager () {
 
 	# move entry to right after whats currently being played (in ***)
 	elif [ "$1" = 'nn' ]; then
-		selt="$3"
 		ed -s "$queue" >/dev/null <<ED_END
-$playing_marker_regex
-${selt}+m.
+/$playing_regex/
+${3}+m.
 wq
 ED_END
 	# move entry to right before whats currently being played (in ***)
 	elif [ "$1" = 'pp' ]; then
-		selt="$3"
 		ed -s "$queue" >/dev/null <<ED_END
-$playing_marker_regex
-${selt}+m.
+/$playing_regex/
+${3}+m.-
 wq
 ED_END
 	# move entry up one
 	elif [ "$1" = 'up' ]; then
-		selt="$3"
 		ed -s "$queue" >/dev/null <<ED_END
-${selt}+m${selt}-
+${3}+m${3}-
 wq
 ED_END
 	# move entry down one
 	elif [ "$1" = 'dn' ]; then
-		selt="$3"
 		ed -s "$queue" >/dev/null <<ED_END
-${selt}+m${selt}+2
+${3}+m${3}+2
 wq
 ED_END
 	# delete entry
 	elif [ "$1" = 'dd' ]; then
-		selt="$3"
-		#sed -ie "${selt}d" "$queue"
 		ed -s "$queue" >/dev/null <<ED_END
-${selt}+d
+${3}+d
 wq
 ED_END
 	fi
