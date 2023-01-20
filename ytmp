@@ -61,8 +61,8 @@ fzf options for search (ytmp [S/se/s]):
 			ctrl-r: replace input field with selection
 			ctrl-x: send input field as search (none of the selections are passed)
 			enter: search only the selections (query not included)
-			tab: select
-			shift-tab: deselect
+			tab: select and clear query
+			shift-tab: deselect all
 			ctrl-c/esc: abort
 
 		query+selections are only available as background search due to fzf limitations. when you press the binding there isn't any indication that the search has passed through so you can assume that fact and just abort fzf. also these options are unavailalbe or mean different things for se/s:
@@ -229,7 +229,7 @@ add () {
 search_exact () {
 	songs_dir_ls=$( ls $songs_dir | cut -d' ' -f2- | sed 's/\.webm$//' )
 	entries=$( cat $search_history $played_titles $played_artists )
-	[ -n "$( echo $* | cut -s -d' ' -f3 )" ] && query=$( echo "$*" | cut -d' ' -f2- ) || query=$( echo "$entries $songs_dir_ls" | fzf --layout=reverse --height 40% -m --bind='ctrl-z:execute-silent(setsid -f ytmp {q}),alt-z:execute-silent(setsid -f ytmp {+} {q} ),alt-a:beginning-of-line,alt-e:end-of-line,alt-s:execute-silent(setsid -f ytmp S {+} {q} ),tab:select+clear-query,return:accept,ctrl-r:replace-query,ctrl-x:print-query,ctrl-s:execute-silent(setsid -f ytmp S {q})' )
+	[ -n "$( echo $* | cut -s -d' ' -f3 )" ] && query=$( echo "$*" | cut -d' ' -f2- ) || query=$( echo "$entries $songs_dir_ls" | fzf --layout=reverse --height 40% -m --bind='tab:toggle+clear-query+down,shift-tab:clear-selection,ctrl-z:execute-silent(setsid -f ytmp {q}),alt-z:execute-silent(setsid -f ytmp {+} {q} ),alt-a:beginning-of-line,alt-e:end-of-line,alt-s:execute-silent(setsid -f ytmp S {+} {q} ),tab:select+clear-query,return:accept,ctrl-r:replace-query,ctrl-x:print-query,ctrl-s:execute-silent(setsid -f ytmp S {q})' )
 	query=$( echo "$query" | tr "\n" ' ' | sed -e 's/[ \t]*$//' )
 	[ -z "$query" ] && return
 	echo "Searching for '$query'"
@@ -244,7 +244,7 @@ search_youtube () {
 	songs_dir_ls=$( ls $songs_dir | cut -d' ' -f2- | sed 's/\.webm$//' )
 	entries=$( cat $search_history $played_titles $played_artists )
 	# if no arguements are passed but just words, search with the words
-	[ "$1" = 'ss' ] && query=$( echo "$*" | cut -d' ' -f2- ) || query=$( echo "$entries $songs_dir_ls" | fzf --layout=reverse --height 40% -m --bind='ctrl-z:execute-silent(setsid -f ytmp S {q}),alt-z:execute-silent(setsid -f ytmp S {+} {q} ),alt-a:beginning-of-line,alt-e:end-of-line,alt-s:execute-silent(setsid -f ytmp {+} {q}),tab:select+clear-query,return:accept,ctrl-r:replace-query,ctrl-x:print-query,ctrl-s:execute-silent(setsid -f ytmp {q})' )
+	[ "$1" = 'ss' ] && query=$( echo "$*" | cut -d' ' -f2- ) || query=$( echo "$entries $songs_dir_ls" | fzf --layout=reverse --height 40% -m --bind='tab:toggle+clear-query+down,shift-tab:clear-selection,ctrl-z:execute-silent(setsid -f ytmp S {q}),alt-z:execute-silent(setsid -f ytmp S {+} {q} ),alt-a:beginning-of-line,alt-e:end-of-line,alt-s:execute-silent(setsid -f ytmp {+} {q}),tab:select+clear-query,return:accept,ctrl-r:replace-query,ctrl-x:print-query,ctrl-s:execute-silent(setsid -f ytmp {q})' )
 	query=$( echo "$query" | tr "\n" ' ' | sed -e 's/[ \t]*$//' )
 	[ -n "$query" ] && echo "Searching for '$query'"
 	( ! grep -Fxq "$query" $search_history ) && ( ! echo "$songs_dir_ls" | grep -Fq "$query" ) && echo "$query" >> $search_history
@@ -259,8 +259,8 @@ search_youtube () {
 		echo "$ids" > /tmp/ytmpids
 		titles=$( echo "$ids_titles" | sed -n 'p;n' | grep -n '' )
 		# sel=$( printf "$titles" | fzf -m --preview="echo {n}+1 | bc | xargs -I ',,' sed -n ,,p /tmp/ytmpids | xargs -I ',,' pipe-viewer --extract 'NOM\t*TITLE*\nCNL\t*AUTHOR*\nPUB\t*PUBLISHED*\nDUR\t*TIME*\nURL\t*URL*\n\n\tDESCRIPTION\n*DESCRIPTION*' -id ,," --height 60% --preview-window='right,70%' )
-		sel=$( printf '%b' "$titles" | fzf --layout=reverse --height 40% -m --preview="echo {n}+1 | bc | xargs -I ',,' sed -n ,,p /tmp/ytmpids | xargs -I ',,' yt-dlp --print title --print duration_string --print description ,," --height 60% --preview-window='right,70%' )
-
+		sel=$( printf '%b' "$titles" | fzf --bind='tab:toggle+clear-query+down,shift-tab:clear-selection' --layout=reverse --height 40% -m --preview="echo {n}+1 | bc | xargs -I ',,' sed -n ,,p /tmp/ytmpids | xargs -I ',,' yt-dlp --print title --print duration_string --print description ,," --height 60% --preview-window='right,70%' )
+		[ -z "$sel" ] && return
 		echo "$sel" | while read -r one; do
 			num=$( printf '%b' "$titles" | grep -Fx "$one" | cut -d':' -f1 )
 			id=$( printf '%b' "$ids" | sed -n "${num}"p )
@@ -276,8 +276,9 @@ search_youtube () {
 		# i don't know how to do it in a more 'proper' way so to get the ids for preview, i put the ids in a file and then use the fzf index (+1) to get the proper id for the description
 		echo "$ids" > /tmp/ytmpids
 		# sel=$( printf "$titles" | fzf -m --preview="echo {n}+1 | bc | xargs -I ',,' sed -n ,,p /tmp/ytmpids | xargs -I ',,' pipe-viewer --extract 'NOM\t*TITLE*\nCNL\t*AUTHOR*\nPUB\t*PUBLISHED*\nDUR\t*TIME*\nURL\t*URL*\n\n\tDESCRIPTION\n*DESCRIPTION*' -id ,," --height 60% --preview-window='right,70%' )
-		sel=$( printf '%b' "$titles" | fzf --layout=reverse --height 40% -m --preview="echo {n}+1 | bc | xargs -I ',,' sed -n ,,p /tmp/ytmpids | xargs -I ',,' yt-dlp --print title --print duration_string --print description ,," --height 60% --preview-window='right,70%' )
+		sel=$( printf '%b' "$titles" | fzf --bind='tab:toggle+clear-query+down,shift-tab:clear-selection' --layout=reverse --height 40% -m --preview="echo {n}+1 | bc | xargs -I ',,' sed -n ,,p /tmp/ytmpids | xargs -I ',,' yt-dlp --print title --print duration_string --print description ,," --height 60% --preview-window='right,70%' )
 
+		[ -z "$sel" ] && return
 		echo "$sel" | while read -r one; do
 			num=$( printf '%b' "$titles" | grep -Fx "$one" | cut -d':' -f1 )
 			id=$( printf '%b' "$ids" | sed -n "${num}"p )
