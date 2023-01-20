@@ -41,6 +41,9 @@ nnoremap <C-y> :te ytmp<Enter>i
 nnoremap <C-w> :te ytmp S<Enter>i
 nnoremap <C-v> :te ytmp vv<Enter>i
 
+nnoremap < :silent !ytmp p<Enter>
+nnoremap > :silent !ytmp n<Enter>
+
 " replace the volume level in the run_on_next file
 nnoremap <leader>v :te echo '' \| dmenu \| xargs -r -I ',,' sed -i 's@vol=.*@vol=,,@' /home/$USER/Music/ytmp/run_on_next<Enter>i
 " set volume
