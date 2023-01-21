@@ -246,7 +246,7 @@ search_youtube () {
 	# if no arguements are passed but just words, search with the words
 	[ "$1" = 'ss' ] && query=$( echo "$*" | cut -d' ' -f2- ) || query=$( echo "$entries $songs_dir_ls" | fzf --layout=reverse --height 40% -m --bind='tab:toggle+clear-query+down,shift-tab:clear-selection,ctrl-z:execute-silent(setsid -f ytmp S {q}),alt-z:execute-silent(setsid -f ytmp S {+} {q} ),alt-a:beginning-of-line,alt-e:end-of-line,alt-s:execute-silent(setsid -f ytmp {+} {q}),tab:select+clear-query,return:accept,ctrl-r:replace-query,ctrl-x:print-query,ctrl-s:execute-silent(setsid -f ytmp {q})' )
 	query=$( echo "$query" | tr "\n" ' ' | sed -e 's/[ \t]*$//' )
-	[ -n "$query" ] && echo "Searching for '$query'"
+	[ -n "$query" ] && echo "Searching for '$query'" || return
 	( ! grep -Fxq "$query" $search_history ) && ( ! echo "$songs_dir_ls" | grep -Fq "$query" ) && echo "$query" >> $search_history
 
 	# allows user to browse search results and select
@@ -259,7 +259,7 @@ search_youtube () {
 		echo "$ids" > /tmp/ytmpids
 		titles=$( echo "$ids_titles" | sed -n 'p;n' | grep -n '' )
 		# sel=$( printf "$titles" | fzf -m --preview="echo {n}+1 | bc | xargs -I ',,' sed -n ,,p /tmp/ytmpids | xargs -I ',,' pipe-viewer --extract 'NOM\t*TITLE*\nCNL\t*AUTHOR*\nPUB\t*PUBLISHED*\nDUR\t*TIME*\nURL\t*URL*\n\n\tDESCRIPTION\n*DESCRIPTION*' -id ,," --height 60% --preview-window='right,70%' )
-		sel=$( printf '%b' "$titles" | fzf --bind='tab:toggle+clear-query+down,shift-tab:clear-selection' --layout=reverse --height 40% -m --preview="echo {n}+1 | bc | xargs -I ',,' sed -n ,,p /tmp/ytmpids | xargs -I ',,' yt-dlp --print title --print duration_string --print description ,," --height 60% --preview-window='right,70%' )
+		sel=$( printf '%b' "$titles" | fzf --bind='tab:toggle+clear-query+down,shift-tab:clear-selection' --layout=reverse --height 40% -m --preview="echo {n}+1 | bc | xargs -I ',,' sed -n ,,p /tmp/ytmpids | xargs -I ',,' yt-dlp --print title --print duration_string --print webpage_url --print description ,, | sed -e '1s/^/Name: /' -e '2s/^/Length: /' -e '3s@^@URL: @' -e '4i --------------------------------\nDescription:\n--------------------------------\n' -e '\$a \\\n--------------------------------'" --height 60% --preview-window='right,70%' )
 		[ -z "$sel" ] && return
 		echo "$sel" | while read -r one; do
 			num=$( printf '%b' "$titles" | grep -Fx "$one" | cut -d':' -f1 )
@@ -276,7 +276,7 @@ search_youtube () {
 		# i don't know how to do it in a more 'proper' way so to get the ids for preview, i put the ids in a file and then use the fzf index (+1) to get the proper id for the description
 		echo "$ids" > /tmp/ytmpids
 		# sel=$( printf "$titles" | fzf -m --preview="echo {n}+1 | bc | xargs -I ',,' sed -n ,,p /tmp/ytmpids | xargs -I ',,' pipe-viewer --extract 'NOM\t*TITLE*\nCNL\t*AUTHOR*\nPUB\t*PUBLISHED*\nDUR\t*TIME*\nURL\t*URL*\n\n\tDESCRIPTION\n*DESCRIPTION*' -id ,," --height 60% --preview-window='right,70%' )
-		sel=$( printf '%b' "$titles" | fzf --bind='tab:toggle+clear-query+down,shift-tab:clear-selection' --layout=reverse --height 40% -m --preview="echo {n}+1 | bc | xargs -I ',,' sed -n ,,p /tmp/ytmpids | xargs -I ',,' yt-dlp --print title --print duration_string --print description ,," --height 60% --preview-window='right,70%' )
+		sel=$( printf '%b' "$titles" | fzf --bind='tab:toggle+clear-query+down,shift-tab:clear-selection' --layout=reverse --height 40% -m --preview="echo {n}+1 | bc | xargs -I ',,' sed -n ,,p /tmp/ytmpids | xargs -I ',,' yt-dlp --print title --print duration_string --print webpage_url --print description ,, | sed -e '1s/^/Name: /' -e '2s/^/Length: /' -e '3s@^@URL: @' -e '4i --------------------------------\nDescription:\n--------------------------------\n' -e '\$a \\\n--------------------------------'" --height 60% --preview-window='right,70%' )
 
 		[ -z "$sel" ] && return
 		echo "$sel" | while read -r one; do
@@ -415,8 +415,8 @@ queue_manager () {
 
 	elif [ "$1" = 'vv' ]; then
 		cat "$queue" | fzf --layout=reverse --height 100% --cycle --bind="ctrl-]:execute-silent(ytmp w),home:first,end:last,alt-r:reload(cat '$queue'),ctrl-alt-d:execute-silent(ytmp -dl {n} f),ctrl-r:replace-query,ctrl-z:execute-silent(setsid -f ytmp S {q}),ctrl-s:execute-silent(setsid -f ytmp {q}),ctrl-j:down,alt-j:jump,shift-left:execute-silent(ytmp dd {n})+reload(cat '$queue'),shift-up:execute-silent(ytmp up {n})+reload(cat '$queue')+up,shift-down:execute-silent(ytmp dn {n})+reload(cat '$queue')+down,return:execute-silent(ytmp e f {n})+abort,shift-right:execute-silent(ytmp e f {n})+reload(cat '$queue'),pgdn:execute-silent(ytmp nn {n})+reload(cat '$queue'),pgup:execute-silent(ytmp pp {n})+reload(cat '$queue'),ctrl-v:page-down,alt-v:page-up,ctrl-alt-p:half-page-up,ctrl-alt-n:half-page-down,left-click:execute-silent(ytmp e f {n})+abort,right-click:execute-silent(ytmp nn {n})+reload(cat '$queue'),ctrl-^:execute-silent(ytmp mln)+reload(cat '$queue'),ctrl-\:execute(ytmp E)+reload(cat '$queue'),alt-m:execute(ytmp m f {n})+reload(cat '$queue'),ctrl-o:execute-silent(ytmp opinbrwsr {n})" \
-			--preview="( printf '#'; echo '{n}+1' | bc ); ( printf '--------------------------------\nhttps://www.youtube.com/watch?v='; echo {} | cut -s -d' ' -f1 ); echo {} | cut -s -d' ' -f1 | xargs -I ',,' grep ',,' $played_urls | cut -s -d' ' -f2- | sed -e 's/\(^[0-9]*\) \(..-..-..-..:..:..\)*\(..\/..\/..+..:..:..\)* \(dl\)* *.*/Amount Played: \1\nLast Played: \2\3\4/' -e 's/dl/\nDOWNLOADED/'; \
-			printf '--------------------------------\n'; echo {} | cut -s -d' ' -f1 | xargs -I ',,' yt-dlp --print title --print duration_string --print description ',,' | sed -e '1s/^/Name: /' -e '2s/^/Length: /' -e '3i --------------------------------\nDescription:\n--------------------------------\n' -e '\$a --------------------------------\n'" --preview-window='right,50%'
+			--preview="( printf '#'; echo '{n}+1' | bc ); echo {} | cut -s -d' ' -f1 | xargs -I ',,' grep ',,' $played_urls | cut -s -d' ' -f2- | sed -e '1i --------------------------------' -e 's/\(^[0-9]*\) \(..-..-..-..:..:..\)*\(..\/..\/..+..:..:..\)* \(dl\)* *.*/Amount Played: \1\nLast Played: \2\3\4/' -e 's/dl/\nDOWNLOADED/'; \
+			printf '--------------------------------\n'; echo {} | cut -s -d' ' -f1 | xargs -I ',,' yt-dlp --print title --print duration_string --print webpage_url --print description ',,' | sed -e '1s/^/Name: /' -e '2s/^/Length: /' -e '3s@^@URL: @' -e '4i --------------------------------\nDescription:\n--------------------------------\n' -e '\$a \\\n--------------------------------'" --preview-window='right,50%'
 
 
 	elif [ "$1" = 'm' ]; then
