@@ -367,14 +367,14 @@ playlist () {
 		[ "$index" -gt "$lncount" ] && index=1
 		title=$( sed -n ${index}p $queue | cut -d' ' -f2- | sed -e 's`[][\\/.*^$&]`\\&`g' )
 		sed -i "${index}s/$title/\*\*\*$title\*\*\*/" "$queue"
-		echo quit | socat - /tmp/mpvsocketytmp
+		echo quit | socat - /tmp/mpvsocketytmp >/dev/null 2>&1
 		play
 	# puts stars around exact title and removes stars from any other lines
 	elif [ "$1" = 'ee' ]; then
 		title="$( echo "$2" | sed -e 's`[][\\/.*^$&]`\\&`g' )"
 		sed -i -e "/$playing_regex/s/$playing_marker_regex/\1\2 /" -e 's/\*\*\*$//' "$queue"
 		sed -i "s/\(^.\{11\}\) $title$\|\(^.\{12\}\) ${title}$/\1\2 \*\*\*${title}\*\*\*/" $queue
-		echo quit | socat - /tmp/mpvsocketytmp
+		echo quit | socat - /tmp/mpvsocketytmp >/dev/null 2>&1
 		play
 	# puts stars around line # and removes stars from any other lines
 	elif [ "$1" = 'e' ]; then
@@ -383,7 +383,7 @@ playlist () {
 		# title="$( sed -n -e ${line}'s/\(^.\{11\}\) \(.*\)\|\(^.\{12\}\) \(.*\)/\2\4/' -e 's`[][\\/.*^$&]`\\&`gp' "$queue" )"
 		title="$( sed -n "${line}p" "$queue" | cut -d' ' -f2- | sed -e 's`[][\\/.*^$&]`\\&`g' )"
 		sed -i "${line}s/${title}$/\*\*\*${title}\*\*\*/" $queue
-		echo quit | socat - /tmp/mpvsocketytmp
+		echo quit | socat - /tmp/mpvsocketytmp >/dev/null 2>&1
 		play
 
 	# checks if queue is not empty but nothing is playing, it will set stars around the first line and call play
@@ -415,8 +415,9 @@ queue_manager () {
 
 	elif [ "$1" = 'vv' ]; then
 		cat "$queue" | fzf --layout=reverse --height 100% --cycle --bind="ctrl-]:execute-silent(ytmp w),home:first,end:last,alt-r:reload(cat '$queue'),ctrl-alt-d:execute-silent(ytmp -dl {n} f),ctrl-r:replace-query,ctrl-z:execute-silent(setsid -f ytmp S {q}),ctrl-s:execute-silent(setsid -f ytmp {q}),ctrl-j:down,alt-j:jump,shift-left:execute-silent(ytmp dd {n})+reload(cat '$queue'),shift-up:execute-silent(ytmp up {n})+reload(cat '$queue')+up,shift-down:execute-silent(ytmp dn {n})+reload(cat '$queue')+down,return:execute-silent(ytmp e f {n})+abort,shift-right:execute-silent(ytmp e f {n})+reload(cat '$queue'),pgdn:execute-silent(ytmp nn {n})+reload(cat '$queue'),pgup:execute-silent(ytmp pp {n})+reload(cat '$queue'),ctrl-v:page-down,alt-v:page-up,ctrl-alt-p:half-page-up,ctrl-alt-n:half-page-down,left-click:execute-silent(ytmp e f {n})+abort,right-click:execute-silent(ytmp nn {n})+reload(cat '$queue'),ctrl-^:execute-silent(ytmp mln)+reload(cat '$queue'),ctrl-\:execute(ytmp E)+reload(cat '$queue'),alt-m:execute(ytmp m f {n})+reload(cat '$queue'),ctrl-o:execute-silent(ytmp opinbrwsr {n})" \
-			--preview="( printf '#'; echo '{n}+1' | bc ); printf '--------------------------------\n'; printf 'https://www.youtube.com/watch?v='; echo {} | cut -s -d' ' -f1; echo {} | cut -s -d' ' -f1 | xargs -I ',,' grep ',,' $played_urls | cut -s -d' ' -f2- | sed -e 's/\(^[0-9]*\) \(..-..-..-..:..:..\)*\(..\/..\/..+..:..:..\)* \(dl\)* *.*/Amount Played: \1\nLast Played: \2\3\4/' -e 's/dl/\nDOWNLOADED/'; \
-			printf '--------------------------------\n'; echo {} | cut -s -d' ' -f1 | xargs -I ',,' yt-dlp --print title --print duration_string --print description ',,'" --preview-window='right,50%'
+			--preview="( printf '#'; echo '{n}+1' | bc ); ( printf '--------------------------------\nhttps://www.youtube.com/watch?v='; echo {} | cut -s -d' ' -f1 ); echo {} | cut -s -d' ' -f1 | xargs -I ',,' grep ',,' $played_urls | cut -s -d' ' -f2- | sed -e 's/\(^[0-9]*\) \(..-..-..-..:..:..\)*\(..\/..\/..+..:..:..\)* \(dl\)* *.*/Amount Played: \1\nLast Played: \2\3\4/' -e 's/dl/\nDOWNLOADED/'; \
+			printf '--------------------------------\n'; echo {} | cut -s -d' ' -f1 | xargs -I ',,' yt-dlp --print title --print duration_string --print description ',,' | sed -e '1s/^/Name: /' -e '2s/^/Length: /' -e '3i --------------------------------\nDescription:\n--------------------------------\n' -e '\$a --------------------------------\n'" --preview-window='right,50%'
+
 
 	elif [ "$1" = 'm' ]; then
 		if [ "$2" = 'f' ]; then
