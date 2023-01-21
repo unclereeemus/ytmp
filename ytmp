@@ -84,7 +84,7 @@ l [n|s] play the song that was played before this one or n before this one or pa
 w toggle mpv window. don't press q to close the window because that will close the file as well instead run ytmp w again to close it.
 mfn queue last entry to play next
 mln queue last entry to play next
-e play entry #
+e play entry # can specify relative places with p|l like 'm'
 pf play first entry
 pl play last entry
 n play next on queue
@@ -379,6 +379,7 @@ playlist () {
 	# puts stars around line # and removes stars from any other lines
 	elif [ "$1" = 'e' ]; then
 		[ "$3" = 'f' ] && line=$(( $4 + 1 )) || line="$3"
+		line="$( echo "$line" | sed s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ | sed s/l/"$( grep -c '.' "$queue" )"/ | bc )"
 		sed -i -e "/$playing_regex/s/$playing_marker_regex/\1\2 /" -e 's/\*\*\*$//' "$queue"
 		# title="$( sed -n -e ${line}'s/\(^.\{11\}\) \(.*\)\|\(^.\{12\}\) \(.*\)/\2\4/' -e 's`[][\\/.*^$&]`\\&`gp' "$queue" )"
 		title="$( sed -n "${line}p" "$queue" | cut -d' ' -f2- | sed -e 's`[][\\/.*^$&]`\\&`g' )"
