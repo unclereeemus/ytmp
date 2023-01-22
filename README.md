@@ -1,7 +1,7 @@
 # ytmp
 a shell script that plays (and downloads) music from youtube with an extensive queue manager using fzf, vim, or cli
 
-an old demo: https://www.reddit.com/r/unixporn/comments/woasvu/oc_ytmp_youtube_music_playing_shell_script_that/
+demo: https://www.reddit.com/r/commandline/comments/10i5zbj/ytmp_shell_script_for_yt_and_local_music_that_has/
 
 **FEATURES:**
   - Keyboard centered
