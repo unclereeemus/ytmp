@@ -29,7 +29,8 @@ demo: https://www.reddit.com/r/bash/comments/10i7cb2/ytmp_shell_script_for_yt_an
 
 (if intending to use n/vim) `mv ytmp.vim ~/.config/nvim/`
 
-(and move run_on_next to your preferred location - it is looked for in ~/Music/ytmp/ by default)
+(and move run_on_next to ~/Music/ytmp/ where it's looked for by default; if you move it elsewhere,
+change the location in the conf file which is also sourced from ~/Music/ytmp/ by default)
 
 the mpv ipc socket is opened at /tmp/mpvsocketytmp
 
@@ -37,7 +38,7 @@ the mpv ipc socket is opened at /tmp/mpvsocketytmp
 
 On first installing ytmp, there won't be any history to select from when you enter ytmp so either pass arguements from the cli with ytmp [S] <search> or to search what's on the fzf input field press ctrl-x or to background search press ctrl-s / ctrl-z (difference explained in `ytmp h`)
 
-## eww setup
+## eww
 `chmod +x mus`
 
 `eww -c . open/close musicplayer` or `mv {eww.scss,eww.yuck,mus} ~/.config/eww; eww open/close musicplayer`
@@ -55,11 +56,11 @@ the thumbnail is located at /tmp/muscover.webp
 
 **mus** is used by the eww config for various information
 
-**mightfinduseful** script to play music outside of ytmp either with local files, youtube search, or the ytmp queue file. also dynamically names the mpvsocket so you don't overwrite an old one.
+**mightfinduseful** a script to play music outside of ytmp either with local files, youtube search, or the ytmp queue file. also dynamically names the mpvsocket so you don't overwrite an old one.
 
-**ytmp.vim** a vim config that has useful keybinds (would recommend over using fzf due to speed/reliability)
+**ytmp.vim** a vim config with useful keybinds relevant to ytmp
 
-**ytmpsuite** for helpful things like toggling lines in run_on_next, selecting queues, creating playlists, etc.
+**ytmpsuite** for oneliners or automation of things like toggling lines in run_on_next, selecting queues, creating playlists, etc.
 
 # tips
 - convert spotify playlists to something ytmp can use: export the playlist to csv with https://github.com/watsonbox/exportify then run `cut -d'"' --output-delimiter=' ' -f4,8 PLAYLIST_PATH.csv | sed -n 1d | sed -E -e 's/[_[:alnum:]]* ?\(?R?r?emaster[ed]?\)? ?[_[:alnum:]]*//g' -e 's/ ?- ?/ /g' -e 's/  //g' | xargs -d '\n' -I ',,' yt-dlp --print id --print title ytsearch1:",, auto-generated provided to youtube" | paste -s -d ' \n' > file`
