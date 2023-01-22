@@ -58,22 +58,22 @@ S search exactly - no result selection.
 sp search for playlists (requires https://github.com/trizen/pipe-viewer/); tab: see videos in playlist
 
 fzf options for search (ytmp [S/se/s]):
-			ctrl-r: replace input field with selection
-			ctrl-x: send input field as search (none of the selections are passed)
-			enter: search only the selections (query not included)
-			tab: toggle selection and clear query
-			shift-tab: deselect all
-			ctrl-c/esc: quit
+	ctrl-r: replace input field with selection
+	ctrl-x: send input field as search (none of the selections are passed)
+	enter: search only the selections (query not included)
+	tab: toggle selection and clear query
+	shift-tab: deselect all
+	ctrl-c/esc: quit
 
-		query+selections are only available as background search due to fzf limitations. when you press the binding there isn't any indication that the search has passed through so you can assume that fact and just abort fzf. also these options are unavailalbe or mean different things for se/s:
-			ctrl-s: search query in the background
-			alt-s: search query and selection in the background
-			ctrl-z: search query in counterpart of current search in the background
-			alt-z: search query and selection in counterpart of current search in the background
+	* query+selections are only available as background search due to fzf limitations. when you press the binding there isn't any indication that the search has passed through so you can assume that fact and just abort fzf. also these bindings are unavailalbe or mean different things for se/s:
+		ctrl-s: search query in the background
+		alt-s: search query and selection in the background
+		ctrl-z: search query in counterpart of current search in the background
+		alt-z: search query and selection in counterpart of current search in the background
 
-		for ytmp v/vv/se/s:
-			ctrl-s: search query in background
-			ctrl-z: search query in background with ytmp S
+	* what the following mean for ytmp v/vv/se/s:
+		ctrl-s: search query in background
+		ctrl-z: search query in background with ytmp S
 
 a add urls (direct links/playlists), paths, or directory (pass them as arguement - accepts many of all the kinds mentioned). does not check if file is a media file or not before adding so if that's a concern pipe with xargs.
 
