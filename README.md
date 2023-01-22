@@ -15,7 +15,7 @@ demo: https://www.reddit.com/r/commandline/comments/10i5zbj/ytmp_shell_script_fo
   - Run commands on song change
   - Keep track of listen history/amount
   - Everything is a plain text file
-  - Integration with eww widgets (through mpv ipc socket)
+  - Integration with eww widgets (through mpv ipc server)
 
 # setup
 ## DEPS: fzf, yt-dlp, mpv, socat, (n/vim, pipe-viewer(https://github.com/trizen/pipe-viewer/))
