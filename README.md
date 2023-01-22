@@ -11,6 +11,8 @@ demo: https://www.reddit.com/r/commandline/comments/10i5zbj/ytmp_shell_script_fo
   - Select from multiple search results
   - Search and add youtube playlists to the queue
   - Manage the queue from cli, nvim, fzf
+  - Control mpv through its ipc server
+  - Run commands on song change
   - Keep track of listen history/amount
   - Everything is a plain text file
   - Integration with eww widgets (through mpv ipc socket)
