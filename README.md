@@ -45,7 +45,7 @@ On first installing ytmp, there won't be any history to select from when you ent
 
 the thumbnail is located at /tmp/muscover.webp
 
-# scripts explanations
+# scripts
 **mpv_socket_selector** prints a menu of active mpv sockets and puts the selected one in /tmp/active_mpvsocket
 
 **mpv_socket_commands** sends commands to the mpv socket in /tmp/active_mpvsocket or another specfied with st option
