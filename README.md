@@ -13,7 +13,7 @@ demo: https://www.reddit.com/r/commandline/comments/10i5zbj/ytmp_shell_script_fo
   - Manage the queue from cli, nvim, fzf
   - Keep track of listen history/amount
   - Everything is a plain text file
-  - Integration with eww widgets (through mpvsocket)
+  - Integration with eww widgets (through mpv ipc socket)
 
 # setup
 ## DEPS: fzf, yt-dlp, mpv, socat, (n/vim, pipe-viewer(https://github.com/trizen/pipe-viewer/))
