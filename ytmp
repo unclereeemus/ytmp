@@ -1,5 +1,5 @@
 #!/bin/sh
-# YTMP: a shell script that plays (and downloads) music from youtube with an extensive queue manager using fzf, vim, or cli
+# YTMP: a shell script for playing, downloading, and keeping track of music from youtube and local files with an extensive queue manager using fzf, vim, or cli
 # DEPS: yt-dlp, mpv, socat, fzf, xargs, find, sed, bc, ed, coreutils, (n/vim), (pipe-viewer and awk for playlist search), (curl for thumbnails)
 
 conf="/home/$USER/Music/ytmp/conf"
@@ -259,7 +259,7 @@ search_youtube () {
 		echo "$ids" > /tmp/ytmpids
 		titles=$( echo "$ids_titles" | sed -n 'p;n' | grep -n '' )
 		# sel=$( printf "$titles" | fzf -m --preview="echo {n}+1 | bc | xargs -I ',,' sed -n ,,p /tmp/ytmpids | xargs -I ',,' pipe-viewer --extract 'NOM\t*TITLE*\nCNL\t*AUTHOR*\nPUB\t*PUBLISHED*\nDUR\t*TIME*\nURL\t*URL*\n\n\tDESCRIPTION\n*DESCRIPTION*' -id ,," --height 60% --preview-window='right,70%' )
-		sel=$( printf '%b' "$titles" | fzf --bind='tab:toggle+clear-query+down,shift-tab:clear-selection' --layout=reverse --height 40% -m --preview="echo {n}+1 | bc | xargs -I ',,' sed -n ,,p /tmp/ytmpids | xargs -I ',,' yt-dlp --print title --print duration_string --print webpage_url --print description ,, | sed -e '1s/^/Name: /' -e '2s/^/Length: /' -e '3s@^@URL: @' -e '4i --------------------------------\nDescription:\n--------------------------------\n' -e '\$a \\\n--------------------------------'" --height 60% --preview-window='right,70%' )
+		sel=$( printf '%b' "$titles" | fzf --bind='tab:toggle+clear-query+down,shift-tab:clear-selection' --layout=reverse --height 40% -m --preview='ytmp fzf_preview s {n} "{}"' --height 60% --preview-window='right,70%' )
 		[ -z "$sel" ] && return
 		echo "$sel" | while read -r one; do
 			num=$( printf '%b' "$titles" | grep -Fx "$one" | cut -d':' -f1 )
@@ -276,7 +276,7 @@ search_youtube () {
 		# i don't know how to do it in a more 'proper' way so to get the ids for preview, i put the ids in a file and then use the fzf index (+1) to get the proper id for the description
 		echo "$ids" > /tmp/ytmpids
 		# sel=$( printf "$titles" | fzf -m --preview="echo {n}+1 | bc | xargs -I ',,' sed -n ,,p /tmp/ytmpids | xargs -I ',,' pipe-viewer --extract 'NOM\t*TITLE*\nCNL\t*AUTHOR*\nPUB\t*PUBLISHED*\nDUR\t*TIME*\nURL\t*URL*\n\n\tDESCRIPTION\n*DESCRIPTION*' -id ,," --height 60% --preview-window='right,70%' )
-		sel=$( printf '%b' "$titles" | fzf --bind='tab:toggle+clear-query+down,shift-tab:clear-selection' --layout=reverse --height 40% -m --preview="echo {n}+1 | bc | xargs -I ',,' sed -n ,,p /tmp/ytmpids | xargs -I ',,' yt-dlp --print title --print duration_string --print webpage_url --print description ,, | sed -e '1s/^/Name: /' -e '2s/^/Length: /' -e '3s@^@URL: @' -e '4i --------------------------------\nDescription:\n--------------------------------\n' -e '\$a \\\n--------------------------------'" --height 60% --preview-window='right,70%' )
+		sel=$( printf '%b' "$titles" | fzf --bind='tab:toggle+clear-query+down,shift-tab:clear-selection' --layout=reverse --height 40% -m --preview='ytmp fzf_preview s {n} "{}"' --height 60% --preview-window='right,70%' )
 
 		[ -z "$sel" ] && return
 		echo "$sel" | while read -r one; do
@@ -350,8 +350,9 @@ play () {
 		dl_thumbnail
 	fi
 	sh "$run_on_next" >/dev/null 2>&1
-	echo "Playing '"$( sed -n -e "/$playing_regex/s/$playing_marker_regex//" -e 's/\*\*\*$//p' "$queue" )"'"
-	[ "$notifications" = '1' ] && notify-send 'Now Playing' "$( sed -n -e "/$playing_regex/s/$playing_marker_regex//" -e 's/\*\*\*$//p' "$queue" )"
+	title="$( sed -n -e "/$playing_regex/s/$playing_marker_regex//" -e 's/\*\*\*$//p' "$queue" )"
+	echo "Playing '$title'"
+	[ "$notifications" = '1' ] && notify-send 'Now Playing' "$title"
 	upd_amnt_played
 }
 
@@ -416,8 +417,7 @@ queue_manager () {
 
 	elif [ "$1" = 'vv' ]; then
 		cat "$queue" | fzf --layout=reverse --height 100% --cycle --bind="ctrl-]:execute-silent(ytmp w),home:first,end:last,alt-r:reload(cat '$queue'),ctrl-alt-d:execute-silent(ytmp -dl {n} f),ctrl-r:replace-query,ctrl-z:execute-silent(setsid -f ytmp S {q}),ctrl-s:execute-silent(setsid -f ytmp {q}),ctrl-j:down,alt-j:jump,shift-left:execute-silent(ytmp dd {n})+reload(cat '$queue'),shift-up:execute-silent(ytmp up {n})+reload(cat '$queue')+up,shift-down:execute-silent(ytmp dn {n})+reload(cat '$queue')+down,return:execute-silent(ytmp e f {n})+abort,shift-right:execute-silent(ytmp e f {n})+reload(cat '$queue'),pgdn:execute-silent(ytmp nn {n})+reload(cat '$queue'),pgup:execute-silent(ytmp pp {n})+reload(cat '$queue'),ctrl-v:page-down,alt-v:page-up,ctrl-alt-p:half-page-up,ctrl-alt-n:half-page-down,left-click:execute-silent(ytmp e f {n})+abort,right-click:execute-silent(ytmp nn {n})+reload(cat '$queue'),ctrl-^:execute-silent(ytmp mln)+reload(cat '$queue'),ctrl-\:execute(ytmp E)+reload(cat '$queue'),alt-m:execute(ytmp m f {n})+reload(cat '$queue'),ctrl-o:execute-silent(ytmp opinbrwsr {n})" \
-			--preview="( printf '#'; echo '{n}+1' | bc ); echo {} | cut -s -d' ' -f1 | xargs -I ',,' grep ',,' $played_urls | cut -s -d' ' -f2- | sed -e '1i --------------------------------' -e 's/\(^[0-9]*\) \(..-..-..-..:..:..\)*\(..\/..\/..+..:..:..\)* \(dl\)* *.*/Amount Played: \1\nLast Played: \2\3\4/' -e 's/dl/\nDOWNLOADED/'; \
-			printf '--------------------------------\n'; echo {} | cut -s -d' ' -f1 | xargs -I ',,' yt-dlp --print title --print duration_string --print webpage_url --print description ',,' | sed -e '1s/^/Name: /' -e '2s/^/Length: /' -e '3s@^@URL: @' -e '4i --------------------------------\nDescription:\n--------------------------------\n' -e '\$a \\\n--------------------------------'" --preview-window='right,50%'
+			--preview='ytmp fzf_preview vv {n} "{}"' --preview-window='right,50%'
 
 
 	elif [ "$1" = 'm' ]; then
@@ -502,6 +502,23 @@ rand_daemon () {
 	done
 }
 
+fzf_preview () {
+	# $@ vv|s $index $selection
+	lsp='--------------------------------\n'
+	fzf_index="$( echo $3+1 | bc )"
+	[ "$2" = vv ] && id="$( echo "$4" | cut -d' ' -f1 | tr -d "'" )" || id="$( sed -n ${fzf_index}p /tmp/ytmpids )"
+	entry="$( grep "$id" "$played_urls" )"
+	last_played="$( echo $entry | cut -s -d' ' -f3 )"
+	amnt_played="$( echo $entry | cut -s -d' ' -f2 )"
+
+	( ls $songs_dir/*"${id}"* >/dev/null 2>&1 ) && dl='\nDownloaded: Yes\n' || dl='\nDownloaded: No\n'
+	[ "$2" = 'vv' ] && printf "#${fzf_index} \n${lsp}Amount Played: ${amnt_played}\nLast Played: ${last_played}${dl}${lsp}"
+
+	info="$( yt-dlp --no-warnings --output-na-placeholder 'ASDASIDJIASDJIAJDI' --print "Name: %(title)s \nAlbum: %(album)s \nArtist(s): %(artist)s \nGenre: %(genre)s \nRelease Year: %(release_year)s \nLength: %(duration_string)s \nUpload Date: %(upload_date>%m/%d/%Y)s \nUploader: %(uploader)s \nURL: %(webpage_url)s \n${lsp}Description:\n${lsp}%(description)s \n$lsp" "https://www.youtube.com/watch?v=$id" )"
+
+	printf "$info" | sed -e '/ASDASIDJIASDJIAJDI/d' # -e "/Description:/s/Description:\n${lsp}//"
+}
+
 download_song () {
 	sel="$( echo $2 | sed s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ | sed s/l/"$( grep -c '.' "$queue" )"/ | bc )"
 	[ "$3" = 'f' ] && sel=$(( sel + 1 ))
@@ -514,8 +531,7 @@ download_song () {
 }
 
 open_in_browser () {
-	selt=$( echo "$*" | cut -d' ' -f2 )
-	index=$(( selt+1 ))
+	index=$(( $1+1 ))
 	id=$( sed -n "${index}p" "$queue" | cut -d' ' -f1 )
 	setsid -f $BROWSER "https://www.youtube.com/watch?v=$id" >/dev/null 2>&1
 }
@@ -555,20 +571,21 @@ case "${1}" in
 	m) queue_manager m "$2" "$3" "$4" ;;
 	fct) queue_manager fct $* ;;
 	ls) grep --color=auto -n '' "$queue" ;;
+	opinbrwsr) open_in_browser $2 ;;
+	fzf_preview) fzf_preview "$@" ;;
 	-shuf) shuf "$queue" -o "$queue" ;;
-	opinbrwsr) open_in_browser "$*" ;;
 	-dl) download_song $* ;;
 	-d) playlist ;;
 	-r) rand_daemon $* ;;
 	-n) while true; do ( ! echo '{ "command": ["get_property", "pid"] }' | socat - /tmp/mpvsocketytmp >/dev/null 2>&1 ) && sleep .5 && break; done ;;
 	-l) echo '{ "command": ["set_property", "loop", true] }' | socat - /tmp/mpvsocketytmp >/dev/null 2>&1 ;;
-	h|help|-h|--help) helper ;;
 	-rq) rm $queue ;;
 	-qa) echo quit | socat - /tmp/mpvsocketytmp ;;
 	-ky) pkill ytmp ;;
 	-ka) echo quit | socat - /tmp/mpvsocketytmp; rm $queue; pkill ytmp ;;
 	-kd) pkill -f 'ytmp -d' && exit ;;
 	-kr) pkill -f 'ytmp -r' && exit ;;
+	h|help|-h|--help) helper ;;
 	*) search_youtube ss "$*" ;;
 esac
 
