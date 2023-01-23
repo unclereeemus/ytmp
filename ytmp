@@ -482,13 +482,8 @@ queue_manager () {
 	# presents an fzf list of the current queue.
 	if [ "$1" = 'v' ]; then
 		cmd="cat $queue | cut -d' ' -f2-"
-		cat $queue | cut -d' ' -f2- | fzf --layout=reverse --height 40% --cycle --bind="ctrl-]:execute-silent(ytmp w),ctrl-r:replace-query,home:first,end:last,alt-r:reload($cmd),ctrl-alt-d:execute-silent(ytmp -dl {n} f),ctrl-z:execute-silent(setsid -f ytmp S {q}),ctrl-s:execute-silent(setsid -f ytmp {q}),ctrl-j:down,alt-j:jump,shift-left:execute-silent(ytmp dd {n})+reload($cmd),shift-up:execute-silent(ytmp up {n})+reload($cmd)+up,shift-down:execute-silent(ytmp dn {n})+reload($cmd)+down,return:execute-silent(ytmp e f {n})+abort,shift-right:execute-silent(ytmp e f {n})+reload($cmd),pgdn:execute-silent(ytmp nn {n})+reload($cmd),pgup:execute-silent(ytmp pp {n})+reload($cmd),ctrl-v:page-down,alt-v:page-up,ctrl-alt-p:half-page-up,ctrl-alt-n:half-page-down,left-click:execute-silent(ytmp e f {n})+abort,right-click:execute-silent(ytmp nn {n})+reload($cmd),ctrl-^:execute-silent(ytmp mln)+reload($cmd),ctrl-\:execute(ytmp E)+reload($cmd),alt-m:execute(ytmp m f {n})+reload($cmd),ctrl-o:execute-silent(ytmp open_in_browser {n})"
-
-	elif [ "$1" = 'vv' ]; then
-		cmd="cat $queue | cut -d' ' -f2-"
-		cat "$queue" | cut -d' ' -f2- | fzf --layout=reverse --height 100% --cycle --bind="ctrl-]:execute-silent(ytmp w),home:first,end:last,alt-r:reload($cmd),ctrl-alt-d:execute-silent(ytmp -dl {n} f),ctrl-r:replace-query,ctrl-z:execute-silent(setsid -f ytmp S {q}),ctrl-s:execute-silent(setsid -f ytmp {q}),ctrl-j:down,alt-j:jump,shift-left:execute-silent(ytmp dd {n})+reload($cmd),shift-up:execute-silent(ytmp up {n})+reload($cmd)+up,shift-down:execute-silent(ytmp dn {n})+reload($cmd)+down,return:execute-silent(ytmp e f {n})+abort,shift-right:execute-silent(ytmp e f {n})+reload($cmd),pgdn:execute-silent(ytmp nn {n})+reload($cmd),pgup:execute-silent(ytmp pp {n})+reload($cmd),ctrl-v:page-down,alt-v:page-up,ctrl-alt-p:half-page-up,ctrl-alt-n:half-page-down,left-click:execute-silent(ytmp e f {n})+abort,right-click:execute-silent(ytmp nn {n})+reload($cmd),ctrl-^:execute-silent(ytmp mln)+reload($cmd),ctrl-\:execute(ytmp E)+reload($cmd),alt-m:execute(ytmp m f {n})+reload($cmd),ctrl-o:execute-silent(ytmp open_in_browser {n})" \
-			--preview='ytmp fzf_preview vv {n} "{}"' --preview-window='right,50%'
-
+		[ "$2" = 'v' ] && fzf_prev_opts=( --height 100% --preview='ytmp fzf_preview vv {n} "{}"' --preview-window='right,50%' ) || fzf_prev_opts=( --height 40% )
+		cat $queue | cut -d' ' -f2- | fzf "${fzf_prev_opts[@]}" --layout=reverse --cycle --bind="ctrl-]:execute-silent(ytmp w),ctrl-r:replace-query,home:first,end:last,alt-r:reload($cmd),ctrl-alt-d:execute-silent(ytmp -dl {n} f),ctrl-z:execute-silent(setsid -f ytmp S {q}),ctrl-s:execute-silent(setsid -f ytmp {q}),ctrl-j:down,alt-j:jump,shift-left:execute-silent(ytmp dd {n})+reload($cmd),shift-up:execute-silent(ytmp up {n})+reload($cmd)+up,shift-down:execute-silent(ytmp dn {n})+reload($cmd)+down,return:execute-silent(ytmp e f {n})+abort,shift-right:execute-silent(ytmp e f {n})+reload($cmd),pgdn:execute-silent(ytmp nn {n})+reload($cmd),pgup:execute-silent(ytmp pp {n})+reload($cmd),ctrl-v:page-down,alt-v:page-up,ctrl-alt-p:half-page-up,ctrl-alt-n:half-page-down,left-click:execute-silent(ytmp e f {n})+abort,right-click:execute-silent(ytmp nn {n})+reload($cmd),ctrl-^:execute-silent(ytmp mln)+reload($cmd),ctrl-\:execute(ytmp E)+reload($cmd),alt-m:execute(ytmp m f {n})+reload($cmd),ctrl-o:execute-silent(ytmp open_in_browser {n})"
 
 	elif [ "$1" = 'm' ]; then
 		if [ "$2" = 'f' ]; then
@@ -622,7 +617,7 @@ case "${1}" in
 	pl) playlist e a "$(  grep -c '.' "$queue" )" ;;
 	-p) echo cycle pause | socat - /tmp/mpvsocketytmp >/dev/null 2>&1 ;;
 	v) queue_manager v ;;
-	vv) queue_manager vv ;;
+	vv) queue_manager v v ;;
 	s) search_youtube s "$2" ;;
 	se) search_youtube se "$2" ;;
 	S) search_exact "$*" ;;
