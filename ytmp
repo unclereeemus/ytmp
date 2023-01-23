@@ -34,11 +34,14 @@ conf="/home/$USER/Music/ytmp/conf"
 
 mkdir -p "$prefix" "$dl_dir" "$songs_dir" "$thumb_dir"
 
+# note: options for ERE are not passed to sed or grep so ERE must be escaped
 # regex to match what's currently playing
 playing_regex="^.\{11\} \*\*\*.*\*\*\*$\|^.\{12\} \*\*\*.*\*\*\*$"
 
 # regex to match <id> ***
 playing_marker_regex="^\(.\{11\}\) \*\*\*\|^\(.\{12\}\) \*\*\*"
+
+qdiscards_file="/tmp/ytmpqdiscards"
 
 helper () {
 cat >&2 << CAT_EOF
@@ -75,7 +78,7 @@ fzf options for search (ytmp [S/se/s]):
 		ctrl-s: search query in background
 		ctrl-z: search query in background with ytmp S
 
-a add urls (direct links/playlists), paths, or directory (pass them as arguement - accepts many of all the kinds mentioned). does not check if file is a media file or not before adding so if that's a concern pipe with xargs.
+a add urls (direct links/playlists), paths, or directory (pass them as arguement - accepts many of all the kinds mentioned). does not check if file is a media file or not before adding.
 
 -p pause
 -l loop what's currently playing
@@ -111,6 +114,9 @@ ls show a numbered view of the entries
 m [p|l|#[+|-#]] [p|l|#[+|-#]] move entry. l means last, p means currently playing. examples: ytmp m 10 +2 or ytmp m p+3 l-1 or ytmp m l-1 p-2 or ytmp m l p+1
 
 -shuf runs shuf on queue and overwrites it.
+
+-vd cats /tmp/ytmpqdiscards which contains list of songs that were selected to be added to the queue but were already found on the queue. it's removed with every search so be prompt to act.
+-rd [c] acts on songs from /tmp/ytmpqdiscards which means songs that were selected to be added to the queue but were already found there can be copied (when given c option) to or moved (when no options are given) to the position they would have been added on if they were never found on the queue.
 
 -d if ytmp does not run in the background automatically, run it by sending this arg
      so things continue playing one after another
@@ -162,17 +168,71 @@ CAT_EOF
 exit
 }
 
+# adds files to queue while scanning to see if file is already in the queue;
+# if it is, doesn't add to the queue but notes where the id is found in the queue,
+# the length of the queue, <id>, <title> in /tmp/ytmpqdiscards so the user can be given a choice
+# later to move or copy the entry at the position it would appear as if it weren't in the queue
+add_to_queue () {
+	touch "$qdiscards_file"
+	if [ "$1" = 'f' ]; then
+		id="$( echo $2 | cut -d' ' -f1 )"
+		title="$( echo $2 | cut -d' ' -f2- )"
+	elif [ "$1" != 'q' ]; then
+		id="$1"
+		title="$2"
+	fi
+
+	if ( ! grep -Fq "$id" $queue ); then
+		echo "Adding '$title'"
+		echo "$id $title" >> $queue
+	else
+		found="$( grep -n "$id" "$queue" | cut -d':' -f1 )"
+		echo "'$title' was found at line $found. It will not be added. See help for -vr|-ar options to learn more."
+		queue_len="$( grep -c '' "$queue" )"
+
+		if grep -Fq "$queue_len" "$qdiscards_file"; then
+			# this while loop ensures multiple entries don't lay claim to
+			# the end of the qdiscards_file and the proper order is maintained
+			# so if an entry with the end of the line is found, the
+			# number is incremented until it's not
+			while grep -Fq "$queue_len" "$qdiscards_file"; do
+				queue_len=$(( queue_len+1 ))
+			done
+			echo "$queue_len $id $title" >> "$qdiscards_file"
+		else echo "$queue_len $id $title" >> "$qdiscards_file"; fi
+	fi
+}
+
+# tranfers or moves entries from $qdiscards_file
+transfer_qdiscards () {
+	[ ! -s "$qdiscards_file" ] && echo "'$qdiscards_file' either doesn't exist or is empty." && return
+	[ "$1" = 'v' ] && cat "$qdiscards_file" && return
+	[ "$1" = 'c' ] && ed_opt='t' || ed_opt='m'
+	cat "$qdiscards_file" | while read -r f; do
+		id="$( echo $f | cut -d' ' -f2 )"
+		found="$( grep -n "$id" "$queue" | cut -d':' -f1 )"
+		place="$( echo $f | cut -d' ' -f1 )"
+		ed -s "$queue" >/dev/null <<ED_END
+	${found}${ed_opt}${place}
+	wq
+ED_END
+	done
+}
+
 # gets the artists listed in the description and places them in $played_artists if first time seeing $id. artists are usually separated by '·' and ':'. also puts things in the queue file.
 register () {
 	id="$1"
 	[ -n "$2" ] && title="$2" || title=$( yt-dlp -e "https://www.youtube.com/watch?v=$id" )
-	echo "Adding '$title'"
 	dt="$( date +'%m/%d/%y+%T' )"
+	rm "$qdiscards_file"
 
-	if ( ls $songs_dir/*"${id}"* >/dev/null 2>&1 ); then ( ! grep -Fq "$id" $queue) && echo "$id $title" >> $queue;
+	if ( ls $songs_dir/*"${id}"* >/dev/null 2>&1 ); then add_to_queue "$id" "$title";
 	elif ! grep -Fq "$id" "$played_urls"; then
 		desc=$( yt-dlp --get-description "https://www.youtube.com/watch?v=$id" )
 		echo "$title" >> $played_titles
+		# this empty entry is added so the program knows it has seen the id before
+		# and parsed its description for artists already so it doesn' prase it again
+		# in the future
 		echo "$id 0 $dt $title" >> $played_urls
 		if ( echo "$desc" | grep -q '·' ); then
 			artist=$( echo "$desc" | grep '·' | sed -e 's/^[^·]*·//g' -e 's/·/\\\n/g' -e 's/\\//g' | xargs -0 printf '%b' )
@@ -190,36 +250,38 @@ register () {
 				fi
 			done
 		fi
-		( ! grep -Fq "$id" $queue) && echo "$id $title" >> $queue;
-	else ( ! grep -Fq "$id" $queue) && echo "$id $title" >> $queue; fi
+		add_to_queue "$id" "$title"
+	else add_to_queue "$id" "$title"; fi
 }
 
 # add urls, playlists, dirs, paths
 add () {
-	search="$( echo $* | cut -s -d' ' -f2- )"
+	search="${@:2}"
 	[ -z "$search" ] && echo "provide a url to a playlist or a path or a directory" && return
 
-	for f in $search; do
+	rm "$qdiscards_file"
+	# printf '%b' "$search" | while read -r f; do
+	for f in "${@:2}"; do
 		if ! echo "$f" | grep -q 'http.*\.com'; then
 			if [ -d "$f" ]; then
 				find "$f" | sed 1d | while read -r f; do
-					echo "Adding '$f'"
-					entry="$( cksum --untagged --algorithm=blake2b -l 48 "$f" | sed -E 's@\W @ @' )"
-					grep -Fq "$entry" "$queue" || echo "$entry" >> "$queue"
+					entry="$( cksum --untagged --algorithm=blake2b -l 48 "$f" | sed 's@\b  @ @' )"
+					# grep -Fq "$entry" "$queue" || echo "$entry" >> "$queue"
+					add_to_queue f "$entry"
 				done
 			elif [ -e "$f" ]; then
-				echo "Adding '$f'"
-				entry="$( cksum --untagged --algorithm=blake2b -l 48 "$f" | sed -E 's@\W @ @' )"
-				grep -Fq "$entry" "$queue" || echo "$entry" >> "$queue"
+				entry="$( cksum --untagged --algorithm=blake2b -l 48 "$f" | sed 's@\b  @ @' )"
+				# grep -Fq "$entry" "$queue" || echo "$entry" >> "$queue"
+				add_to_queue f "$entry"
 			fi
 		else
 			ids="$( yt-dlp --get-id "$f" )"
 			echo "$ids" | while read -r id; do
 				title=$( yt-dlp -e "https://www.youtube.com/watch?v=$id" )
-				echo "Adding '$title'"
 				! grep -Fq "$id" "$played_urls" && dt="$( date +'%m/%d/%y+%T' )" && echo "$id 0 $dt $title" >> $played_urls
-				if ( ls $songs_dir/*"${id}"* >/dev/null 2>&1 ); then ( ! grep -Fq "$id" $queue) && echo "$id $title" >> $queue;
-				else ( ! grep -Fq "$id" $queue) && echo "$id $title" >> $queue; fi
+				add_to_queue "$id" "$title"
+				# if ( ls $songs_dir/*"${id}"* >/dev/null 2>&1 ); then ( ! grep -Fq "$id" $queue) && echo "$id $title" >> $queue;
+				# else ( ! grep -Fq "$id" $queue) && echo "$id $title" >> $queue; fi
 			done
 		fi
 	done
@@ -233,10 +295,12 @@ search_exact () {
 	query=$( echo "$query" | tr "\n" ' ' | sed -e 's/[ \t]*$//' )
 	[ -z "$query" ] && return
 	echo "Searching for '$query'"
-	( ! grep -Fq "$query" $queue ) && ( ls $songs_dir/*"${query}"* >/dev/null 2>&1 ) && find $songs_dir -name "*${query}*" -type f -print | xargs -d '\n' -n 1 basename | sed 's/\.webm$//' >> $queue || id=$( yt-dlp --get-id ytsearch1:"$query" )
+	id=$( yt-dlp --get-id ytsearch1:"$query" )
 	title=$( yt-dlp -e "https://www.youtube.com/watch?v=$id" )
-	echo "Adding '$title'"
-	( ! grep -Fq "$id" $queue) && echo "$id $title" >> $queue
+
+	rm "$qdiscards_file"
+	add_to_queue "$id" "$title"
+
 	( ! grep -Fq "$query" $search_history ) && ( ! echo "$songs_dir_ls" | grep -Fq "$query" ) && echo "$query" >> $search_history
 }
 
@@ -248,6 +312,7 @@ search_youtube () {
 	query=$( echo "$query" | tr "\n" ' ' | sed -e 's/[ \t]*$//' )
 	[ -n "$query" ] && echo "Searching for '$query'" || return
 	( ! grep -Fxq "$query" $search_history ) && ( ! echo "$songs_dir_ls" | grep -Fq "$query" ) && echo "$query" >> $search_history
+	rm "$qdiscards_file"
 
 	# allows user to browse search results and select
 	if [ "$1" = 'se' ]; then
@@ -259,11 +324,10 @@ search_youtube () {
 		titles=$( echo "$ids_titles" | sed -n 'p;n' | grep -n '' )
 		sel=$( printf '%b' "$titles" | fzf --bind='tab:toggle+clear-query+down,shift-tab:clear-selection' --layout=reverse --height 40% -m --preview='ytmp fzf_preview s {n} "{}"' --height 60% --preview-window='right,70%' )
 		[ -z "$sel" ] && return
-		echo "$sel" | while read -r one; do
-			num=$( printf '%b' "$titles" | grep -Fx "$one" | cut -d':' -f1 )
+		echo "$sel" | while read -r sel; do
+			num=$( printf '%b' "$titles" | grep -Fx "$sel" | cut -d':' -f1 )
 			id=$( printf '%b' "$ids" | sed -n "${num}"p )
-			echo "Adding '$( echo $one | cut -d':' -f2- )'"
-			( ! grep -Fq "$id" $queue) && echo "$id $( echo $one | cut -d':' -f2- )" >> $queue
+			add_to_queue "$id" "$( echo $sel | cut -d':' -f2- )"
 		done
 	elif [ "$1" = 's' ]; then
 		[ -n "$2" ] && ids_titles=$( yt-dlp --get-id -e ytsearch${2}:"$query auto-generated provided to youtube" ) || ids_titles=$( yt-dlp --get-id -e ytsearch5:"$query auto-generated provided to youtube" )
@@ -275,13 +339,13 @@ search_youtube () {
 		sel=$( printf '%b' "$titles" | fzf --bind='tab:toggle+clear-query+down,shift-tab:clear-selection' --layout=reverse --height 40% -m --preview='ytmp fzf_preview s {n} "{}"' --height 60% --preview-window='right,70%' )
 
 		[ -z "$sel" ] && return
-		echo "$sel" | while read -r one; do
-			num=$( printf '%b' "$titles" | grep -Fx "$one" | cut -d':' -f1 )
+		echo "$sel" | while read -r sel; do
+			num=$( printf '%b' "$titles" | grep -Fx "$sel" | cut -d':' -f1 )
 			id=$( printf '%b' "$ids" | sed -n "${num}"p )
-			register "$id" "$( echo $one | cut -d':' -f2- )"
+			register "$id" "$( echo $sel | cut -d':' -f2- )"
 		done
 	elif [ -n "$query" ]; then
-		( ! grep -Fq "$query" $queue ) && ( ls $songs_dir/*"${query}"* >/dev/null 2>&1 ) && find $songs_dir -name "*${query}*" -type f -print | xargs -d '\n' -n 1 basename | sed 's/\.webm$//' >> $queue || id=$( yt-dlp --get-id ytsearch1:"$query auto-generated provided to youtube" )
+		id=$( yt-dlp --get-id ytsearch1:"$query auto-generated provided to youtube" )
 		[ -n "$id" ] && register "$id"
 	fi
 }
@@ -409,10 +473,11 @@ queue_manager () {
 	# presents an fzf list of the current queue.
 	if [ "$1" = 'v' ]; then
 		cmd="cat $queue | cut -d' ' -f2-"
-		cat $queue | cut -d' ' -f2- | fzf --layout=reverse --height 40% --cycle --bind="ctrl-]:execute-silent(ytmp w),ctrl-r:replace-query,home:first,end:last,alt-r:reload(cat '$queue'),ctrl-alt-d:execute-silent(ytmp -dl {n} f),ctrl-z:execute-silent(setsid -f ytmp S {q}),ctrl-s:execute-silent(setsid -f ytmp {q}),ctrl-j:down,alt-j:jump,shift-left:execute-silent(ytmp dd {n})+reload($cmd),shift-up:execute-silent(ytmp up {n})+reload($cmd)+up,shift-down:execute-silent(ytmp dn {n})+reload($cmd)+down,return:execute-silent(ytmp e f {n})+abort,shift-right:execute-silent(ytmp e f {n})+reload($cmd),pgdn:execute-silent(ytmp nn {n})+reload($cmd),pgup:execute-silent(ytmp pp {n})+reload($cmd),ctrl-v:page-down,alt-v:page-up,ctrl-alt-p:half-page-up,ctrl-alt-n:half-page-down,left-click:execute-silent(ytmp e f {n})+abort,right-click:execute-silent(ytmp nn {n})+reload($cmd),ctrl-^:execute-silent(ytmp mln)+reload($cmd),ctrl-\:execute(ytmp E)+reload($cmd),alt-m:execute(ytmp m f {n})+reload($cmd),ctrl-o:execute-silent(ytmp open_in_browser {n})"
+		cat $queue | cut -d' ' -f2- | fzf --layout=reverse --height 40% --cycle --bind="ctrl-]:execute-silent(ytmp w),ctrl-r:replace-query,home:first,end:last,alt-r:reload($cmd),ctrl-alt-d:execute-silent(ytmp -dl {n} f),ctrl-z:execute-silent(setsid -f ytmp S {q}),ctrl-s:execute-silent(setsid -f ytmp {q}),ctrl-j:down,alt-j:jump,shift-left:execute-silent(ytmp dd {n})+reload($cmd),shift-up:execute-silent(ytmp up {n})+reload($cmd)+up,shift-down:execute-silent(ytmp dn {n})+reload($cmd)+down,return:execute-silent(ytmp e f {n})+abort,shift-right:execute-silent(ytmp e f {n})+reload($cmd),pgdn:execute-silent(ytmp nn {n})+reload($cmd),pgup:execute-silent(ytmp pp {n})+reload($cmd),ctrl-v:page-down,alt-v:page-up,ctrl-alt-p:half-page-up,ctrl-alt-n:half-page-down,left-click:execute-silent(ytmp e f {n})+abort,right-click:execute-silent(ytmp nn {n})+reload($cmd),ctrl-^:execute-silent(ytmp mln)+reload($cmd),ctrl-\:execute(ytmp E)+reload($cmd),alt-m:execute(ytmp m f {n})+reload($cmd),ctrl-o:execute-silent(ytmp open_in_browser {n})"
 
 	elif [ "$1" = 'vv' ]; then
-		cat "$queue" | fzf --layout=reverse --height 100% --cycle --bind="ctrl-]:execute-silent(ytmp w),home:first,end:last,alt-r:reload(cat '$queue'),ctrl-alt-d:execute-silent(ytmp -dl {n} f),ctrl-r:replace-query,ctrl-z:execute-silent(setsid -f ytmp S {q}),ctrl-s:execute-silent(setsid -f ytmp {q}),ctrl-j:down,alt-j:jump,shift-left:execute-silent(ytmp dd {n})+reload(cat '$queue'),shift-up:execute-silent(ytmp up {n})+reload(cat '$queue')+up,shift-down:execute-silent(ytmp dn {n})+reload(cat '$queue')+down,return:execute-silent(ytmp e f {n})+abort,shift-right:execute-silent(ytmp e f {n})+reload(cat '$queue'),pgdn:execute-silent(ytmp nn {n})+reload(cat '$queue'),pgup:execute-silent(ytmp pp {n})+reload(cat '$queue'),ctrl-v:page-down,alt-v:page-up,ctrl-alt-p:half-page-up,ctrl-alt-n:half-page-down,left-click:execute-silent(ytmp e f {n})+abort,right-click:execute-silent(ytmp nn {n})+reload(cat '$queue'),ctrl-^:execute-silent(ytmp mln)+reload(cat '$queue'),ctrl-\:execute(ytmp E)+reload(cat '$queue'),alt-m:execute(ytmp m f {n})+reload(cat '$queue'),ctrl-o:execute-silent(ytmp open_in_browser {n})" \
+		cmd="cat $queue | cut -d' ' -f2-"
+		cat "$queue" | cut -d' ' -f2- | fzf --layout=reverse --height 100% --cycle --bind="ctrl-]:execute-silent(ytmp w),home:first,end:last,alt-r:reload($cmd),ctrl-alt-d:execute-silent(ytmp -dl {n} f),ctrl-r:replace-query,ctrl-z:execute-silent(setsid -f ytmp S {q}),ctrl-s:execute-silent(setsid -f ytmp {q}),ctrl-j:down,alt-j:jump,shift-left:execute-silent(ytmp dd {n})+reload($cmd),shift-up:execute-silent(ytmp up {n})+reload($cmd)+up,shift-down:execute-silent(ytmp dn {n})+reload($cmd)+down,return:execute-silent(ytmp e f {n})+abort,shift-right:execute-silent(ytmp e f {n})+reload($cmd),pgdn:execute-silent(ytmp nn {n})+reload($cmd),pgup:execute-silent(ytmp pp {n})+reload($cmd),ctrl-v:page-down,alt-v:page-up,ctrl-alt-p:half-page-up,ctrl-alt-n:half-page-down,left-click:execute-silent(ytmp e f {n})+abort,right-click:execute-silent(ytmp nn {n})+reload($cmd),ctrl-^:execute-silent(ytmp mln)+reload($cmd),ctrl-\:execute(ytmp E)+reload($cmd),alt-m:execute(ytmp m f {n})+reload($cmd),ctrl-o:execute-silent(ytmp open_in_browser {n})" \
 			--preview='ytmp fzf_preview vv {n} "{}"' --preview-window='right,50%'
 
 
@@ -501,7 +566,7 @@ rand_daemon () {
 fzf_preview () {
 	lsp='--------------------------------\n'
 	fzf_index="$( echo $3+1 | bc )"
-	[ "$2" = vv ] && id="$( echo "$4" | cut -d' ' -f1 | tr -d "'" )" || id="$( sed -n ${fzf_index}p /tmp/ytmpids )"
+ 	[ "$2" = vv ] && id="$( sed -n "${fzf_index}s/^\(.\{11\}\) .*\|^\(.\{12\}\) .*/\1\2/p" "$queue" )" || id="$( sed -n ${fzf_index}p /tmp/ytmpids )"
 	entry="$( grep "$id" "$played_urls" )"
 	last_played="$( echo $entry | cut -s -d' ' -f3 )"
 	amnt_played="$( echo $entry | cut -s -d' ' -f2 )"
@@ -553,7 +618,7 @@ case "${1}" in
 	se) search_youtube se "$2" ;;
 	S) search_exact "$*" ;;
 	sp) search_playlist $* ;;
-	a) add $* ;;
+	a) add "$@" ;;
 	n) playlist c n ;;
 	p) playlist c p ;;
 	e) playlist e $* ;;
@@ -570,6 +635,8 @@ case "${1}" in
 	open_in_browser) open_in_browser $2 ;;
 	fzf_preview) fzf_preview "$@" ;;
 	-shuf) shuf "$queue" -o "$queue" ;;
+	-vd) transfer_qdiscards v ;;
+	-rd) transfer_qdiscards "$2" ;;
 	-dl) download_song $* ;;
 	-d) playlist ;;
 	-r) rand_daemon $* ;;
