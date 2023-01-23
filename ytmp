@@ -207,7 +207,15 @@ add_to_queue () {
 transfer_qdiscards () {
 	[ ! -s "$qdiscards_file" ] && echo "'$qdiscards_file' either doesn't exist or is empty." && return
 	[ "$1" = 'v' ] && cat "$qdiscards_file" && return
-	[ "$1" = 'c' ] && ed_opt='t' || ed_opt='m'
+
+	if [ "$1" = 'c' ]; then
+		ed_opt='t'
+		action='Copied'
+	else
+		ed_opt='m'
+		action='Moved'
+	fi
+
 	cat "$qdiscards_file" | while read -r f; do
 		id="$( echo $f | cut -d' ' -f2 )"
 		found="$( grep -n "$id" "$queue" | cut -d':' -f1 )"
@@ -216,6 +224,7 @@ transfer_qdiscards () {
 	${found}${ed_opt}${place}
 	wq
 ED_END
+		echo "$action '$( echo $f | cut -d' ' -f3- )' from $found to $place"
 	done
 }
 
