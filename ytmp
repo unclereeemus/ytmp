@@ -177,7 +177,7 @@ add_to_queue () {
 	if [ "$1" = 'f' ]; then
 		id="$( echo $2 | cut -d' ' -f1 )"
 		title="$( echo $2 | cut -d' ' -f2- )"
-	elif [ "$1" != 'q' ]; then
+	else
 		id="$1"
 		title="$2"
 	fi
@@ -187,7 +187,7 @@ add_to_queue () {
 		echo "$id $title" >> $queue
 	else
 		found="$( grep -n "$id" "$queue" | cut -d':' -f1 )"
-		echo "'$title' was found at line $found. It will not be added. See help for -vr|-ar options to learn more."
+		echo "'$title' was found at line $found. It will not be added."
 		queue_len="$( grep -c '' "$queue" )"
 
 		if grep -Fq "$queue_len" "$qdiscards_file"; then
@@ -203,7 +203,7 @@ add_to_queue () {
 	fi
 }
 
-# tranfers or moves entries from $qdiscards_file
+# copies or moves entries from $qdiscards_file
 transfer_qdiscards () {
 	[ ! -s "$qdiscards_file" ] && echo "'$qdiscards_file' either doesn't exist or is empty." && return
 	[ "$1" = 'v' ] && cat "$qdiscards_file" && return
@@ -219,10 +219,10 @@ transfer_qdiscards () {
 	cat "$qdiscards_file" | while read -r f; do
 		id="$( echo $f | cut -d' ' -f2 )"
 		found="$( grep -n "$id" "$queue" | cut -d':' -f1 )"
-		place="$( echo $f | cut -d' ' -f1 )"
+		place="$( echo "$f" | cut -d' ' -f1 )"
 		ed -s "$queue" >/dev/null <<ED_END
-	${found}${ed_opt}${place}
-	wq
+${found}${ed_opt}${place}
+wq
 ED_END
 		echo "$action '$( echo $f | cut -d' ' -f3- )' from $found to $place"
 	done
