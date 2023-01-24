@@ -1,6 +1,7 @@
 #!/bin/sh
 # YTMP: a shell script for playing, downloading, and keeping track of music from youtube and local files with an extensive queue manager using fzf, vim, or cli
 # DEPS: yt-dlp, mpv, socat, fzf, xargs, find, sed, bc, ed, coreutils, (pipe-viewer for playlist search), (curl for thumbnails), (n/vim)
+# set -xv
 
 conf="/home/$USER/Music/ytmp/conf"
 [ -e "$conf" ] && . "$conf"
@@ -123,7 +124,7 @@ m [p|l|#[+|-#]] [p|l|#[+|-#]] move entry. l means last, p means currently playin
 -shuf runs shuf on queue and overwrites it.
 
 -vd cats /tmp/ytmpqdiscards which contains list of songs that were selected to be added to the queue but were already found on the queue. it's removed with every search so be prompt to act.
--rd [c] acts on songs listed in /tmp/ytmpqdiscards which means songs that were selected to be added to the queue but were already found there can be copied (when given c option) to or moved (when no options are given) to the position they would have been added on if they were never found on the queue. (broken as of now).
+-rd [c] acts on songs listed in /tmp/ytmpqdiscards which means songs that were selected to be added to the queue but were already found there can be copied (when given c option) to or moved (when no options are given) to the position they would have been added on if they were never found on the queue (broken as of now.)
 
 -d if ytmp does not run in the background automatically, run it by sending this arg
      so things continue playing one after another
@@ -272,7 +273,7 @@ register () {
 # add urls, playlists, dirs, paths
 add () {
 	search="${@:2}"
-	[ -z "$search" ] && echo "provide a url to a playlist or a path or a directory" && return
+	[ -z "$search" ] && echo "Provide a url, path, or directory to add as arguement" && return
 
 	rm -f "$qdiscards_file"
 	for f in "${@:2}"; do
@@ -297,8 +298,6 @@ add () {
 }
 
 search_youtube () {
-	songs_dir_ls=$( ls $songs_dir | cut -d' ' -f2- | sed 's/\.webm$//' )
-	entries=$( cat $search_history $played_titles $played_artists )
 	# if no arguements are passed but just words, search with the words
 	# echo "you've sent me $1 $2" | fzf && exit
 	if [ "$1" = 'ss' ]; then
@@ -308,6 +307,8 @@ search_youtube () {
 	elif [ "$1" = 'S' ] && [ -n "$3" ]; then
 		query="${@:3}"
 	else
+		songs_dir_ls=$( ls $songs_dir | cut -d' ' -f2- | sed 's/\.webm$//' )
+		entries=$( cat $search_history $played_titles $played_artists )
 		query=$( echo "$entries $songs_dir_ls" | fzf --layout=reverse --height 40% -m --bind='tab:toggle+clear-query+down,shift-tab:clear-selection,ctrl-z:execute-silent(setsid -f ytmp S {q}),alt-z:execute-silent(setsid -f ytmp S {+} {q} ),alt-s:execute-silent(setsid -f ytmp {+} {q}),tab:select+clear-query,return:accept,ctrl-r:replace-query,ctrl-x:print-query,ctrl-s:execute-silent(setsid -f ytmp {q})' | tr "\n" ' ' | sed -e 's/[ \t]*$//' )
 	fi
 
@@ -350,7 +351,7 @@ search_youtube () {
 }
 
 search_playlist () {
-	[ -z "$2" ] && echo 'provide a search string as arguement' && return
+	[ -z "$2" ] && echo 'Provide a search string as arguement' && return
 	if [ "$2" = 'f' ]; then
 		fzf_index="$( echo $3+1 | bc )"
 		url="$( sed -n "${fzf_index}s/ .*//p" /tmp/ytmpplaylists )"
