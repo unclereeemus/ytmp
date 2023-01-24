@@ -177,7 +177,7 @@ CAT_EOF
 exit
 }
 
-# adds files to queue while scanning to see if file is already in the queue;
+# adds entries to queue while scanning to see if entry is already in the queue;
 # if it is, doesn't add to the queue but notes where the id is found in the queue,
 # the length of the queue, <id>, <title> in /tmp/ytmpqdiscards so the user can be given a choice
 # later to move or copy the entry at the position it would appear as if it weren't in the queue
@@ -290,7 +290,6 @@ add () {
 			ids="$( yt-dlp --get-id "$f" )"
 			echo "$ids" | while read -r id; do
 				title=$( yt-dlp -e "https://www.youtube.com/watch?v=$id" )
-				! grep -Fq "$id" "$played_urls" && dt="$( date +'%m/%d/%y+%T' )" && echo "$id 0 $dt $title" >> $played_urls
 				add_to_queue "$id" "$title"
 			done
 		fi
