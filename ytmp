@@ -337,7 +337,7 @@ search_youtube () {
 		echo "$sel" | while read -r sel; do
 			num=$( printf '%b' "$titles" | grep -Fx "$sel" | cut -d':' -f1 )
 			id=$( printf '%b' "$ids" | sed -n "${num}"p )
-			[ "$1" = 'se' ] && add_to_queue "$id" "$( echo $sel | cut -d':' -f2- )" || register "$id" "$( echo $sel | cut -d':' -f2- )"
+			[ "$1" = 's' ] && register "$id" "$( echo $sel | cut -d':' -f2- )" || add_to_queue "$id" "$( echo $sel | cut -d':' -f2- )"
 		done
 	elif [ -n "$query" ]; then
 		if [ "$1" = 'S' ]; then
