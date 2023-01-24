@@ -116,7 +116,7 @@ m [p|l|#[+|-#]] [p|l|#[+|-#]] move entry. l means last, p means currently playin
 -shuf runs shuf on queue and overwrites it.
 
 -vd cats /tmp/ytmpqdiscards which contains list of songs that were selected to be added to the queue but were already found on the queue. it's removed with every search so be prompt to act.
--rd [c] acts on songs from /tmp/ytmpqdiscards which means songs that were selected to be added to the queue but were already found there can be copied (when given c option) to or moved (when no options are given) to the position they would have been added on if they were never found on the queue.
+-rd [c] acts on songs listed in /tmp/ytmpqdiscards which means songs that were selected to be added to the queue but were already found there can be copied (when given c option) to or moved (when no options are given) to the position they would have been added on if they were never found on the queue. (broken as of now).
 
 -d if ytmp does not run in the background automatically, run it by sending this arg
      so things continue playing one after another
@@ -187,7 +187,7 @@ add_to_queue () {
 		echo "$id $title" >> $queue
 	else
 		found="$( grep -n "$id" "$queue" | cut -d':' -f1 )"
-		echo "'$title' was found at line $found. It will not be added."
+		echo "'$title' was found at line $found in the queue. It will not be newly added."
 		queue_len="$( grep -c '' "$queue" )"
 
 		if grep -Fq "$queue_len" "$qdiscards_file"; then
@@ -233,7 +233,7 @@ register () {
 	id="$1"
 	[ -n "$2" ] && title="$2" || title=$( yt-dlp -e "https://www.youtube.com/watch?v=$id" )
 	dt="$( date +'%m/%d/%y+%T' )"
-	rm "$qdiscards_file"
+	rm "$qdiscards_file" >/dev/null 2>&1
 
 	if ( ls $songs_dir/*"${id}"* >/dev/null 2>&1 ); then add_to_queue "$id" "$title";
 	elif ! grep -Fq "$id" "$played_urls"; then
@@ -575,7 +575,10 @@ fzf_preview () {
 	last_played="$( echo $entry | cut -s -d' ' -f3 )"
 	amnt_played="$( echo $entry | cut -s -d' ' -f2 )"
 
-	( ls $songs_dir/*"${id}"* >/dev/null 2>&1 ) && dl='\nDownloaded: Yes\n' || dl='\nDownloaded: No\n'
+	if ( ls $songs_dir/*"${id}"* >/dev/null 2>&1 ); then dl='\nDownloaded: Yes\n'
+	elif [ "$( printf "$id" | wc -m )" != '11' ]; then dl='\nDownloaded: Yes\n'
+	else dl='\nDownloaded: No\n'; fi
+
 	[ "$2" = 'vv' ] && printf "#${fzf_index} \n${lsp}Amount Played: ${amnt_played}\nLast Played: ${last_played}${dl}${lsp}"
 	[ "$( printf "$id" | wc -m )" != '11' ] && return
 
