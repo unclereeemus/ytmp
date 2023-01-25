@@ -1,5 +1,5 @@
 #!/bin/sh
-# YTMP: a shell script for playing, downloading, and keeping track of music from youtube and local files with an extensive queue manager using fzf, vim, or cli
+# YTMP: a shell script for searching, playing, downloading, and keeping track of music from youtube and local files with extensive queue management using fzf, vim, or cli
 # DEPS: yt-dlp, mpv, socat, fzf, xargs, find, sed, bc, ed, coreutils, (pipe-viewer for playlist search), (curl for thumbnails), (n/vim)
 # set -xv
 
