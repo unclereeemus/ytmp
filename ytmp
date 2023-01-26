@@ -392,7 +392,7 @@ upd_amnt_played () {
 			echo "$id $amnt_played $dt dl $title" >> $played_urls
 		else
 			len=$( yt-dlp --get-duration "https://www.youtube.com/watch?v=$id" | sed -E 's/(.*):(.+):(.+)/\1*3600+\2*60+\3/;s/(.+):(.+)/\1*60+\2/' | bc )
-			[ $len -lt $max_len_for_dl ] && ( setsid -f yt-dlp -f bestaudio -o "$songs_dir/%(id)s %(title)s.%(ext)s" "https://www.youtube.com/watch?v=$id" >/dev/null 2>&1 && echo "Downloading '$title'. You have listened to it $amnt_played times." && echo "$id $amnt_played $dt dl $title" >> $played_urls ) || echo "$id $amnt_played $dt $title" >> $played_urls
+			[ $len -lt $max_len_for_dl ] && ( yt-dlp -f bestaudio -o "$songs_dir/%(id)s %(title)s.%(ext)s" "https://www.youtube.com/watch?v=$id" >/dev/null 2>&1 && echo "Downloading '$title'. You have listened to it $amnt_played times." && echo "$id $amnt_played $dt dl $title" >> $played_urls ) || echo "$id $amnt_played $dt $title" >> $played_urls
 		fi
 	else
 		ls $songs_dir/*"${id}"* >/dev/null 2>&1 && echo "$id $amnt_played $dt dl $title" >> $played_urls || echo "$id $amnt_played $dt $title" >> $played_urls
