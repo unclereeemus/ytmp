@@ -104,7 +104,7 @@ P <search> fuzzy search string in queue and play match
 
 v view queue; keybinds:
 	   home: first; end: last
-	   shift-up: move entry up one; shift-down: move entry down one; shift-right: play entry
+	   shift-up: move entry up one; shift-down: move entry down one; shift-right: play entry and don't exit fzf window
 	   shift-left: delete entry; page-up: move entry to after currently playing
 	   page-down: move entry to before currently playing; enter: play entry and quit fzf
 	   alt-m: ytmp m; ctrl-\: ytmp E; ctrl-6: ytmp mln; ctrl-]: ytmp w
@@ -117,7 +117,6 @@ v view queue; keybinds:
 	   ctrl-o: open entry in web browser
 	   alt-up: move entry to first
 	   alt-down: move entry to last
-	   alt-right: play entry and don't exit fzf window
 	   alt-n: next song; alt-p: prev song
 
 vv view queue with details about the video (same keybinds as v option)
@@ -498,7 +497,7 @@ queue_manager () {
 		'v')
 		cmd="cat $queue | cut -d' ' -f2-"
 		[ "$2" = 'v' ] && fzf_prev_opts=( --height 100% --preview='ytmp fzf_preview vv {n} "{}"' --preview-window='right,50%' ) || fzf_prev_opts=( --height 40% )
-		cat $queue | cut -d' ' -f2- | fzf "${fzf_prev_opts[@]}" --layout=reverse --cycle --bind="alt-up:execute-silent(ytmp m ff {n} 0)+reload($cmd),alt-down:execute-silent(ytmp m ff {n} l)+reload($cmd),ctrl-]:execute-silent(ytmp w),ctrl-r:replace-query,home:first,end:last,alt-r:reload($cmd),ctrl-alt-d:execute-silent(ytmp -dl {n} f),ctrl-z:execute-silent(setsid -f ytmp z {q}),ctrl-s:execute-silent(setsid -f ytmp {q}),ctrl-j:down,alt-j:jump,shift-left:execute-silent(ytmp dd {n})+reload($cmd),shift-up:execute-silent(ytmp up {n})+reload($cmd)+up,shift-down:execute-silent(ytmp dn {n})+reload($cmd)+down,ctrl-k:kill-line,alt-p:execute-silent(ytmp p)+reload($cmd),alt-n:execute-silent(ytmp n)+reload($cmd),alt-right:execute-silent(ytmp e f {n})+reload($cmd),return:execute-silent(ytmp e f {n})+abort,shift-right:execute-silent(ytmp e f {n})+reload($cmd),pgdn:execute-silent(ytmp nn {n})+reload($cmd),pgup:execute-silent(ytmp pp {n})+reload($cmd),ctrl-v:page-down,alt-v:page-up,ctrl-alt-p:half-page-up,ctrl-alt-n:half-page-down,left-click:execute-silent(ytmp e f {n})+abort,right-click:execute-silent(ytmp nn {n})+reload($cmd),ctrl-^:execute-silent(ytmp mln)+reload($cmd),ctrl-\:execute(ytmp E)+reload($cmd),alt-m:execute(ytmp m f {n})+reload($cmd),ctrl-o:execute-silent(ytmp open_in_browser {n})"
+		cat $queue | cut -d' ' -f2- | fzf "${fzf_prev_opts[@]}" --layout=reverse --cycle --bind="alt-up:execute-silent(ytmp m ff {n} 0)+reload($cmd),alt-down:execute-silent(ytmp m ff {n} l)+reload($cmd),ctrl-]:execute-silent(ytmp w),ctrl-r:replace-query,home:first,end:last,alt-r:reload($cmd),ctrl-alt-d:execute-silent(ytmp -dl {n} f),ctrl-z:execute-silent(setsid -f ytmp z {q}),ctrl-s:execute-silent(setsid -f ytmp {q}),ctrl-j:down,alt-j:jump,shift-left:execute-silent(ytmp dd {n})+reload($cmd),shift-up:execute-silent(ytmp up {n})+reload($cmd)+up,shift-down:execute-silent(ytmp dn {n})+reload($cmd)+down,ctrl-k:kill-line,alt-p:execute-silent(ytmp p)+reload($cmd),alt-n:execute-silent(ytmp n)+reload($cmd),shift-right:execute-silent(ytmp e f {n})+reload($cmd),return:execute-silent(ytmp e f {n})+abort,pgdn:execute-silent(ytmp nn {n})+reload($cmd),pgup:execute-silent(ytmp pp {n})+reload($cmd),ctrl-v:page-down,alt-v:page-up,ctrl-alt-p:half-page-up,ctrl-alt-n:half-page-down,left-click:execute-silent(ytmp e f {n})+abort,right-click:execute-silent(ytmp nn {n})+reload($cmd),ctrl-^:execute-silent(ytmp mln)+reload($cmd),ctrl-\:execute(ytmp E)+reload($cmd),alt-m:execute(ytmp m f {n})+reload($cmd),ctrl-o:execute-silent(ytmp open_in_browser {n})"
 		;;
 
 		'm')
