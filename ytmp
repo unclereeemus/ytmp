@@ -424,6 +424,7 @@ play () {
 		upd_amnt_played
 		return
 	fi
+	upd_amnt_played "$id"
 	if ( ls $songs_dir/*"${id}"* >/dev/null 2>&1 ); then
 		find $songs_dir/*"${id}"* -print0 | xargs -0 -I ',,' setsid -f mpv --x11-name='ytmp_mpv' --no-terminal --vid=no --input-ipc-server=/tmp/mpvsocketytmp ",,"
 		dl_thumbnail
@@ -435,7 +436,6 @@ play () {
 	title="$( sed -n -e "/$playing_regex/s/$playing_marker_regex//" -e 's/\*\*\*$//p' "$queue" )"
 	echo "Playing '$title'"
 	[ "$notifications" = '1' ] && notify-send 'Now Playing' "$title"
-	upd_amnt_played
 }
 
 playlist () {
@@ -479,7 +479,7 @@ playlist () {
 				if ! grep -q "$playing_regex" $queue; then
 					id="$( head -1 "$queue" | cut -d' ' -f1 )"
 					title="$( head -1 "$queue" | cut -d' ' -f2- | sed -e 's`[][\\/.*^$&]`\\&`g' )"
-					sed -i "s/$title/\*\*\*$title\*\*\*/" "$queue"
+					sed -i "1s/$title/\*\*\*$title\*\*\*/" "$queue"
 					play "$id"
 				else
 					sleep 1.5 && ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ) && playlist c n
