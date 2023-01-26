@@ -38,7 +38,7 @@ nnoremap J /\*\*\*$/<Esc>mp
 nnoremap <C-s> :te ytmp v<Enter>i
 nnoremap <C-t> :te <Enter>i
 nnoremap <C-y> :te ytmp<Enter>i
-nnoremap <C-w> :te ytmp S<Enter>i
+nnoremap <C-w> :te ytmp z<Enter>i
 nnoremap <C-v> :te ytmp vv<Enter>i
 
 nnoremap < :silent !ytmp p<Enter>
