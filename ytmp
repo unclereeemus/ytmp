@@ -380,7 +380,7 @@ search_playlist () {
 # also downloads the file once it exceeds $max_stream_amount and it can't be found in the $songs_dir
 upd_amnt_played () {
 	[ -n "$1" ] && id="$1" || id=$( grep "$playing_regex" $queue | cut -d' ' -f1 )
-	[ -n "$1" ] && title=$( echo "$*" | cut -d' ' -f2- ) || title=$( sed -n -e "/$playing_regex/s/$playing_marker_regex//" -e 's/\*\*\*$//p' "$queue" )
+	[ -n "$2" ] && title=$( echo "$*" | cut -d' ' -f2- ) || title=$( sed -n -e "/$playing_regex/s/$playing_marker_regex//" -e 's/\*\*\*$//p' "$queue" )
 	dt="$( date +'%m/%d/%y+%T' )"
 	amnt_played="$( grep -F "$id" "$played_urls" | head -1 | cut -d' ' -f2 )"
 	amnt_played=$((amnt_played + 1))
