@@ -276,11 +276,12 @@ register () {
 
 # add urls, playlists, dirs, paths
 add () {
-	search="${@:2}"
+	search="$( echo "$@" | cut -d' ' -f2- )"
 	[ -z "$search" ] && echo "Provide a url, path, or directory to add as arguement" && return
 
 	rm -f "$qdiscards_file"
-	for f in "${@:2}"; do
+	for f in "$@"; do
+		[ "$f" = 'a' ] && continue
 		if echo "$f" | grep -q 'http.*\.com'; then
 			ids="$( yt-dlp --get-id "$f" )"
 			echo "$ids" | while read -r id; do
@@ -309,7 +310,7 @@ search_youtube () {
 	elif [ "$1" = 'p' ]; then
 		query="$2"
 	elif [ "$1" = 'z' ] && [ -n "$3" ]; then
-		query="${@:3}"
+		query="$( echo "$@" | cut -d' ' -f3- )"
 	else
 		songs_dir_ls=$( ls $songs_dir | cut -d' ' -f2- | sed 's/\.webm$//' )
 		entries=$( cat $search_history $played_titles $played_artists )
@@ -452,13 +453,6 @@ playlist () {
 		sed -i "${index}s/$title/\*\*\*$title\*\*\*/" "$queue"
 		echo quit | socat - /tmp/mpvsocketytmp >/dev/null 2>&1
 		play
-	# puts stars around exact title and removes stars from any other lines
-	elif [ "$1" = 'ee' ]; then
-		title="$( echo "$2" | sed -e 's`[][\\/.*^$&]`\\&`g' )"
-		sed -i -e "/$playing_regex/s/$playing_marker_regex/\1\2 /" -e 's/\*\*\*$//' "$queue"
-		sed -i "s/\(^.\{11\}\) $title$\|\(^.\{12\}\) ${title}$/\1\2 \*\*\*${title}\*\*\*/" $queue
-		echo quit | socat - /tmp/mpvsocketytmp >/dev/null 2>&1
-		play
 	# puts stars around line # and removes stars from any other lines
 	elif [ "$1" = 'e' ]; then
 		[ "$3" = 'f' ] && line=$(( $4 + 1 )) || line="$3"
@@ -496,8 +490,12 @@ queue_manager () {
 	case "$1" in
 		'v')
 		cmd="cat $queue | cut -d' ' -f2-"
-		[ "$2" = 'v' ] && fzf_prev_opts=( --height 100% --preview='ytmp fzf_preview vv {n} "{}"' --preview-window='right,50%' ) || fzf_prev_opts=( --height 40% )
-		cat $queue | cut -d' ' -f2- | fzf "${fzf_prev_opts[@]}" --layout=reverse --cycle --bind="alt-up:execute-silent(ytmp m ff {n} 0)+reload($cmd),alt-down:execute-silent(ytmp m ff {n} l)+reload($cmd),ctrl-]:execute-silent(ytmp w),ctrl-r:replace-query,home:first,end:last,alt-r:reload($cmd),ctrl-alt-d:execute-silent(ytmp -dl {n} f),ctrl-z:execute-silent(setsid -f ytmp z {q}),ctrl-s:execute-silent(setsid -f ytmp {q}),ctrl-j:down,alt-j:jump,shift-left:execute-silent(ytmp dd {n})+reload($cmd),shift-up:execute-silent(ytmp up {n})+reload($cmd)+up,shift-down:execute-silent(ytmp dn {n})+reload($cmd)+down,ctrl-k:kill-line,alt-p:execute-silent(ytmp p)+reload($cmd),alt-n:execute-silent(ytmp n)+reload($cmd),shift-right:execute-silent(ytmp e f {n})+reload($cmd),return:execute-silent(ytmp e f {n})+abort,pgdn:execute-silent(ytmp nn {n})+reload($cmd),pgup:execute-silent(ytmp pp {n})+reload($cmd),ctrl-v:page-down,alt-v:page-up,ctrl-alt-p:half-page-up,ctrl-alt-n:half-page-down,left-click:execute-silent(ytmp e f {n})+abort,right-click:execute-silent(ytmp nn {n})+reload($cmd),ctrl-^:execute-silent(ytmp mln)+reload($cmd),ctrl-\:execute(ytmp E)+reload($cmd),alt-m:execute(ytmp m f {n})+reload($cmd),ctrl-o:execute-silent(ytmp open_in_browser {n})"
+		cat $queue | cut -d' ' -f2- | fzf --height 40% --layout=reverse --cycle --bind="alt-up:execute-silent(ytmp m ff {n} 0)+reload($cmd),alt-down:execute-silent(ytmp m ff {n} l)+reload($cmd),ctrl-]:execute-silent(ytmp w),ctrl-r:replace-query,home:first,end:last,alt-r:reload($cmd),ctrl-alt-d:execute-silent(ytmp -dl {n} f),ctrl-z:execute-silent(setsid -f ytmp z {q}),ctrl-s:execute-silent(setsid -f ytmp {q}),ctrl-j:down,alt-j:jump,shift-left:execute-silent(ytmp dd {n})+reload($cmd),shift-up:execute-silent(ytmp up {n})+reload($cmd)+up,shift-down:execute-silent(ytmp dn {n})+reload($cmd)+down,ctrl-k:kill-line,alt-p:execute-silent(ytmp p)+reload($cmd),alt-n:execute-silent(ytmp n)+reload($cmd),alt-right:execute-silent(ytmp e f {n})+reload($cmd),return:execute-silent(ytmp e f {n})+abort,shift-right:execute-silent(ytmp e f {n})+reload($cmd),pgdn:execute-silent(ytmp nn {n})+reload($cmd),pgup:execute-silent(ytmp pp {n})+reload($cmd),ctrl-v:page-down,alt-v:page-up,ctrl-alt-p:half-page-up,ctrl-alt-n:half-page-down,left-click:execute-silent(ytmp e f {n})+abort,right-click:execute-silent(ytmp nn {n})+reload($cmd),ctrl-^:execute-silent(ytmp mln)+reload($cmd),ctrl-\:execute(ytmp E)+reload($cmd),alt-m:execute(ytmp m f {n})+reload($cmd),ctrl-o:execute-silent(ytmp open_in_browser {n})"
+		;;
+
+		'vv')
+		cmd="cat $queue | cut -d' ' -f2-"
+		cat $queue | cut -d' ' -f2- | fzf  --height 100% --preview='ytmp fzf_preview vv {n} "{}"' --preview-window='right,50%' --layout=reverse --cycle --bind="alt-up:execute-silent(ytmp m ff {n} 0)+reload($cmd),alt-down:execute-silent(ytmp m ff {n} l)+reload($cmd),ctrl-]:execute-silent(ytmp w),ctrl-r:replace-query,home:first,end:last,alt-r:reload($cmd),ctrl-alt-d:execute-silent(ytmp -dl {n} f),ctrl-z:execute-silent(setsid -f ytmp z {q}),ctrl-s:execute-silent(setsid -f ytmp {q}),ctrl-j:down,alt-j:jump,shift-left:execute-silent(ytmp dd {n})+reload($cmd),shift-up:execute-silent(ytmp up {n})+reload($cmd)+up,shift-down:execute-silent(ytmp dn {n})+reload($cmd)+down,ctrl-k:kill-line,alt-p:execute-silent(ytmp p)+reload($cmd),alt-n:execute-silent(ytmp n)+reload($cmd),alt-right:execute-silent(ytmp e f {n})+reload($cmd),return:execute-silent(ytmp e f {n})+abort,shift-right:execute-silent(ytmp e f {n})+reload($cmd),pgdn:execute-silent(ytmp nn {n})+reload($cmd),pgup:execute-silent(ytmp pp {n})+reload($cmd),ctrl-v:page-down,alt-v:page-up,ctrl-alt-p:half-page-up,ctrl-alt-n:half-page-down,left-click:execute-silent(ytmp e f {n})+abort,right-click:execute-silent(ytmp nn {n})+reload($cmd),ctrl-^:execute-silent(ytmp mln)+reload($cmd),ctrl-\:execute(ytmp E)+reload($cmd),alt-m:execute(ytmp m f {n})+reload($cmd),ctrl-o:execute-silent(ytmp open_in_browser {n})"
 		;;
 
 		'm')
@@ -615,7 +613,7 @@ case "${1}" in
 	pl) playlist e a "$(  grep -c '' "$queue" )" ;;
 	-p) echo cycle pause | socat - /tmp/mpvsocketytmp >/dev/null 2>&1 ;;
 	v) queue_manager v ;;
-	vv) queue_manager v v ;;
+	vv) queue_manager vv ;;
 	s) search_youtube s "$2" ;;
 	z) search_youtube z "$@" ;;
 	x) search_youtube x "$2" ;;
