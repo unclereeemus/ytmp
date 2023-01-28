@@ -8,10 +8,10 @@ demo: https://www.reddit.com/r/bash/comments/10i7cb2/ytmp_shell_script_for_yt_an
   - Add local files/directories
   - Select from multiple search results
   - Search regular youtube or youtube music (kind of... in a round about way. see `ytmp h` for explanation)
-  - Search and add youtube playlists to the queue (or only certain videos of a playlist)
+  - Search and add youtube playlists to the queue (or only certain videos of playlists)
   - Download songs after they have been played a chosen amount of times (and play the download in the future)
   - Fzf preview of song/playlist details
-  - Manage the queue from cli, nvim, fzf
+  - Manage the queue from fzf, vim, cli
   - Control mpv through its ipc server
   - Run commands on song change
   - Keep track of listen history/amount
