@@ -5,11 +5,12 @@ demo: https://www.reddit.com/r/bash/comments/10i7cb2/ytmp_shell_script_for_yt_an
 
 **FEATURES:**
   - Keyboard centered
-  - Search regular youtube or youtube music (kind of... in a round about way. see `ytmp h` for explanation)
-  - Download songs after they have been played a chosen amount of times (and play the download in the future)
   - Add local files/directories
   - Select from multiple search results
-  - Search and add youtube playlists to the queue
+  - Search regular youtube or youtube music (kind of... in a round about way. see `ytmp h` for explanation)
+  - Search and add youtube playlists to the queue (or only certain videos of a playlist)
+  - Download songs after they have been played a chosen amount of times (and play the download in the future)
+  - Fzf preview of song/playlist details
   - Manage the queue from cli, nvim, fzf
   - Control mpv through its ipc server
   - Run commands on song change
@@ -46,7 +47,7 @@ On first installing ytmp, there won't be any history to select from when you ent
 the thumbnail is located at /tmp/muscover.webp
 
 # scripts
-**mpv_socket_selector** prints a menu of active mpv sockets and puts the selected one in /tmp/active_mpvsocket
+**mpv_socket_selector** prints a dmenu of active mpv sockets and puts the selected one in /tmp/active_mpvsocket
 
 **mpv_socket_commands** sends commands to the mpv socket in /tmp/active_mpvsocket or another specfied with st option
 
