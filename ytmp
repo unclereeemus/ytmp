@@ -524,7 +524,7 @@ queue_manager () {
 		sel="$( echo "$sel" | sed s/m/"$( cat /tmp/ytmpmark )"/ | sed s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ | sed s/l/"$( grep -c '.' "$queue" )"/ | bc )"
 		echo "$place" | grep -Eqx '(\+|-|\*|/)+[0-9]*' && place="$( echo "${sel}${place}" | bc )" || place="$( echo "$place" | sed s/m/"$( cat /tmp/ytmpmark )"/ | sed s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ | sed s/l/"$( grep -c '.' "$queue" )"/ | bc )"
 
-		echo "Moving ($sel) "$( sed -n "${sel}s/\(^.\{11\}\) \(.*\)\|\(^.\{12\}\) \(.*\)/\2\4/p" "$queue" )" [[TO AFTER]] ($place) "$( sed -n "${place}s/\(^.\{11\}\) \(.*\)\|\(^.\{12\}\) \(.*\)/\2\4/p" "$queue" )""
+		echo "Moving [$sel] "$( sed -n "${sel}s/\(^.\{11\}\) \(.*\)\|\(^.\{12\}\) \(.*\)/\2\4/p" "$queue" )" [[TO AFTER]] [$place] "$( sed -n "${place}s/\(^.\{11\}\) \(.*\)\|\(^.\{12\}\) \(.*\)/\2\4/p" "$queue" )""
 		printf "%s\n" "${sel}m${place}" "wq" | ed -s "$queue" >/dev/null
 		;;
 
