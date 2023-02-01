@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/dash
 # YTMP: a shell script for searching, playing, downloading, and keeping track of music from youtube and local files with extensive queue management using fzf, vim, or cli
 # DEPS: yt-dlp, mpv, socat, fzf, xargs, find, sed, bc, ed, coreutils, (pipe-viewer for playlist search), (notify-send for notifcations), (curl for thumbnails), (n/vim)
 # set -xv
@@ -184,7 +184,7 @@ J go to currently playing
 <C-v> :te ytmp vv
 __________________________________________________________
 
-One can communicate with mpv through the ipc server the script opens at /tmp/mpvsocketytmp. See https://pastebin.com/23PXxpiD for examples.
+One can communicate with mpv through the ipc server the script opens at /tmp/mpvsocketytmp. See https://pastebin.com/23PXxpiD for examples (make sure to pass commands to the /tmp/mpvsocketytmp socket) and \`mpv --list-properties\` for properties that can be controlled.
 CAT_EOF
 exit
 }
@@ -558,7 +558,7 @@ queue_manager () {
 fuzzy_play () {
 	query=$( echo "$*" | cut -s -d' ' -f2- )
 	[ -z "$query" ] && echo "Provide a string to search as an argument." && return
-	match=$( grep -n '' "$queue" | fzf --tiebreak=begin -f "$query" | head -1 | cut -d':' -f1 )
+	match=$( grep -n '' "$queue" | sed -E -e 's/[_[:alnum:]]* ?\(?R?r?emaster[ed]?\)? ?[_[:alnum:]]*//g' -e 's/ ?- ?/ /g' -e 's/  //g' -e 's/ \($//' | fzf --tiebreak=begin -f "$query" | head -1 | cut -d':' -f1 )
 	[ -n "$match" ] && playlist e a "$match" || echo 'Match not found.'
 }
 
@@ -567,7 +567,7 @@ play_history () {
 	if ( echo "$1" | grep -qxE '[0-9]*' ); then
 		tail "-$1" "$played_urls" | head -1 | cut -d' ' -f1 | xargs -I '{}' ytmp P '{}'
 	elif [ "$1" = 's' ]; then
-		cat "$played_urls" | fzf --prompt='search: ' --info=inline --border=bottom --color=hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   ytmp v   }" --separator='' \
+		cat "$played_urls" | fzf --prompt='search: ' --info=inline --border=bottom --color=hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   ytmp history   }" --separator='' \
 		--layout=reverse --height 40% --tac | cut -d' ' -f1 | xargs -I '{}' ytmp P '{}'
 	else
 		tail -2 "$played_urls" | head -1 | cut -d' ' -f1 | xargs -I '{}' ytmp P '{}'
