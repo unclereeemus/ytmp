@@ -1,4 +1,4 @@
-#!/bin/dash
+#!/bin/sh
 # YTMP: a shell script for searching, playing, downloading, and keeping track of music from youtube and local files with extensive queue management using fzf, vim, or cli
 # DEPS: yt-dlp, mpv, socat, fzf, xargs, find, sed, bc, ed, coreutils, (pipe-viewer for playlist search), (notify-send for notifcations), (curl for thumbnails), (n/vim)
 # set -xv
@@ -499,13 +499,13 @@ queue_manager () {
 	case "$1" in
 		'v')
 		cmd="cat $queue | cut -d' ' -f2-"
-		cat $queue | cut -d' ' -f2- | fzf --prompt='search: ' --info=inline --border=bottom --color=hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   ytmp v   }" --separator='' \
+		cat $queue | cut -d' ' -f2- | fzf --prompt='search: ' --info=inline --border=bottom --color=hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   ytmp queue   }" --separator='' \
 		--height 40% --layout=reverse --cycle --bind="ctrl-space:execute(ytmp m x {n})+reload($cmd),ctrl-alt-m:execute-silent(ytmp m s f {n}),alt-up:execute-silent(ytmp m ff {n} 0)+reload($cmd),alt-down:execute-silent(ytmp m ff {n} l)+reload($cmd),ctrl-]:execute-silent(ytmp w),ctrl-r:replace-query,home:first+reload($cmd),end:last+reload($cmd),alt-r:reload($cmd),ctrl-alt-d:execute-silent(ytmp -dl {n} f),ctrl-z:execute-silent(setsid -f ytmp z {q}),ctrl-s:execute-silent(setsid -f ytmp {q}),ctrl-j:down,ctrl-j:jump,shift-left:execute-silent(ytmp dd {n})+reload($cmd),shift-up:execute-silent(ytmp up {n})+reload($cmd)+up,shift-down:execute-silent(ytmp dn {n})+reload($cmd)+down,ctrl-k:kill-line,alt-p:execute-silent(ytmp p)+reload($cmd),alt-n:execute-silent(ytmp n)+reload($cmd),alt-right:execute-silent(ytmp e f {n})+reload($cmd),return:execute-silent(ytmp e f {n})+abort,shift-right:execute-silent(ytmp e f {n})+reload($cmd),pgdn:execute-silent(ytmp nn {n})+reload($cmd),pgup:execute-silent(ytmp pp {n})+reload($cmd),ctrl-v:page-down,alt-v:page-up,ctrl-alt-p:half-page-up,ctrl-alt-n:half-page-down,left-click:execute-silent(ytmp e f {n})+abort,right-click:execute-silent(ytmp nn {n})+reload($cmd),ctrl-^:execute-silent(ytmp mln)+reload($cmd),ctrl-\:execute(ytmp E)+reload($cmd),alt-m:execute(ytmp m f {n})+reload($cmd),ctrl-o:execute-silent(ytmp open_in_browser {n})"
 		;;
 
 		'vv')
 		cmd="cat $queue | cut -d' ' -f2-"
-		cat $queue | cut -d' ' -f2- | fzf --prompt='search: ' --info=inline --padding=2,2,2,2 --margin=2,2,2,2 --border=bottom --color=hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,preview-label:italic,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   ytmp vv   }" --separator='' \
+		cat $queue | cut -d' ' -f2- | fzf --prompt='search: ' --info=inline --padding=2,2,2,2 --margin=2,2,2,2 --border=bottom --color=hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,preview-label:italic,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   ytmp queue   }" --separator='' \
 		--height 100% --preview='ytmp fzf_preview vv {n} "{}"' --preview-window='right,50%' --layout=reverse --cycle --bind="ctrl-space:execute(ytmp m x f {n})+reload($cmd),ctrl-alt-m:execute-silent(ytmp m s f {n}),alt-up:execute-silent(ytmp m ff {n} 0)+reload($cmd),alt-down:execute-silent(ytmp m ff {n} l)+reload($cmd),ctrl-]:execute-silent(ytmp w),ctrl-r:replace-query,home:first+reload($cmd),end:last+reload($cmd),alt-r:reload($cmd),ctrl-alt-d:execute-silent(ytmp -dl {n} f),ctrl-z:execute-silent(setsid -f ytmp z {q}),ctrl-s:execute-silent(setsid -f ytmp {q}),ctrl-j:down,ctrl-j:jump,shift-left:execute-silent(ytmp dd {n})+reload($cmd),shift-up:execute-silent(ytmp up {n})+reload($cmd)+up,shift-down:execute-silent(ytmp dn {n})+reload($cmd)+down,ctrl-k:kill-line,alt-p:execute-silent(ytmp p)+reload($cmd),alt-n:execute-silent(ytmp n)+reload($cmd),alt-right:execute-silent(ytmp e f {n})+reload($cmd),return:execute-silent(ytmp e f {n})+abort,shift-right:execute-silent(ytmp e f {n})+reload($cmd),pgdn:execute-silent(ytmp nn {n})+reload($cmd),pgup:execute-silent(ytmp pp {n})+reload($cmd),ctrl-v:page-down,alt-v:page-up,ctrl-alt-p:half-page-up,ctrl-alt-n:half-page-down,left-click:execute-silent(ytmp e f {n})+abort,right-click:execute-silent(ytmp nn {n})+reload($cmd),ctrl-^:execute-silent(ytmp mln)+reload($cmd),ctrl-\:execute(ytmp E)+reload($cmd),alt-m:execute(ytmp m f {n})+reload($cmd),ctrl-o:execute-silent(ytmp open_in_browser {n})" \
 		--preview-label=info
 		;;
@@ -560,6 +560,7 @@ fuzzy_play () {
 	[ -z "$query" ] && echo "Provide a string to search as an argument." && return
 	match=$( grep -n '' "$queue" | sed -E -e 's/[_[:alnum:]]* ?\(?R?r?emaster[ed]?\)? ?[_[:alnum:]]*//g' -e 's/ ?- ?/ /g' -e 's/  //g' -e 's/ \($//' | fzf --tiebreak=begin -f "$query" | head -1 | cut -d':' -f1 )
 	[ -n "$match" ] && playlist e a "$match" || echo 'Match not found.'
+	return
 }
 
 play_history () {
