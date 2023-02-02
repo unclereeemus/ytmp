@@ -140,7 +140,7 @@ m [p|l|m|#[+|-#]] [p|l|m|#[+|-#]] [s #|v] [x #] move entry. l means last, p mean
      so things continue playing one after another
 -n get notified when mpv exits (song finishes)
 -r play random entries; a range can be specified with two separate arguements
--dl download song # (or p|l[-+#] like 'm')
+-dl download song # (accepts p|l|m like 'm')
 
 -rq delete queue file
 -qa quit audio
@@ -465,7 +465,7 @@ playlist () {
 	# puts stars around line # and removes stars from any other lines
 	elif [ "$1" = 'e' ]; then
 		[ "$3" = 'f' ] && line=$(( $4 + 1 )) || line="$3"
-		line="$( echo "$line" | sed s/m/"$( cat /tmp/ytmpmark )"/ | sed s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ | sed s/l/"$( grep -c '.' "$queue" )"/ | bc )"
+		line="$( echo "$line" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
 		sed -i -e "/$playing_regex/s/$playing_marker_regex/\1\2 /" -e 's/\*\*\*$//' "$queue"
 		# title="$( sed -n -e ${line}'s/\(^.\{11\}\) \(.*\)\|\(^.\{12\}\) \(.*\)/\2\4/' -e 's`[][\\/.*^$&]`\\&`gp' "$queue" )"
 		title="$( sed -n "${line}p" "$queue" | cut -d' ' -f2- | sed -e 's`[][\\/.*^$&]`\\&`g' )"
@@ -535,8 +535,8 @@ queue_manager () {
 		fi
 
 		[ -z "$place" ] && return
-		sel="$( echo "$sel" | sed s/m/"$( cat /tmp/ytmpmark )"/ | sed s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ | sed s/l/"$( grep -c '.' "$queue" )"/ | bc )"
-		echo "$place" | grep -Eqx '(\+|-|\*|/)+[0-9]*' && place="$( echo "${sel}${place}" | bc )" || place="$( echo "$place" | sed s/m/"$( cat /tmp/ytmpmark )"/ | sed s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ | sed s/l/"$( grep -c '.' "$queue" )"/ | bc )"
+		sel="$( echo "$sel" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
+		echo "$place" | grep -Eqx '(\+|-|\*|/)+[0-9]*' && place="$( echo "${sel}${place}" | bc )" || place="$( echo "$place" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
 
 		echo "Moving [$sel] "$( sed -n "${sel}s/\(^.\{11\}\) \(.*\)\|\(^.\{12\}\) \(.*\)/\2\4/p" "$queue" )" [[TO AFTER]] [$place] "$( sed -n "${place}s/\(^.\{11\}\) \(.*\)\|\(^.\{12\}\) \(.*\)/\2\4/p" "$queue" )""
 		printf "%s\n" "${sel}m${place}" "wq" | ed -s "$queue" >/dev/null
@@ -611,7 +611,7 @@ fzf_preview () {
 }
 
 download_song () {
-	sel="$( echo $2 | sed s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ | sed s/l/"$( grep -c '.' "$queue" )"/ | bc )"
+	sel="$( echo "$sel" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
 	[ "$3" = 'f' ] && sel=$(( sel + 1 ))
 	id="$( sed -n ${sel}p "$queue" | cut -d' ' -f1 )"
 	[ "$( printf "$id" | wc -m )" != '11' ] && return
