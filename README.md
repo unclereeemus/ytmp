@@ -37,7 +37,7 @@ the mpv ipc socket is opened at /tmp/mpvsocketytmp
 
 ## on first run
 
-On first installing ytmp, there won't be any history to select from when you enter ytmp so either pass arguements from the cli with ytmp [S] <search> or to search what's on the fzf input field press ctrl-x or to background search press ctrl-s / ctrl-z (difference explained in `ytmp h`)
+On first installing ytmp, there won't be any history to select from when you enter ytmp so either pass arguements from the cli with `ytmp [z] <search>` or to search what's on the fzf input field press ctrl-x or to background search press ctrl-s / ctrl-z (difference explained in `ytmp h`)
 
 ## eww
 `chmod +x mus`
