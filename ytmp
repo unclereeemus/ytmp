@@ -91,6 +91,9 @@ fzf bindings for search (ytmp [z/x/s]):
 		ctrl-s: search query in background
 		ctrl-z: search query in background with ytmp z
 
+** readline commands/binds are available in all fzf instances
+** <search> with spaces don't have to be quoted
+
 a add urls (direct links/playlists), paths, or directory (pass them as arguement - accepts many of all the kinds mentioned). does not check if file is a media file or not before adding.
 
 -p pause
@@ -129,7 +132,7 @@ v view queue; keybinds:
 vv view queue with details about the video (same keybinds as v option)
 
 ls show a numbered view of the entries
-m [p|l|m|#[+|-#]] [p|l|m|#[+|-#]] [s #|v] [x #] move entry. l means last, p means currently playing, m means a position mark set with passing s #. set mark by passing s # and see current mark with s v. pass x # to move # to the position of the queue selected in fzf. examples: ytmp m 10 2 or ytmp m m+3 l-1 or ytmp m l-1 p-2 or ytmp m l p+1 or ytmp m s 123.
+m [p|l|m|#[+|-#]] [p|l|m|#[+|-#]] [s #|v] [x #] move entry. l means last, p means currently playing, m means a position mark set with passing s #. set mark by passing s # and see current mark with s v. pass x # to move # to the position of the queue selected in fzf. examples: ytmp m 10 2 or ytmp m 13|m|p|l +/-5 or ytmp m m+3 l-1 or ytmp m l-1 p-2 or ytmp m l p+1 or ytmp m s 123.
 
 -shuf runs shuf on queue and overwrites it.
 
@@ -310,9 +313,10 @@ add () {
 }
 
 search_youtube () {
-	# if no arguements are passed but just words, search with the words
+	# ss = <query> was passed from cli
 	if [ "$1" = 'ss' ]; then
 		query=$( echo "$*" | cut -d' ' -f2- | tr "\n" ' ' | sed -e 's/[ \t]*$//' )
+	# p = playlist url
 	elif [ "$1" = 'p' ]; then
 		query="$2"
 	elif [ "$1" = 'z' ] && [ -n "$3" ]; then
@@ -364,7 +368,7 @@ search_youtube () {
 }
 
 search_playlist () {
-	[ -z "$2" ] && echo 'Provide a search string as arguement' && return
+	[ -z "$2" ] && echo 'Provide a search string as arguement.' && return
 	if [ "$2" = 'f' ]; then
 		fzf_index="$( echo $3+1 | bc )"
 		url="$( sed -n "${fzf_index}s/ .*//p" /tmp/ytmpplaylists )"
@@ -521,8 +525,9 @@ queue_manager () {
 			return
 		fi
 		if [ "$2" = 'f' ]; then
-			read place
 			sel="$( echo "1+${3}" | bc )"
+			printf "\nMove entry #$sel to where? "
+			read place
 		elif [ "$2" = 'ff' ]; then
 			sel="$( echo "1+${3}" | bc )"
 			place="$4"
@@ -557,7 +562,7 @@ queue_manager () {
 
 fuzzy_play () {
 	query=$( echo "$*" | cut -s -d' ' -f2- )
-	[ -z "$query" ] && echo "Provide a string to search as an argument." && return
+	[ -z "$query" ] && echo "Provide a string to search as argument." && return
 	match=$( grep -n '' "$queue" | sed -E -e 's/[_[:alnum:]]* ?\(?R?r?emaster[ed]?\)? ?[_[:alnum:]]*//g' -e 's/ ?- ?/ /g' -e 's/  //g' -e 's/ \($//' | fzf --tiebreak=begin -f "$query" | head -1 | cut -d':' -f1 )
 	[ -n "$match" ] && playlist e a "$match" || echo 'Match not found.'
 	return
