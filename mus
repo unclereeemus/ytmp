@@ -1,56 +1,77 @@
 #!/bin/sh
 mpvsocket="$( cat /tmp/active_mpvsocket )"
-if [ $1 = "title" ];then
-	title=$( echo '{ "command": ["get_property", "media-title" ] }' | socat - "$mpvsocket" | jq -r .data )
-	[ -z "$title" ] && echo '●ᴥ●'|| echo "$title"
-elif [ $1 = "statusicon" ];then
-	state=$( echo '{ "command": ["get_property", "pause"] }' | socat - "$mpvsocket" | jq .data )
-	[ "$state" = "false" ] && echo "󰏤" || echo "󰐊"
-elif [ $1 = "prog" ];then
-	perc=$( echo '{ "command": ["get_property", "percent-pos" ] }' | socat - "$mpvsocket" | jq .data | cut -d'.' -f1 )
-	echo "$perc"
-elif [ $1 = "seek" ];then
-	[ "$2" = "f" ] && echo '{ "command": [ "seek", "+30" ] }' | socat - "$mpvsocket"
-	[ "$2" = "ff" ] && echo '{ "command": [ "seek", "+600" ] }' | socat - "$mpvsocket"
-	[ "$2" = "bb" ] && echo '{ "command": [ "seek", "0", "absolute" ] }' | socat - "$mpvsocket"
-	[ "$2" = "b" ] && echo '{ "command": [ "seek", "-30" ] }' | socat - "$mpvsocket"
-elif [ $1 = "save_pos" ];then
-	echo '{ "command": ["set_property", "save-position-on-quit", true] }' | socat - "$mpvsocket" && echo quit | socat - "$mpvsocket"
-elif [ $1 = "loopstate" ];then
-	state=$( echo '{ "command": ["get_property", "loop" ] }' | socat - "$mpvsocket" | jq -r .data )
-	[ "$2" = "toggle" ] && ( [ $state = "false" ] && echo '{ "command": ["set_property", "loop", true] }' | socat - "$mpvsocket" || echo '{ "command": ["set_property", "loop", false] }' | socat - "$mpvsocket" )
-	[ "$2" = "abloop" ] && echo "{ \"command\": [ \"ab-loop\" ] }" | socat - "$mpvsocket"
-	[ $state = "false" ] && echo "󰑗" || echo "󰑖"
-elif [ $1 = "pauseplay" ];then
-	echo cycle pause | socat - "$mpvsocket"
-elif [ $1 = "looptip" ];then
-	a=$( echo '{ "command": ["get_property", "ab-loop-a" ] }' | socat - "$mpvsocket" | jq -r .data )
-	b=$( echo '{ "command": ["get_property", "ab-loop-b" ] }' | socat - "$mpvsocket" | jq -r .data )
-	echo "${a}-${b}"
-elif [ $1 = "mutestate" ];then
-	amixer -c 0 sget Master | sed '5!d' | cut -d' ' -f8 | grep -q 'on' && echo "󰕾" || echo "󰝟"
-elif [ $1 = "lyrics" ];then
-	title=$( grep '\*\*\*' /home/$USER/Music/ytmp/queue | cut -d' ' -f2-100 | sed 's@\*\*\*@@g' ) #| xargs -0 -I '{}' setsid -f
-	/usr/bin/clyrics "$title" > /tmp/lyrics
-	st -e less /tmp/lyrics
-elif [ $1 = "vol" ];then
-	vol=$( echo '{ "command": ["get_property", "volume" ] }' | socat - "$mpvsocket" | jq .data )
-	echo $vol
-elif [ $1 = "volch" ];then
-	echo "{ \"command\": [ \"set_property\", \"volume\", \"${2}\" ] }" | socat - "$mpvsocket"
-elif [ $1 = "dur" ];then
-	duration=$( echo '{ "command": ["get_property", "duration" ] }' | socat - "$mpvsocket" | jq .data | cut -d'.' -f1 )
-	position=$( echo '{ "command": ["get_property", "time-pos" ] }' | socat - "$mpvsocket" | jq .data | cut -d'.' -f1 )
-	[ "null" != "duration" ] && printf "%02d:%02d" $((position%3600/60)) $((position%60)) && printf " / " && printf "%02d:%02d" $((duration%3600/60)) $((duration%60)) || printf "00:00 / 00:00"
-elif [ $1 = "micvol" ];then
-	mic=$(amixer sget Capture | grep "Mono:")
-	mic=${mic#*[}
-	echo ${mic%%%*}
-elif [ $1 = "micmute" ];then
-	mic=$(amixer sget Capture | grep "Mono:")
-	mic=${mic##*[}
-	[ "${mic%%]*}" = "off" ] && icon="" || icon=""
-	echo $icon
-elif [ $1 = "exit" ];then
-	echo 'exit' | socat - "$mpvsocket" && rm "$mpvsocket"
-fi
+case "$1" in
+	"title")
+		title=$( echo '{ "command": ["get_property", "media-title" ] }' | socat - "$mpvsocket" | jq -r .data )
+		[ -z "$title" ] && echo '●ᴥ●'|| echo "$title"
+		;;
+	"statusicon")
+		state=$( echo '{ "command": ["get_property", "pause"] }' | socat - "$mpvsocket" | jq .data )
+		[ "$state" = "false" ] && echo "󰏤" || echo "󰐊"
+		;;
+	"prog")
+		perc=$( echo '{ "command": ["get_property", "percent-pos" ] }' | socat - "$mpvsocket" | jq .data | cut -d'.' -f1 )
+		echo "$perc"
+		;;
+	"seek")
+		[ "$2" = "f" ] && echo '{ "command": [ "seek", "+30" ] }' | socat - "$mpvsocket"
+		[ "$2" = "ff" ] && echo '{ "command": [ "seek", "+600" ] }' | socat - "$mpvsocket"
+		[ "$2" = "bb" ] && echo '{ "command": [ "seek", "0", "absolute" ] }' | socat - "$mpvsocket"
+		[ "$2" = "b" ] && echo '{ "command": [ "seek", "-30" ] }' | socat - "$mpvsocket"
+		;;
+	"save_pos")
+		echo '{ "command": ["set_property", "save-position-on-quit", true] }' | socat - "$mpvsocket" && echo quit | socat - "$mpvsocket"
+		;;
+	"loopstate")
+		state=$( echo '{ "command": ["get_property", "loop" ] }' | socat - "$mpvsocket" | jq -r .data )
+		[ "$2" = "toggle" ] && ( [ $state = "false" ] && echo '{ "command": ["set_property", "loop", true] }' | socat - "$mpvsocket" || echo '{ "command": ["set_property", "loop", false] }' | socat - "$mpvsocket" )
+		[ "$2" = "abloop" ] && echo "{ \"command\": [ \"ab-loop\" ] }" | socat - "$mpvsocket"
+		[ $state = "false" ] && echo "󰑗" || echo "󰑖"
+		;;
+	"pauseplay")
+		echo cycle pause | socat - "$mpvsocket"
+		;;
+	"looptip")
+		a=$( echo '{ "command": ["get_property", "ab-loop-a" ] }' | socat - "$mpvsocket" | jq -r .data )
+		b=$( echo '{ "command": ["get_property", "ab-loop-b" ] }' | socat - "$mpvsocket" | jq -r .data )
+		echo "${a}-${b}"
+		;;
+	"mutestate")
+		amixer -c 0 sget Master | sed '5!d' | cut -d' ' -f8 | grep -q 'on' && echo "󰕾" || echo "󰝟"
+		;;
+	"lyrics")
+		title=$( grep '\*\*\*' /home/$USER/Music/ytmp/queue | cut -d' ' -f2-100 | sed 's@\*\*\*@@g' ) #| xargs -0 -I '{}' setsid -f
+		/usr/bin/clyrics "$title" > /tmp/lyrics
+		st -e less /tmp/lyrics
+		;;
+	"vol")
+		vol=$( echo '{ "command": ["get_property", "volume" ] }' | socat - "$mpvsocket" | jq .data )
+		echo $vol
+		;;
+	"volch")
+		echo "{ \"command\": [ \"set_property\", \"volume\", \"${2}\" ] }" | socat - "$mpvsocket"
+		;;
+	"dur")
+		duration=$( echo '{ "command": ["get_property", "duration" ] }' | socat - "$mpvsocket" | jq .data | cut -d'.' -f1 )
+		position=$( echo '{ "command": ["get_property", "time-pos" ] }' | socat - "$mpvsocket" | jq .data | cut -d'.' -f1 )
+		[ "null" != "duration" ] && printf "%02d:%02d" $((position%3600/60)) $((position%60)) && printf " / " && printf "%02d:%02d" $((duration%3600/60)) $((duration%60)) || printf "00:00 / 00:00"
+		;;
+	"micvol")
+		mic=$(amixer sget Capture | grep "Mono:")
+		mic=${mic#*[}
+		echo ${mic%%%*}
+		;;
+	"micmute")
+		mic=$(amixer sget Capture | grep "Mono:")
+		mic=${mic##*[}
+		[ "${mic%%]*}" = "off" ] && icon="" || icon=""
+		echo $icon
+		;;
+	"exit")
+		echo 'exit' | socat - "$mpvsocket" && rm "$mpvsocket"
+		;;
+	"w")
+		state=$( echo '{ "command": ["get_property", "force-window" ] }' | socat - $mpvsocket | jq .data )
+		[ "$state" = "false" ] && echo '{ "command": ["set_property", "force-window", true ] }' | socat - $mpvsocket &>/dev/null && ( mpv_socket_commands s 'load-stats-overlay' 'true' ) || echo '{ "command": ["set_property", "force-window", false ] }' | socat - $mpvsocket &>/dev/null
+		;;
+esac
