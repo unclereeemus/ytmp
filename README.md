@@ -44,6 +44,8 @@ On first installing ytmp, there won't be any history to select from when you ent
 
 `eww -c . open/close musicplayer` or `mv {eww.scss,eww.yuck,mus} ~/.config/eww; eww open/close musicplayer`
 
+it should (mostly) look like this: https://github.com/Gwynsav/messydots/blob/main/basicshowcase.png
+
 the thumbnail is located at /tmp/muscover.webp
 
 # scripts
@@ -72,7 +74,7 @@ the thumbnail is located at /tmp/muscover.webp
 
 - to play a random song once, run `grep -c '' "/home/$USER/Music/ytmp/queue" | xargs seq | shuf -n 1 | xargs ytmp e`
 
-- you don't need to use ytmp to make playlists for it! you could do `yt-dlp --print id --print title '<playlist_url>' | paste -s -d ' \n' > file` or to search for playlists from the terminal: `query='SEARCH' && pipe-viewer --no-interactive -sp --custom-playlist-layout='*VIDEOS*VIDS *TITLE* *URL*' "$query" | fzf --bind='alt-a:beginning-of-line,alt-e:end-of-line,ctrl-a:execute(echo {} | awk "{print $NF}" | xargs -0 -I ",," pipe-viewer --custom-layout="*AUTHOR* *TIME* *TITLE*" --no-interactive ",," | fzf)' | awk '{print $NF}' | xargs -0 -I ',,' yt-dlp --print id --print title ',,' | paste -s -d ' \n' > file`
+- you don't need to use ytmp to make playlists for it. you could do `yt-dlp --print id --print title '<playlist_url>' | paste -s -d ' \n' > file` or to search for playlists from the terminal: `query='SEARCH' && pipe-viewer --no-interactive -sp --custom-playlist-layout='*VIDEOS*VIDS *TITLE* *URL*' "$query" | fzf --bind='alt-a:beginning-of-line,alt-e:end-of-line,ctrl-a:execute(echo {} | awk "{print $NF}" | xargs -0 -I ",," pipe-viewer --custom-layout="*AUTHOR* *TIME* *TITLE*" --no-interactive ",," | fzf)' | awk '{print $NF}' | xargs -0 -I ',,' yt-dlp --print id --print title ',,' | paste -s -d ' \n' > file`
 
 - to sort your play history by how many times you've listened to something use `sort -nk2 "/home/$USER/Music/ytmp/played_urls" | less`
 
