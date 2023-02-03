@@ -24,7 +24,9 @@ case "$1" in
 	oc) nvim "$conf" ;;
 	or) nvim "$run_on_next" ;;
 	# set vol var in $run_on_next
-	ld) printf '' | dmenu | xargs -r -I ',,' sed -i 's@^vol=.*$@vol=,,@' "$run_on_next" ;;
+	sv) printf '' | dmenu | xargs -r -I ',,' sed -i 's@^vol=.*$@vol=,,@' "$run_on_next" ;;
+	# set mpv volume to $var in $run_on_next
+	ev) mpv_socket_commands s volume $( grep '^vol=.*' "$run_on_next" | sed 's/vol=//' ) st /tmp/mpvsocketytmp ;;
 	v) mpv_socket_commands s volume $2 st /tmp/mpvsocketytmp ;;
 	rv) mpv_socket_commands s volume 100 st /tmp/mpvsocketytmp ;;
 	# a dmenu wrapper
