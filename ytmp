@@ -1,4 +1,4 @@
-#!/bin/dash
+#!/bin/sh
 # YTMP: a shell script for searching, playing, downloading, and keeping track of music from youtube and local files with extensive queue management using fzf, vim, or cli
 # DEPS: yt-dlp, mpv, socat, fzf, xargs, find, sed, bc, ed, coreutils, (pipe-viewer for playlist search), (notify-send for notifcations), (curl for thumbnails), (n/vim)
 # set -xv
@@ -406,7 +406,7 @@ upd_amnt_played () {
 			echo "$id $amnt_played $dt dl $title" >> $played_urls
 		else
 			len=$( yt-dlp -q --no-warnings --get-duration "https://www.youtube.com/watch?v=$id" | sed -E 's/(.*):(.+):(.+)/\1*3600+\2*60+\3/;s/(.+):(.+)/\1*60+\2/' | bc )
-			[ $len -lt $max_len_for_dl ] && ( echo "Downloading '$title'. You have listened to it $amnt_played times." && yt-dlp -q --no-warnings -f bestaudio -o "$songs_dir/%(id)s %(title)s.%(ext)s" "https://www.youtube.com/watch?v=$id" >/dev/null 2>&1 && echo "$id $amnt_played $dt dl $title" >> $played_urls ) || echo "$id $amnt_played $dt $title" >> $played_urls
+			[ $len -lt $max_len_for_dl ] && ( echo "Downloading '$title'. You have listened to it $amnt_played times. Playback will start once download finishes." && yt-dlp -q --no-warnings -f bestaudio -o "$songs_dir/%(id)s %(title)s.%(ext)s" "https://www.youtube.com/watch?v=$id" >/dev/null 2>&1 && echo "$id $amnt_played $dt dl $title" >> $played_urls ) || echo "$id $amnt_played $dt $title" >> $played_urls
 		fi
 	else
 		ls $songs_dir/*"${id}"* >/dev/null 2>&1 && echo "$id $amnt_played $dt dl $title" >> $played_urls || echo "$id $amnt_played $dt $title" >> $played_urls
