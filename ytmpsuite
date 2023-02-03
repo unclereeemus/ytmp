@@ -9,19 +9,29 @@ case "$1" in
 	gt) ( grep -q '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT$' "$run_on_next" ) && index="$( grep -n '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT$' "$run_on_next" | cut -d':' -f1 | xargs -I ',' echo ',+1' | bc )" && ( sed -n "${index}p" "$run_on_next" | grep '^# ' && echo "OFF" || echo "ON" ) ;;
 	T) ( grep -q '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT ALT$' "$run_on_next" ) && index="$( grep -n '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT ALT$' "$run_on_next" | cut -d':' -f1 | xargs -I ',' echo ',+1' | bc )"; ( sed -n "${index}p" "$run_on_next" | grep '^# ' ) && ( sed -i "${index}s/^# //" "$run_on_next"; echo "ON" ) || ( sed -i "${index}s/^/# /" "$run_on_next"; echo "OFF" ) ;;
 	gT) ( grep -q '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT ALT$' "$run_on_next" ) && index="$( grep -n '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT ALT$' "$run_on_next" | cut -d':' -f1 | xargs -I ',' echo ',+1' | bc )" && ( sed -n "${index}p" "$run_on_next" | grep '^# ' && echo "OFF" || echo "ON" ) ;;
+	# select queue in file browser
 	q) xplr "$prefix/playlists" | xargs -r -I ',,' sed -i "s@^queue=.*@queue=\",,\"@" $conf ;;
 	fq) fd . "$prefix/playlists" | fzf | xargs -r -I ',,' sed -i "s@^queue=.*@queue=\",,\"@" $conf ;;
+	# change queue to $prefix/queue
 	oq) sed -i "s@^queue=.*@queue=\"$prefix/queue\"@" $conf ;;
+	# comment queue var
 	cq) sed -i "s@^queue=.*@#&@" $conf ;;
+	# print queue file path
 	pq) grep -x 'queue=.*' "$conf" ;;
 	lq) lf "$prefix/playlists" ;;
+	# remove all *** in the queue
 	ra) sed -i '/\*\*\*$/s/\*\*\*//g' "$queue" ;;
 	l) sed -i "s;^vol=.*$;vol=${2};" "$run_on_next" ;;
 	oc) nvim "$conf" ;;
 	or) nvim "$run_on_next" ;;
-	ld) echo '' | dmenu | xargs -r -I ',,' sed -i 's@^vol=.*$@vol=,,@' "$run_on_next" ;;
+	# set vol var in $run_on_next
+	ld) printf '' | dmenu | xargs -r -I ',,' sed -i 's@^vol=.*$@vol=,,@' "$run_on_next" ;;
 	v) mpv_socket_commands s volume $2 st /tmp/mpvsocketytmp ;;
 	rv) mpv_socket_commands s volume 100 st /tmp/mpvsocketytmp ;;
+	# queue up entries to play one after another; ex: ytmpsuite qn 5 p+8 l-2
+	qn) printf '%s\n' "$@" | sed 1d | while read p; do ( while (ytmp -n); do ytmp e $p; break; done; ) done ;;
+	# search for playlists and make a queue file with the selected one at $prefix/playlists/"$3"
 	sp) [ -n "$3" ] && query="$2" && pipe-viewer --results=50 --no-interactive -sp --custom-playlist-layout='*VIDEOS*VIDS *TITLE* *URL*' "$query" | fzf --bind='alt-a:beginning-of-line,alt-e:end-of-line,ctrl-a:execute(echo {} | awk "{print $NF}" | xargs -0 -I ",," pipe-viewer --results=50 --custom-layout="*AUTHOR* *TIME* *TITLE*" --no-interactive ",," | fzf)' | awk '{print $NF}' | xargs -r -0 -I ',,' yt-dlp --print id --print title ',,' | paste -s -d ' \n' > $prefix/playlists/"$3" ;;
+	# make a queue file from playlist url and put it in $prefix/playlists/"$3"
 	ap) [ -n "$3" ] && yt-dlp --print id --print title "$2" | paste -s -d ' \n' > $prefix/playlists/"$3" ;;
 esac
