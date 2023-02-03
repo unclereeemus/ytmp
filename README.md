@@ -68,9 +68,9 @@ the thumbnail is located at /tmp/muscover.webp
 # tips
 - a dmenu wrapper: `cmd="$( printf ' ' | dmenu -p 'run which ytmp cmd? ' )" && ( printf "$cmd" | grep -Eq '^ $|^x( [0-9]*)?$|^s( [0-9]*)?$|^z$|^l s$|^v$|^vv$|^E$|^sp .*$' && setsid -f $TERMINAL -e ytmp $cmd >/dev/null 2>&1 || ytmp $cmd )`
 
-- to play one song after another without moving them to a consecutive place and running the daemon, do `printf '%s\n' 5 p+8 l-2 | while read p; do ( while (! ytmp -n); do ytmp e $p; break; done; ) done` (replacing the printf string with the proper positions of course)
+- to play one song after another without moving them to a consecutive place and running the daemon, do `printf '%s\n' 5 p+8 l-2 | while read p; do ( while (! ytmp -n); do ytmp e $p; break; done; ) done` (replacing the printf strings with the proper positions of course)
 
-- if you wanted to move multiple songs to one position i.e. the end you could use something like `echo '3,6,27,18' | xargs -d ',' -I '{}' ytmp m '{}' 'l'` (replacing the numbers and 'l' with 'p|l' or the proper positions of course)
+- if you want to move multiple songs to one position i.e. the end you could use something like `echo '3,6,27,18' | xargs -d ',' -I '{}' ytmp m '{}' 'l'` (replacing the numbers and 'l' with 'p|m' or the proper positions of course)
 
 - you don't need to use ytmp to make playlists for it. you can do `yt-dlp --print id --print title '<playlist_url>' | paste -s -d ' \n' > file` or to search for playlists from the terminal (requires pipe-viewer): `search='YOUR_SEARCH'; pipe-viewer --no-interactive -sp --custom-playlist-layout='*VIDEOS*VIDS *TITLE* *URL*' "$search" | fzf --bind='alt-a:beginning-of-line,alt-e:end-of-line,ctrl-a:execute(echo {} | awk "{print $NF}" | xargs -0 -I ",," pipe-viewer --custom-layout="*AUTHOR* *TIME* *TITLE*" --no-interactive ",," | fzf)' | awk '{print $NF}' | xargs -0 -I ',,' yt-dlp --print id --print title ',,' | paste -s -d ' \n' > file`
 
