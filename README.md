@@ -72,15 +72,15 @@ the thumbnail is located at /tmp/muscover.webp
 
 - to play one song after another without moving them to a consecutive place and running the daemon, do `printf '%s\n' 5 p+8 l-2 | while read p; do ( while (! ytmp -n); do ytmp e $p; break; done; ) done` (replacing the printf string with the proper positions of course)
 
-- get the $num songs immediately before and after currently playing: `num=3; line=$( grep -n '\*\*\*$' /home/$USER/Music/ytmp/queue | cut -d':' -f1 ); sed -n "$( echo "${line}-${num}" | bc )","$( echo "${line}+${num}" | bc )"p /home/$USER/Music/ytmp/queue | cut -d' ' -f2-` or send a notification: `num=1; line=$( grep -n '\*\*\*$' /home/$USER/Music/ytmp/queue | cut -d':' -f1 ); notify-send "$( sed -n "$( echo "${line}-${num}" | bc )","$( echo "${line}+${num}" | bc )"p /home/$USER/Music/ytmp/queue | cut -d' ' -f2- )"`
+- see the $num songs immediately before and after currently playing: `num=3; line=$( grep -n '\*\*\*$' /home/$USER/Music/ytmp/queue | cut -d':' -f1 ); sed -n "$( echo "${line}-${num}" | bc )","$( echo "${line}+${num}" | bc )"p /home/$USER/Music/ytmp/queue | cut -d' ' -f2-` or send a notification: `num=1; line=$( grep -n '\*\*\*$' /home/$USER/Music/ytmp/queue | cut -d':' -f1 ); notify-send "$( sed -n "$( echo "${line}-${num}" | bc )","$( echo "${line}+${num}" | bc )"p /home/$USER/Music/ytmp/queue | cut -d' ' -f2- )"`
 
 - to play a random song once, run `grep -c '' "/home/$USER/Music/ytmp/queue" | xargs seq | shuf -n 1 | xargs ytmp e`
 
-- you don't need to use ytmp to make playlists for it. you could do `yt-dlp --print id --print title '<playlist_url>' | paste -s -d ' \n' > file` or to search for playlists from the terminal: `query='SEARCH' && pipe-viewer --no-interactive -sp --custom-playlist-layout='*VIDEOS*VIDS *TITLE* *URL*' "$query" | fzf --bind='alt-a:beginning-of-line,alt-e:end-of-line,ctrl-a:execute(echo {} | awk "{print $NF}" | xargs -0 -I ",," pipe-viewer --custom-layout="*AUTHOR* *TIME* *TITLE*" --no-interactive ",," | fzf)' | awk '{print $NF}' | xargs -0 -I ',,' yt-dlp --print id --print title ',,' | paste -s -d ' \n' > file`
+- you don't need to use ytmp to make playlists for it. you can do `yt-dlp --print id --print title '<playlist_url>' | paste -s -d ' \n' > file` or to search for playlists from the terminal: `query='SEARCH' && pipe-viewer --no-interactive -sp --custom-playlist-layout='*VIDEOS*VIDS *TITLE* *URL*' "$query" | fzf --bind='alt-a:beginning-of-line,alt-e:end-of-line,ctrl-a:execute(echo {} | awk "{print $NF}" | xargs -0 -I ",," pipe-viewer --custom-layout="*AUTHOR* *TIME* *TITLE*" --no-interactive ",," | fzf)' | awk '{print $NF}' | xargs -0 -I ',,' yt-dlp --print id --print title ',,' | paste -s -d ' \n' > file`
 
 - to sort your play history by how many times you've listened to something use `sort -nk2 "/home/$USER/Music/ytmp/played_urls" | less`
 
-- if you wanted to move multiple songs to one position i.e. the end you could use something like `echo '3,6,27,18' | xargs -d ',' -I '{}' ytmp m '{}' 'l'` (replacing the numbers and 'l' with 'p' or the proper positions of course)
+- if you wanted to move multiple songs to one position i.e. the end you could use something like `echo '3,6,27,18' | xargs -d ',' -I '{}' ytmp m '{}' 'l'` (replacing the numbers and 'l' with 'p|l' or the proper positions of course)
 
 - you can make a scratchpad (i recommend tdrop if your wm doesn't support them) of `ytmp E` which can be your one stop for music management (you can invoke ytmp with keybindings by using the vim config provided)
 
