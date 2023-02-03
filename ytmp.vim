@@ -40,6 +40,8 @@ nnoremap <C-t> :te <Enter>i
 nnoremap <C-y> :te ytmp<Enter>i
 nnoremap <C-w> :te ytmp z<Enter>i
 nnoremap <C-v> :te ytmp vv<Enter>i
+nnoremap <C-p> :silent !ytmpsuite qs 
+nnoremap <C-n> :silent !ytmpsuite qn 
 
 nnoremap < :silent !ytmp p<Enter>
 nnoremap > :silent !ytmp n<Enter>
@@ -49,3 +51,4 @@ nnoremap <leader>v :te echo '' \| dmenu \| xargs -r -I ',,' sed -i 's@vol=.*@vol
 " set volume
 nnoremap <leader>l :te echo '' \| dmenu \| xargs -r -I ',,' mpv_socket_commands s volume ',,' st /tmp/mpvsocketytmp <Enter>i
 nnoremap <leader>w :te ytmp w<Enter>i
+nnoremap <leader>y :silent !ytmp 
