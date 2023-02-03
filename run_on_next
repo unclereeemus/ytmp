@@ -4,7 +4,10 @@ vol=35
 # wait for mpv to load before continuing so the commands aren't sent to a black hole
 while true; do [ -n "$( echo '{ "command": ["get_property", "pid"] }' | socat - /tmp/mpvsocketytmp )" ] && break; done >/dev/null 2>&1
 
-# the two lines below are toggled by the ytmpsuite script; don't change the comments (feel free to change the commands) or else the toggle system won't work
+# the two lines below are toggled by the ytmpsuite script; don't change the comments 
+# (feel free to change the commands - make sure to leave a space after the # and leave them directly below the comments) 
+# or else the toggle system won't work
+
 # LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT
 # mpv_socket_commands s volume $vol st /tmp/mpvsocketytmp && exit
 
