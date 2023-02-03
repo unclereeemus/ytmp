@@ -31,6 +31,8 @@ case "$1" in
 	dm) cmd="$( printf ' ' | dmenu -p 'which ytmp cmd to run? ' )" && if ( printf "$cmd" | grep -Eq '^ $|^x( [0-9]*)?$|^s( [0-9]*)?$|^z$|^l s$|^v$|^vv$|^E$|^sp .*$' ); then setsid -f $TERMINAL -e ytmp $cmd >/dev/null 2>&1; else ytmp $cmd; fi ;;
 	# queue up entries to play one after another; ex: ytmpsuite qn 5 p+8 l-2
 	qn) printf '%s\n' "$@" | sed 1d | while read p; do ( while (ytmp -n); do ytmp e $p; break; done; ) done ;;
+	# search searches contained in (newline separated) $2 and put results in $prefix/playlists/"$3"
+	sa) [ -n "$3" ] && xargs -a "$2" -I ,, yt-dlp --print id --print title ",," | paste -s -d ' \n' > $prefix/playlists/"$3" ;;
 	# make a queue file from playlist url and put it in $prefix/playlists/"$3"
 	ap) [ -n "$3" ] && yt-dlp --print id --print title "$2" | paste -s -d ' \n' > $prefix/playlists/"$3" ;;
 	# select songs from playlists to add to $prefix/playlists/"$3"; $3=filename
