@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/dash
 # YTMP: a shell script for searching, playing, downloading, and keeping track of music from youtube and local files with extensive queue management using fzf, vim, or cli
 # DEPS: yt-dlp, mpv, socat, fzf, xargs, find, sed, bc, ed, coreutils, (pipe-viewer for playlist search), (notify-send for notifcations), (curl for thumbnails), (n/vim)
 # set -xv
@@ -252,13 +252,13 @@ transfer_qdiscards () {
 # gets the artists listed in the description and places them in $played_artists if first time seeing $id. artists are usually separated by '·' and ':'. also puts things in the queue file.
 register () {
 	id="$1"
-	[ -n "$2" ] && title="$2" || title=$( yt-dlp -e "https://www.youtube.com/watch?v=$id" )
+	[ -n "$2" ] && title="$2" || title=$( yt-dlp -q --no-warnings -e "https://www.youtube.com/watch?v=$id" )
 	dt="$( date +'%m/%d/%y+%T' )"
 	rm -f "$qdiscards_file"
 
 	if ( ls $songs_dir/*"${id}"* >/dev/null 2>&1 ); then add_to_queue "$id" "$title";
 	elif ! grep -Fq "$id" "$played_urls"; then
-		desc=$( yt-dlp --get-description "https://www.youtube.com/watch?v=$id" )
+		desc=$( yt-dlp -q --no-warnings --get-description "https://www.youtube.com/watch?v=$id" )
 		echo "$title" >> $played_titles
 		# this empty entry is added so the program knows it has seen the id before
 		# and parsed its description for artists already so it doesn' prase it again
@@ -293,9 +293,9 @@ add () {
 	for f in "$@"; do
 		[ "$f" = 'a' ] && continue
 		if echo "$f" | grep -q 'http.*\.com'; then
-			ids="$( yt-dlp --get-id "$f" )"
+			ids="$( yt-dlp -q --no-warnings --get-id "$f" )"
 			echo "$ids" | while read -r id; do
-				title=$( yt-dlp -e "https://www.youtube.com/watch?v=$id" )
+				title=$( yt-dlp -q --no-warnings -e "https://www.youtube.com/watch?v=$id" )
 				add_to_queue "$id" "$title"
 			done
 		elif [ -d "$f" ]; then
@@ -336,11 +336,11 @@ search_youtube () {
 	# allows user to browse search results and select
 	if [ "$1" = 'p' ] || [ "$1" = 'x' ] || [ "$1" = 's' ]; then
 		if [ "$1" = 'x' ]; then
-			printf "$2" | grep -xq '[0-9]*' && ids_titles=$( yt-dlp -e --get-id ytsearch${2}:"$query" ) || ids_titles=$( yt-dlp --get-id -e ytsearch5:"$query" )
+			printf "$2" | grep -xq '[0-9]*' && ids_titles=$( yt-dlp -q --no-warnings -e --get-id ytsearch${2}:"$query" ) || ids_titles=$( yt-dlp -q --no-warnings --get-id -e ytsearch5:"$query" )
 		elif [ "$1" = 'p' ]; then
 			ids_titles=$( pipe-viewer --no-interactive --no-use-colors --results=50 --custom-layout="*TITLE*\n*ID*" -e="*ID* *TITLE*" "$query" | sed 1d )
 		else
-			printf "$2" | grep -xq '[0-9]*' && ids_titles=$( yt-dlp --get-id -e ytsearch${2}:"$query auto-generated provided to youtube" ) || ids_titles=$( yt-dlp --get-id -e ytsearch5:"$query auto-generated provided to youtube" )
+			printf "$2" | grep -xq '[0-9]*' && ids_titles=$( yt-dlp -q --no-warnings --get-id -e ytsearch${2}:"$query auto-generated provided to youtube" ) || ids_titles=$( yt-dlp -q --no-warnings --get-id -e ytsearch5:"$query auto-generated provided to youtube" )
 		fi
 
 		# separates ids and titles. shows only $titles to user and then uses the number of the line $title is found on
@@ -358,10 +358,10 @@ search_youtube () {
 		done
 	elif [ -n "$query" ]; then
 		if [ "$1" = 'z' ]; then
-			id=$( yt-dlp --get-id ytsearch1:"$query" )
-			add_to_queue "$id" "$( yt-dlp -e "https://www.youtube.com/watch?v=$id" )"
+			id=$( yt-dlp -q --no-warnings --get-id ytsearch1:"$query" )
+			add_to_queue "$id" "$( yt-dlp -q --no-warnings -e "https://www.youtube.com/watch?v=$id" )"
 		else
-			id=$( yt-dlp --get-id ytsearch1:"$query auto-generated provided to youtube" )
+			id=$( yt-dlp -q --no-warnings --get-id ytsearch1:"$query auto-generated provided to youtube" )
 			[ -n "$id" ] && register "$id"
 		fi
 	fi
@@ -405,8 +405,8 @@ upd_amnt_played () {
 		if ( ls $songs_dir/*"${id}"* >/dev/null 2>&1 ); then
 			echo "$id $amnt_played $dt dl $title" >> $played_urls
 		else
-			len=$( yt-dlp --get-duration "https://www.youtube.com/watch?v=$id" | sed -E 's/(.*):(.+):(.+)/\1*3600+\2*60+\3/;s/(.+):(.+)/\1*60+\2/' | bc )
-			[ $len -lt $max_len_for_dl ] && ( yt-dlp -f bestaudio -o "$songs_dir/%(id)s %(title)s.%(ext)s" "https://www.youtube.com/watch?v=$id" >/dev/null 2>&1 && echo "Downloading '$title'. You have listened to it $amnt_played times." && echo "$id $amnt_played $dt dl $title" >> $played_urls ) || echo "$id $amnt_played $dt $title" >> $played_urls
+			len=$( yt-dlp -q --no-warnings --get-duration "https://www.youtube.com/watch?v=$id" | sed -E 's/(.*):(.+):(.+)/\1*3600+\2*60+\3/;s/(.+):(.+)/\1*60+\2/' | bc )
+			[ $len -lt $max_len_for_dl ] && ( echo "Downloading '$title'. You have listened to it $amnt_played times." && yt-dlp -q --no-warnings -f bestaudio -o "$songs_dir/%(id)s %(title)s.%(ext)s" "https://www.youtube.com/watch?v=$id" >/dev/null 2>&1 && echo "$id $amnt_played $dt dl $title" >> $played_urls ) || echo "$id $amnt_played $dt $title" >> $played_urls
 		fi
 	else
 		ls $songs_dir/*"${id}"* >/dev/null 2>&1 && echo "$id $amnt_played $dt dl $title" >> $played_urls || echo "$id $amnt_played $dt $title" >> $played_urls
@@ -420,7 +420,7 @@ dl_thumbnail () {
 		[ "$( printf "$id" | wc -m )" != '11' ] && return
 		if ( ! ls $thumb_dir/*"${id}"* >/dev/null 2>&1 ); then
 			title=$( sed -n -e "/$playing_regex/s/$playing_marker_regex//" -e 's/\*\*\*$//p' "$queue" )
-			yt-dlp --get-thumbnail "https://www.youtube.com/watch?v=$id" | xargs curl --output "$thumb_dir/$id $title.webp"
+			yt-dlp -q --no-warnings --get-thumbnail "https://www.youtube.com/watch?v=$id" | xargs curl --output "$thumb_dir/$id $title.webp"
 			ln -fs $thumb_dir/*"${id}"* /tmp/muscover.webp
 		else
 			ln -fs $thumb_dir/*"${id}"* /tmp/muscover.webp
@@ -610,7 +610,7 @@ fzf_preview () {
 
 	[ "$( printf "$id" | wc -m )" != '11' ] && return
 
-	info="$( yt-dlp --no-warnings --output-na-placeholder 'ASDASIDJIASDJIAJDI' --print "${lsp}Name: %(title)s \nAlbum: %(album)s \nArtist(s): %(artist)s \nGenre: %(genre)s \nRelease Year: %(release_year)s \nLength: %(duration_string)s \nUpload Date: %(upload_date>%m/%d/%Y)s \nUploader: %(uploader)s \nURL: %(webpage_url)s \n${lsp}Description:\n${lsp}%(description)s \n$lsp" "https://www.youtube.com/watch?v=$id" )"
+	info="$( yt-dlp -q --no-warnings --output-na-placeholder 'ASDASIDJIASDJIAJDI' --print "${lsp}Name: %(title)s \nAlbum: %(album)s \nArtist(s): %(artist)s \nGenre: %(genre)s \nRelease Year: %(release_year)s \nLength: %(duration_string)s \nUpload Date: %(upload_date>%m/%d/%Y)s \nUploader: %(uploader)s \nURL: %(webpage_url)s \n${lsp}Description:\n${lsp}%(description)s \n$lsp" "https://www.youtube.com/watch?v=$id" )"
 
 	printf "$info" | sed -e '/ASDASIDJIASDJIAJDI/d'
 }
@@ -621,7 +621,7 @@ download_song () {
 	id="$( sed -n ${sel}p "$queue" | cut -d' ' -f1 )"
 	[ "$( printf "$id" | wc -m )" != '11' ] && return
 	title="$( sed -n -e "/$playing_regex/s/$playing_marker_regex//" -e 's/\*\*\*$//p' "$queue" )"
-	( ! ls $songs_dir/*"${id}"* >/dev/null 2>&1 ) && setsid -f yt-dlp -f bestaudio -o "$songs_dir/%(id)s %(title)s.%(ext)s" "https://www.youtube.com/watch?v=$id" >/dev/null 2>&1 && echo "Downloading '$title'" || echo "There is already a file of that name downloaded."
+	( ! ls $songs_dir/*"${id}"* >/dev/null 2>&1 ) && setsid -f yt-dlp -q --no-warnings -f bestaudio -o "$songs_dir/%(id)s %(title)s.%(ext)s" "https://www.youtube.com/watch?v=$id" >/dev/null 2>&1 && echo "Downloading '$title'" || echo "There is already a file of that name downloaded."
 }
 
 open_in_browser () {
