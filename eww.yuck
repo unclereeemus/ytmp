@@ -3,7 +3,7 @@
 		(box :class "music-bg" :orientation "v" :space-evenly "false"
 			(button	:class "albumart" :onclick "$HOME/.config/eww/eww-mpv-opener cl; eww close-all; rm $HOME/.cache/eww_launch.xyz; setsid -f st -e ytmp w" :vexpand "false" :hexpand "false" :style "background-image: url('${art}');")
 			(box :class "music-info" :orientation "v" :space-evenly "false"
-				(button :class "title" :onrightclick "./mus pcw" :onmiddleclick "setsid -f kitty -e ytmpsuite fq && ytmp -kr; ytmp -kd" :onclick "setsid -f kitty -e ytmp vv" mus-title))
+				(button :class "title" :onrightclick "./mus w" :onmiddleclick "setsid -f kitty -e ytmpsuite fq && ytmp -kr; ytmp -kd" :onclick "setsid -f kitty -e ytmp vv" mus-title))
 			(box :class "music-ctrl" :orientation "h" :halign "center" :space-evenly "false" :spacing 20
 				(button :onrightclick "ytmp p" :onclick "./mus seek b" :onmiddleclick "ytmp -kr; setsid -f ytmp -r" "")
 				(button :tooltip "exit; t: ${ysgt}; ev" :onclick "mpv_socket_commands e quit st /tmp/mpvsocketytmp" :onmiddleclick "ytmpsuite t" :onrightclick "mpv_socket_commands s volume $( grep '^vol=.*' /home/$USER/Music/ytmp/run_on_next | sed 's/vol=//' )" "󰈆")
