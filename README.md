@@ -70,6 +70,8 @@ the thumbnail is located at /tmp/muscover.webp
 
 - a dmenu wrapper: `cmd="$( printf ' ' | dmenu -p 'run which ytmp cmd? ' )" && ( printf "$cmd" | grep -Eq '^ $|^x( [0-9]*)?$|^s( [0-9]*)?$|^z$|^l s$|^v$|^vv$|^E$|^sp .*$' && setsid -f $TERMINAL -e ytmp $cmd >/dev/null 2>&1 || ytmp $cmd )`
 
+- to play one song after another without moving them to a consecutive place and running the daemon, do `printf '%s\n' 5 p+8 l-2 | while read p; do ( while (! ytmp -n); do ytmp e $p; break; done; ) done` (replacing the printf string with the proper positions of course)
+
 - get the $num songs immediately before and after currently playing: `num=3; line=$( grep -n '\*\*\*$' /home/$USER/Music/ytmp/queue | cut -d':' -f1 ); sed -n "$( echo "${line}-${num}" | bc )","$( echo "${line}+${num}" | bc )"p /home/$USER/Music/ytmp/queue | cut -d' ' -f2-` or send a notification: `num=1; line=$( grep -n '\*\*\*$' /home/$USER/Music/ytmp/queue | cut -d':' -f1 ); notify-send "$( sed -n "$( echo "${line}-${num}" | bc )","$( echo "${line}+${num}" | bc )"p /home/$USER/Music/ytmp/queue | cut -d' ' -f2- )"`
 
 - to play a random song once, run `grep -c '' "/home/$USER/Music/ytmp/queue" | xargs seq | shuf -n 1 | xargs ytmp e`
