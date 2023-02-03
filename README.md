@@ -37,7 +37,7 @@ the mpv ipc socket is opened at /tmp/mpvsocketytmp
 
 ## on first run
 
-On first installing ytmp, there won't be any history to select from when you enter ytmp so either pass arguements from the cli with `ytmp [z] <search>` or to search what's on the fzf input field press ctrl-x or to background search press ctrl-s / ctrl-z (difference explained in `ytmp h`)
+on first installing ytmp, there won't be any history to select from when you enter ytmp so either pass arguements from the cli with `ytmp [z] <search>` or to search what's on the fzf input field press ctrl-x or to background search press ctrl-s / ctrl-z (difference explained in `ytmp h`)
 
 ## eww
 `chmod +x mus`
@@ -49,9 +49,9 @@ it should (mostly) look like this: https://github.com/Gwynsav/messydots/blob/mai
 the thumbnail is located at /tmp/muscover.webp
 
 # scripts
-**mpv_socket_selector** prints a dmenu of active mpv sockets and puts the selected one in /tmp/active_mpvsocket
+**mpv_socket_selector** prints a dmenu of active mpv sockets and puts the selected one in /tmp/active_mpvsocket (options: n(ext), p(rev), s(elect))
 
-**mpv_socket_commands** sends commands to the mpv socket in /tmp/active_mpvsocket or another specfied with st option
+**mpv_socket_commands** sends commands to the mpv socket in /tmp/active_mpvsocket or another specfied with st option (see -h)
 
 **run_on_next** runs on the start of every song which can be used to keep some consistent settings within mpv (volume, loop, seek, etc)
 
@@ -63,7 +63,7 @@ the thumbnail is located at /tmp/muscover.webp
 
 **ytmp.vim** a vim config with useful keybinds relevant to ytmp
 
-**ytmpsuite** for oneliners or automation of things like toggling lines in run_on_next, selecting queues, creating playlists, etc.
+**ytmpsuite** for oneliners or automation of things like toggling lines in run_on_next, selecting queues, creating playlists, etc. there is no help option so you'll have to parse through the code and comments to figure out what does what if you want to use it.
 
 # tips
 - a dmenu wrapper: `cmd="$( printf ' ' | dmenu -p 'which ytmp cmd to run? ' )" && if ( printf "$cmd" | grep -Eq '^ $|^x( [0-9]*)?$|^s( [0-9]*)?$|^z$|^l s$|^v$|^vv$|^E$|^sp .*$' ); then setsid -f $TERMINAL -e ytmp $cmd >/dev/null 2>&1; else ytmp $cmd; fi`
