@@ -286,12 +286,11 @@ register () {
 
 # add urls, playlists, dirs, paths
 add () {
-	search="$( echo "$@" | cut -d' ' -f2- )"
-	[ -z "$search" ] && echo "Provide a url, path, or directory to add as arguement" && return
+	shift 1
+	[ -z "$1" ] && echo "Provide a url, path, or directory to add as arguement" && return
 
 	rm -f "$qdiscards_file"
 	for f in "$@"; do
-		[ "$f" = 'a' ] && continue
 		if echo "$f" | grep -q 'http.*\.com'; then
 			ids="$( yt-dlp -q --no-warnings --get-id "$f" )"
 			echo "$ids" | while read -r id; do
