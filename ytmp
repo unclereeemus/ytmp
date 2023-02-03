@@ -141,7 +141,7 @@ m [p|l|m|#[+|-#]] [p|l|m|#[+|-#]] [s #|v] [x #] move entry. l means last, p mean
 
 -d if ytmp does not run in the background automatically, run it by sending this arg
      so things continue playing one after another
--n get notified when mpv exits (song finishes)
+-n get notified when mpv exits (i.e. song finishes)
 -r play random entries; a range can be specified with two separate arguements
 -dl download song # (accepts p|l|m like 'm')
 
@@ -673,7 +673,7 @@ case "${1}" in
 	-dl) download_song $* ;;
 	-d) playlist ;;
 	-r) rand_daemon $* ;;
-	-n) while true; do ( ! echo '{ "command": ["get_property", "pid"] }' | socat - /tmp/mpvsocketytmp >/dev/null 2>&1 ) && sleep .5 && break; done ;;
+	-n) while true; do ( ! echo '{ "command": ["get_property", "pid"] }' | socat - /tmp/mpvsocketytmp >/dev/null 2>&1 ) && sleep .5 && return 0; done ;;
 	-l) echo '{ "command": ["set_property", "loop", true] }' | socat - /tmp/mpvsocketytmp >/dev/null 2>&1 ;;
 	-rq) rm $queue ;;
 	-qa) echo quit | socat - /tmp/mpvsocketytmp ;;
