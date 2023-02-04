@@ -63,7 +63,7 @@ the thumbnail is located at /tmp/muscover.webp
 
 **ytmp.vim** a vim config with useful keybinds relevant to ytmp
 
-**ytmpsuite** for oneliners or automation of things like toggling lines in run_on_next, selecting queues, creating playlists, etc. there is no help option so you'll have to parse through the code and comments to figure out what does what if you want to use it.
+**ytmpsuite** for oneliners or automation of things like toggling lines in run_on_next, selecting queues, creating playlists; some of the lines below can be found there as well. there is no help option so you'll have to parse through the code and comments to figure out what does what if you want to use it.
 
 # tips
 - a dmenu wrapper: `cmd="$( printf ' ' | dmenu -p 'which ytmp cmd to run? ' )" && if ( printf "$cmd" | grep -Eq '^( |x( [0-9]*)?|s( [0-9]*)?|z|l s|v|vv|E|sp .*)+$' ); then setsid -f $TERMINAL -e ytmp $cmd >/dev/null 2>&1; else ytmp $cmd; fi`
