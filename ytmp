@@ -194,7 +194,7 @@ J go to currently playing
 <C-p> :silent !ytmpsuite qs
 <C-n> :silent !ytmpsuite qn
 
-<leader>v change the value of the var var in the run_on_next file
+<leader>v change the value of the $vol var in the run_on_next file
 <leader>l set volume of what's currently playing
 <leader>w ytmp w
 <leader>y :silent !ytmp
@@ -392,7 +392,7 @@ search_playlist () {
 
 		[ -z "$playlist_sel" ] && return
 		printf "Adding:\n${lsp}$playlist_sel\n${lsp}"
-		printf "It might take a while to add everything, give it some time.\n${lsp}"
+		printf "yt-dlp is a little slow retrieving things, give it some time to add everything.\n${lsp}"
 
 		echo "$playlist_sel" | while read -r s; do
 			num="$( printf '%b' "$s" | cut -d':' -f1 )"
@@ -599,6 +599,7 @@ rand_daemon () {
 }
 
 fzf_preview () {
+	[ -z "$3" ] && echo 'Provide a line number' && return
 	[ "$2" = 'c' ] && fzf_index=$3 || fzf_index="$( echo $3+1 | bc )"
  	[ "$2" = s ] && id="$( sed -n ${fzf_index}p /tmp/ytmpids | cut -d" " -f1 )" || id="$( sed -n "${fzf_index}s/^\(.\{11\}\) .*\|^\(.\{12\}\) .*/\1\2/p" "$queue" )"
 
