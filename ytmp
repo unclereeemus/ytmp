@@ -194,7 +194,7 @@ J go to currently playing
 <C-p> :silent !ytmpsuite qs
 <C-n> :silent !ytmpsuite qn
 
-<leader>v change the value of the $vol var in the run_on_next file
+<leader>v change the value of the \$vol var in the run_on_next file
 <leader>l set volume of what's currently playing
 <leader>w ytmp w
 <leader>y :silent !ytmp
