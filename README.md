@@ -26,7 +26,7 @@ demo: https://www.reddit.com/r/bash/comments/10i7cb2/ytmp_shell_script_for_yt_an
 
 `chmod +x ytmp mpv_socket_commands mpv_socket_selector run_on_next`
 
-(link/move ytmp to one of your paths like) `[ln/mv] $(pwd)/ytmp /home/$USER/.local/bin/`
+(link/move ytmp to one of your paths like) `[ln -s/mv] $(pwd)/ytmp /home/$USER/.local/bin/`
 
 (if intending to use n/vim) `mv ytmp.vim ~/.config/nvim/`
 
