@@ -56,13 +56,17 @@ On first installing ytmp, there won't be any history to select from when you ent
 
 The difference between s and x/z: x/z searches without the added jargon 'auto-generated provided to youtube' which usually fetches results from youtube music. If you just pass the query from the command line or just run ytmp without options, it will add the jargon to your search. ytmp and ytmp z also accept arguements as search if you don't want to enter fzf for search.
 
+[no arg] enter fzf to search with the jargon - no result selection.
+
+[<search>] search with the jargon - no result selection.
+
 s [# of results] view search results and select (can select multiple). can specify amount of search
    results to return with a following arguement; defaults to 5.
 
 x [# of results] search exactly. view search results and select (can select multiple). can specify amount of search
    results to return with a following arguement; defaults to 5.
 
-z [<search>] search exactly - no result selection.
+z [<search>] search exactly - no result selection. if no args then enter fzf.
 
 sp <search> search for playlists (requires https://github.com/trizen/pipe-viewer/); bindings:
 	tab: toggle selection
@@ -87,13 +91,13 @@ fzf bindings for search (ytmp [z/x/s]):
 		ctrl-z: search query in counterpart of current search in the background
 		alt-z: search query and selection in counterpart of current search in the background
 
-	* what the following mean for ytmp v/vv/x/s:
+	* what the following mean for ytmp v/vv:
 		ctrl-s: search query in background
 		ctrl-z: search query in background with ytmp z
 
 a add urls (direct links/playlists), paths, or directory (pass them as arguement - accepts many of all the kinds mentioned). does not check if file is a media file or not before adding.
 
--p pause
+-p toggle playback
 -l loop what's currently playing
 
 l [n|s] play the song that was played before this one or n before this one or pass s to select from the history file with fzf
@@ -122,7 +126,7 @@ v view queue; keybinds:
 	   ctrl-o: open entry in web browser
 	   alt-up: move entry to first
 	   alt-down: move entry to last
-	   alt-n: next song; alt-p: prev song
+	   alt-n: play next song; alt-p: play prev song
 	   ctrl-alt-m: set entry as mark (for 'm' option)
 	   ctrl-space: move entry to the selected position in a new fzf search
 
@@ -134,10 +138,11 @@ vv view queue with details about the song (same keybinds as v option)
 ls show a numbered view of the entries
 m [p|l|m|#[+|-#]] [p|l|m|#[+|-#]] [s #|v] [x #] move entry. l means last, p means currently playing, m means a position mark set with passing s #. set mark by passing s # and see current mark with s v. pass x # to move # to the position of the queue selected in fzf. examples: ytmp m 10 2 or ytmp m 13|m|p|l +/-5 or ytmp m m+3 l-1 or ytmp m l-1 p-2 or ytmp m l p+1 or ytmp m s 123.
 
+-sd <#> get listen history / youtube details about entry
 -shuf runs shuf on queue and overwrites it.
 
--vd cats /tmp/ytmpqdiscards which contains list of songs that were selected to be added to the queue but were already found on the queue. it's removed with every search so be prompt to act.
--rd [c] acts on songs listed in /tmp/ytmpqdiscards which means songs that were selected to be added to the queue but were already found there can be copied (when given c option) to or moved (when no options are given) to the position they would have been added on if they were never found on the queue (broken as of now.)
+-vd cats /tmp/ytmpqdiscards which contains list of songs that were selected to be added to the queue but were already found on the queue. it's removed with every search.
+-rd [c] copies or moves songs listed in /tmp/ytmpqdiscards which means songs that were selected to be added to the queue but were already found there can be copied (when given c option) to or moved (when no options are given) to the position they would have been added on if they were never found on the queue (broken as of now.)
 
 -d if ytmp does not run in the background automatically, run it by sending this arg
      so things continue playing one after another
@@ -186,7 +191,8 @@ J go to currently playing
 <C-w> :te ytmp z
 <C-s> :te ytmp v
 <C-v> :te ytmp vv
-<C-n> :silent !ytmpsuite qs
+<C-p> :silent !ytmpsuite qs
+<C-n> :silent !ytmpsuite qn
 
 <leader>v change the value of the var var in the run_on_next file
 <leader>l set volume of what's currently playing
@@ -593,10 +599,10 @@ rand_daemon () {
 }
 
 fzf_preview () {
-	fzf_index="$( echo $3+1 | bc )"
- 	[ "$2" = vv ] && id="$( sed -n "${fzf_index}s/^\(.\{11\}\) .*\|^\(.\{12\}\) .*/\1\2/p" "$queue" )" || id="$( sed -n ${fzf_index}p /tmp/ytmpids | cut -d" " -f1 )"
+	[ "$2" = 'c' ] && fzf_index=$3 || fzf_index="$( echo $3+1 | bc )"
+ 	[ "$2" = s ] && id="$( sed -n ${fzf_index}p /tmp/ytmpids | cut -d" " -f1 )" || id="$( sed -n "${fzf_index}s/^\(.\{11\}\) .*\|^\(.\{12\}\) .*/\1\2/p" "$queue" )"
 
-	if [ "$2" = 'vv' ]; then
+	if [ "$2" = 'vv' ] || [ "$2" = 'c' ]; then
 		entry="$( grep "$id" "$played_urls" )"
 		last_played="$( echo $entry | cut -s -d' ' -f3 )"
 		amnt_played="$( echo $entry | cut -s -d' ' -f2 )"
@@ -607,6 +613,7 @@ fzf_preview () {
 		elif [ "$( printf "$id" | wc -m )" != '11' ]; then dl='\n'
 		else dl='\nDownloaded: No\n'; fi
 
+		[ "$2" = 'c' ] && echo "[$fzf_index] "$( echo "$entry" | cut -s -d' ' -f4- | sed 's/^dl //' )""
 		printf "${lsp}Times Played: ${amnt_played}\nLast Played: ${last_played}${dl}${lsp}"
 	fi
 
@@ -665,10 +672,10 @@ case "${1}" in
 	nn) queue_manager nn $* ;;
 	pp) queue_manager pp $* ;;
 	m) queue_manager m "$2" "$3" "$4" ;;
-	fct) queue_manager fct $* ;;
 	ls) grep --color=auto -n '' "$queue" ;;
 	open_in_browser) open_in_browser $2 ;;
 	fzf_preview) fzf_preview "$@" ;;
+	-sd) fzf_preview a c "$2" ;;
 	-shuf) shuf "$queue" -o "$queue" ;;
 	-vd) transfer_qdiscards v ;;
 	-rd) transfer_qdiscards "$2" ;;
