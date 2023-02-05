@@ -65,7 +65,7 @@ On first installing ytmp, there won't be any history to select from when you ent
 
 The difference between s and x/z: x/z searches without the added jargon 'auto-generated provided to youtube' which usually fetches results from youtube music. If you just pass the query from the command line or just run ytmp without options, it will add the jargon to your search. ytmp and ytmp z also accept arguements as search if you don't want to enter fzf for search.
 
-Lastly, ytmp keeps track of how many times you've played a song and downloads it after you've played it a set amount (3 by default) this is noted in case this feature is unwanted in which case set the value of the var \$max_stream_amount to something big in the conf file which is looked for in  $prefix by default (along with the run_on_next script and is also where all the songs are downloaded.)
+Lastly, ytmp keeps track of how many times you've played a song and downloads it after you've played it a set amount (3 by default.) This is noted in case this feature is unwanted in which case set the value of the var \$max_stream_amount to something big in the conf file which is looked for in $prefix by default (along with the run_on_next script and is also where all the songs are downloaded.)
 
 [no arg] enter fzf to make a search with the jargon appended.
 
