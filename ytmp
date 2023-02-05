@@ -61,6 +61,8 @@ On first installing ytmp, there won't be any history to select from when you ent
 
 The difference between s and x/z: x/z searches without the added jargon 'auto-generated provided to youtube' which usually fetches results from youtube music. If you just pass the query from the command line or just run ytmp without options, it will add the jargon to your search. ytmp and ytmp z also accept arguements as search if you don't want to enter fzf for search.
 
+Lastly, ytmp keeps track of how many times you've played a song and downloads it after you've played it a set amount (3 by default) this is noted in case this feature is unwanted in which case set the number to something big in the conf.
+
 [no arg] enter fzf to make a search with the jargon appended.
 
 [<search>] search with the jargon.
@@ -105,7 +107,7 @@ a add urls (direct links/playlists), paths, or directory (pass them as arguement
 -p toggle playback
 -l loop what's currently playing
 
-l [n|s] play the song that was played before this one or n before this one or pass s to select from the history file with fzf
+l [n|s] play the song that was played before this one or n before this one or pass s to select from the history file with fzf.
 w toggle mpv window. don't press q to close the window because that will close the file as well instead run ytmp w again to close it.
 mfn queue last entry to play next
 mln queue last entry to play next
