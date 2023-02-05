@@ -641,7 +641,7 @@ download_song () {
 	title="$( sed -n "${sel}s/${field_regex}/\2/p" "$queue" )"
 	[ "$( printf "$id" | wc -m )" != '11' ] && return
 	# echo $id && return
-	( ! ls $songs_dir/*"${id}"* >/dev/null 2>&1 ) && setsid -f yt-dlp -q --no-warnings -f bestaudio -o "$songs_dir/%(id)s %(title)s.%(ext)s" "https://www.youtube.com/watch?v=$id" >/dev/null 2>&1 && echo "Downloading '${title}.' || echo "A file of that name '$title' was found in $songs_dir. It will not be downloaded."
+	( ! ls $songs_dir/*"${id}"* >/dev/null 2>&1 ) && setsid -f yt-dlp -q --no-warnings -f bestaudio -o "$songs_dir/%(id)s %(title)s.%(ext)s" "https://www.youtube.com/watch?v=$id" >/dev/null 2>&1 && echo "Downloading '${title}.'" || echo "A file of that name '$title' was found in $songs_dir. It will not be downloaded."
 }
 
 open_in_browser () {
