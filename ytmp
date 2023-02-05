@@ -3,7 +3,9 @@
 # DEPS: yt-dlp, mpv, socat, fzf, xargs, find, sed, bc, ed, coreutils, (pipe-viewer for playlist search), (notify-send for notifcations), (curl for thumbnails), (n/vim)
 # set -xv
 
-conf="/home/$USER/Music/ytmp/conf"
+[ -z "$prefix" ] && prefix="/home/$USER/Music/ytmp"
+conf="$prefix/conf"
+
 [ -e "$conf" ] && . "$conf"
 
 # A value of 1 means true and 0 means false
@@ -11,7 +13,7 @@ conf="/home/$USER/Music/ytmp/conf"
 # daemonize, notifications, download_thumbnails
 
 # if to play one song after another by default
-[ -z "$daemonize" ] && daemonize="1" # 1=true; 0/anything else=false
+[ -z "$daemonize" ] && daemonize="1"
 
 # maximum amount of times to play a song before downloading it
 # set to a big number if not wanting this feature
@@ -21,8 +23,6 @@ conf="/home/$USER/Music/ytmp/conf"
 
 [ -z "$download_thumbnails" ] && download_thumbnails="0" # 1=true; 0/anything else=false
 [ -z "$notifications" ] && notifications="1" # 1=true; 0/anything else=false
-
-[ -z "$prefix" ] && prefix="/home/$USER/Music/ytmp"
 
 [ -z "$dl_dir" ] && dl_dir="$prefix/downloads"
 [ -z "$songs_dir" ] && songs_dir="$dl_dir/songs"
@@ -65,7 +65,7 @@ On first installing ytmp, there won't be any history to select from when you ent
 
 The difference between s and x/z: x/z searches without the added jargon 'auto-generated provided to youtube' which usually fetches results from youtube music. If you just pass the query from the command line or just run ytmp without options, it will add the jargon to your search. ytmp and ytmp z also accept arguements as search if you don't want to enter fzf for search.
 
-Lastly, ytmp keeps track of how many times you've played a song and downloads it after you've played it a set amount (3 by default) this is noted in case this feature is unwanted in which case set the number to something big in the conf.
+Lastly, ytmp keeps track of how many times you've played a song and downloads it after you've played it a set amount (3 by default) this is noted in case this feature is unwanted in which case set the value of the var \$max_stream_amount to something big in the conf file which is looked for in  $prefix by default (along with the run_on_next script and is also where all the songs are downloaded.)
 
 [no arg] enter fzf to make a search with the jargon appended.
 
