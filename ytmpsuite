@@ -4,7 +4,9 @@ conf="/home/$USER/Music/ytmp/conf"
 . $conf
 
 case "$1" in
+	# comment/uncomment the line following the comment # LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT
 	t) ( grep -q '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT$' "$run_on_next" ) && index="$( grep -n '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT$' "$run_on_next" | cut -d':' -f1 | xargs -I ',' echo ',+1' | bc )"; ( sed -n "${index}p" "$run_on_next" | grep '^# ' ) && ( sed -i "${index}s/^# //" "$run_on_next"; echo "ON" ) || ( sed -i "${index}s/^/# /" "$run_on_next"; echo "OFF" ) ;;
+	# learn whether the line below # LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT is commented (on) or not (off)
 	gt) ( grep -q '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT$' "$run_on_next" ) && index="$( grep -n '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT$' "$run_on_next" | cut -d':' -f1 | xargs -I ',' echo ',+1' | bc )" && ( sed -n "${index}p" "$run_on_next" | grep '^# ' && echo "OFF" || echo "ON" ) ;;
 	T) ( grep -q '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT ALT$' "$run_on_next" ) && index="$( grep -n '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT ALT$' "$run_on_next" | cut -d':' -f1 | xargs -I ',' echo ',+1' | bc )"; ( sed -n "${index}p" "$run_on_next" | grep '^# ' ) && ( sed -i "${index}s/^# //" "$run_on_next"; echo "ON" ) || ( sed -i "${index}s/^/# /" "$run_on_next"; echo "OFF" ) ;;
 	gT) ( grep -q '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT ALT$' "$run_on_next" ) && index="$( grep -n '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT ALT$' "$run_on_next" | cut -d':' -f1 | xargs -I ',' echo ',+1' | bc )" && ( sed -n "${index}p" "$run_on_next" | grep '^# ' && echo "OFF" || echo "ON" ) ;;
