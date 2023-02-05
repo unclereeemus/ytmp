@@ -6,6 +6,10 @@
 conf="/home/$USER/Music/ytmp/conf"
 [ -e "$conf" ] && . "$conf"
 
+# A value of 1 means true and 0 means false
+# for the following settings:
+# daemonize, notifications, download_thumbnails
+
 # if to play one song after another by default
 [ -z "$daemonize" ] && daemonize="1" # 1=true; 0/anything else=false
 
