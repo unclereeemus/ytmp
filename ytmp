@@ -10,14 +10,15 @@ conf="$prefix/conf"
 
 # A value of 1 means true and 0 means false
 # for the following settings:
-# daemonize, notifications, download_thumbnails
+# daemonize, notifications, download_thumbnails, download_songs
 
 # if to play one song after another by default
 [ -z "$daemonize" ] && daemonize="1"
 
-# maximum amount of times to play a song before downloading it
-# set to a big number if not wanting this feature
-[ -z "$max_stream_amount" ] && max_stream_amount=4
+# if to download songs after they are played more than $max_stream_amount
+[ -z "$download_songs" ] && download_songs="1"
+# maximum amount of times to stream a song before downloading it
+[ -z "$max_stream_amount" ] && max_stream_amount=3
 # the maximum a length a file can be (in seconds) if it's to be downloaded
 [ -z "$max_len_for_dl" ] && max_len_for_dl='600'
 
@@ -64,8 +65,6 @@ Usage: ytmp [z] [<search>]/s|x [# of results]/sp <search>/a <local path|dir|url>
 On first installing ytmp, there won't be any history to select from when you enter ytmp so either pass arguements from the cli with ytmp [z] <search> or to search what's on the fzf input field press ctrl-x or to background search press ctrl-s / ctrl-z (difference explained below)
 
 The difference between s and x/z: x/z searches without the added jargon 'auto-generated provided to youtube' which usually fetches results from youtube music. If you just pass the query from the command line or just run ytmp without options, it will add the jargon to your search. ytmp and ytmp z also accept arguements as search if you don't want to enter fzf for search.
-
-Lastly, ytmp keeps track of how many times you've played a song and downloads it after you've played it a set amount (3 by default.) This is noted in case this feature is unwanted in which case set the value of the var \$max_stream_amount to something big in the conf file which is looked for in $prefix by default (along with the run_on_next script and is also where all the songs are downloaded.)
 
 [no arg] enter fzf to make a search with the jargon appended.
 
@@ -150,10 +149,10 @@ ls show a numbered list of the queue
 m [p|l|m|#[+|-#]] [p|l|m|#[+|-#]] [s #|v] [x #] move entry. l means last, p means currently playing, m means a position mark set with passing s #. set mark by passing s # and see current mark with s v. pass x # to move # to the position of the queue selected in fzf. examples: ytmp m 10 2 or ytmp m 13|m|p|l +/-5 or ytmp m m+3 l-1 or ytmp m l-1 p-2 or ytmp m l p+1 or ytmp m s 123.
 
 -sd <#> get listen history and other details about entry (accepts p|l|m like 'm')
--shuf runs shuf on queue and overwrites it.
+-shuf runs shuf on the queue file and overwrites it.
 
 -vd cats /tmp/ytmpqdiscards which contains list of songs that were selected to be added to the queue but were already found on the queue. it's removed with every search.
--rd [c] copies or moves songs listed in /tmp/ytmpqdiscards which means songs that were selected to be added to the queue but were already found there can be copied (when given c option) to or moved (when no options are given) to the position they would have been added on if they were never found on the queue (broken as of now.)
+-rd [c] copies or moves songs listed in /tmp/ytmpqdiscards which means songs that were selected to be added to the queue but were already found there can be copied (when given c option) to or moved (when no options are given) from their current position to the position they would have been added on if they were never found on the queue (broken as of now.)
 
 -d run daemon to play one song after another
 -r [#-#] play random entries; a range can be specified with two separate arguements.
@@ -211,6 +210,10 @@ J go to currently playing
 __________________________________________________________
 
 One can communicate with mpv through the ipc socket the script opens at /tmp/mpvsocketytmp. See https://pastebin.com/23PXxpiD for examples (make sure to pass commands to the /tmp/mpvsocketytmp socket) and \`mpv --list-properties\` for properties that can be controlled.
+
+Other features:
+- by default ytmp downloads songs after you have listened to them $max_stream_amount times, if you don't want this feature set \$download_songs to '0' in $conf. the downloads can be found in $songs_dir.
+- put commands you want to run at the start of each song in the script $run_on_next.
 CAT_EOF
 exit
 }
@@ -423,7 +426,7 @@ upd_amnt_played () {
 	sed -i "/$id/d" $played_urls
 	[ "$( printf "$id" | wc -m )" = '12' ] && echo "$id $amnt_played $dt $title" >> $played_urls && return
 	[ -z "$id" ] && return
-	if [ "$amnt_played" -gt "$max_stream_amount" ]; then
+	if [ $download_songs = "1" ] && [ "$amnt_played" -gt "$max_stream_amount" ]; then
 		if ( ls $songs_dir/*"${id}"* >/dev/null 2>&1 ); then
 			echo "$id $amnt_played $dt dl $title" >> $played_urls
 		else
