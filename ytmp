@@ -583,7 +583,7 @@ fuzzy_play () {
 	shift 1
 	query="$@"
 	[ -z "$query" ] && echo "Provide a string to search as argument." && return
-	match=$( grep -n '' "$queue" | sed -E -e 's/[_[:alnum:]]* ?\(?R?r?emaster[ed]?\)? ?[_[:alnum:]]*//g' | fzf --tiebreak=begin -f "$query" | head -1 | cut -d':' -f1 )
+	match=$( grep -n '' "$queue" | sed -E -e 's/\(?[0-9]*[Rr]emaster(ed)? ?\)? ?[0-9]*//g' -e 's/( - )?(  )?(\)$)?( $)?//g' | fzf --tiebreak=begin -f "$query" | head -1 | cut -d':' -f1 )
 	[ -n "$match" ] && playlist e a "$match" || echo 'Match not found.'
 	return
 }
