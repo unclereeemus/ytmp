@@ -3,21 +3,23 @@
 
 # A value of 1 means true and 0 means false
 # for the following settings:
-# daemonize, notifications, download_thumbnails
+# daemonize, notifications, download_thumbnails, download_songs
 
 # if to play one song after another by default
 daemonize=1
-
-# maximum amount of times to play a song before downloading it
-# set to a big number if not wanting this feature
-max_stream_amount=3
-# the maximum a length a file can be (in seconds) if it's to be downloaded
-max_len_for_dl='600'
 
 # thumbnails are downloaded to $thumb_dir but the thumbnail of 
 # what's currently playing is linked to /tmp/muscover.webp
 download_thumbnails="0"
 notifications="1"
+# if to download songs after they are played more than $max_stream_amount
+download_songs="1"
+
+# maximum amount of times to stream a song before downloading it
+# set to a big number if not wanting this feature
+max_stream_amount=3
+# the maximum a length a file can be (in seconds) if it's to be downloaded
+max_len_for_dl='600'
 
 prefix="/home/$USER/Music/ytmp"
 
@@ -32,6 +34,6 @@ search_history="$prefix/search_history"
 # queue="/home/$USER/Music/ytmp/altqueue"
 queue="/home/$USER/Music/ytmp/queue"
 
-# this is run on everytime a song is played so if you want certain
-# mpv settings to remain consistent (volume, loop, seek, etc), then put them in this file
+# this is run everytime a song is played so if you want certain
+# mpv settings to remain consistent (volume, loop, seek, etc) then put them in this file
 run_on_next="/home/$USER/Music/ytmp/run_on_next"
