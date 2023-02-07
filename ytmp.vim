@@ -45,6 +45,7 @@ nnoremap <C-n> :silent !ytmpsuite qn
 
 nnoremap < :silent !ytmp p<Enter>
 nnoremap > :silent !ytmp n<Enter>
+nnoremap . :let l = line('.')<Enter>:execute '! ytmp -sd '.shellescape(l)<Enter>
 
 " replace the volume level in the run_on_next file
 nnoremap <leader>v :te echo '' \| dmenu \| xargs -r -I ',,' sed -i 's@vol=.*@vol=,,@' /home/$USER/Music/ytmp/run_on_next<Enter>i
