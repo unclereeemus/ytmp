@@ -49,11 +49,11 @@ case "$1" in
 	a) pipe-viewer -e="*ID*" --results=50 --no-interactive --no-use-colors --custom-playlist-layout='*ID* *TITLE*' --custom-layout='*ID* *TITLE*' "$2" | sed 1,3d | fzf -m --preview="echo {} | cut -d' ' -f1 | xargs -I ,, pipe-viewer --results=1 -e='*ID*' --no-interactive --no-use-colors --custom-layout='Length: *TIME* \nUploader: *AUTHOR* \nDate: *PUBLISHED* \nURL: *URL*\n--------------\nDescription:\n--------------\n*DESCRIPTION*\nDESCEND\n--------------' ,," >> $prefix/playlists/"$3" ;;
 	# search for playlists and make a queue file with the selected one at $prefix/playlists/"$3"; $3=filename
 	# add playlists with yt-dlp -- pipe-viewer doesn't return all videos in a playlist and yt-dlp is slow so choose your trade off
-	spy) [ -n "$3" ] && query="$2" && pipe-viewer --results=50 --no-interactive -sp --custom-playlist-layout='*VIDEOS*VIDS *TITLE* *URL*' "$query" | fzf -m --bind="ctrl-x:execute(echo {} | awk -F ' ' '{print \$NF}' | xargs -r -0 -I ',,' ytmpsuite a ,, $3)" \
+	spy) [ -n "$3" ] && query="$2" && pipe-viewer --results=50 --no-interactive -sp --custom-playlist-layout='*VIDEOS*VIDS *TITLE* *URL*' "$query" | fzf -m --bind="ctrl-x:execute(echo {} | awk -F ' ' '{print \$NF}' | xargs -r -0 -I ',,' ytmpsuite a ,, $3),ctrl-o:execute-silent(echo {} | awk -F ' ' '{print \$NF}' | xargs -0 -I ',,' $BROWSER ,, )" \
 		--preview='echo {} | awk "{print $NF}" | xargs -0 -I ",," pipe-viewer -e="*ID*" --no-use-colors --results=50 --custom-layout="*AUTHOR* *TIME* *TITLE*" --no-interactive ",,"' | awk '{print $NF}' | xargs -r -0 -I ',,' yt-dlp --print id --print title ',,' | paste -s -d ' \n' > $prefix/playlists/"$3"
 		;;
 	sp) [ -n "$3" ] && query="$2" && pipe-viewer -e="*ID*" --results=50 --no-interactive --no-use-colors -sp --custom-playlist-layout='*VIDEOS*VIDS *TITLE* *URL*' "$query" | grep 'youtube\.com' | fzf -m \
-		--bind="ctrl-x:execute(echo {} | awk -F ' ' '{print \$NF}' | xargs -0 -I ',,' ytmpsuite a ,, $3),ctrl-o:execute(echo {} | awk -F ' ' '{print \$NF}' | xargs -0 -I ',,' $BROWSER ,, )" \
+		--bind="ctrl-x:execute(echo {} | awk -F ' ' '{print \$NF}' | xargs -0 -I ',,' ytmpsuite a ,, $3),ctrl-o:execute-silent(echo {} | awk -F ' ' '{print \$NF}' | xargs -0 -I ',,' $BROWSER ,, )" \
 		--preview='echo {} | awk "{print $NF}" | xargs -0 -I ",," pipe-viewer -e="*ID*" --no-use-colors --results=50 --custom-layout="*AUTHOR* *TIME* *TITLE*" --no-interactive ",," | sed 1d' | awk '{print $NF}' | \
 		xargs -r -I ',,' pipe-viewer -e='*ID*' --no-use-colors --results=50 --custom-layout='*ID* *TITLE*' --no-interactive ',,' | sed 1d >> $prefix/playlists/"$3" ;;
 
