@@ -194,6 +194,7 @@ W write file
 J go to currently playing
 > play next
 < play previous
+. -sd for entry
 
 <C-t> :te
 <C-y> :te ytmp
