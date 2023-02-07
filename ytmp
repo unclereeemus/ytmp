@@ -470,8 +470,8 @@ play () {
 		dl_thumbnail
 	fi
 	title="$( sed -n -e "/$playing_regex/s/$playing_marker_regex//" -e 's/\*\*\*$//p' "$queue" )"
-	echo 'Now Playing' "'$title'"
-	[ "$notifications" = 1 ] && notify-send 'Now Playing' "'$title'"
+	echo "Playing '$title'"
+	[ "$notifications" = '1' ] && notify-send 'Now Playing' "$title"
 	sh "$run_on_next" >/dev/null 2>&1 &
 	[ "$daemonize" = 1 ] && ! pgrep -fa 'ytmp -d' && setsid -f ytmp -d >/dev/null 2>&1
 }
