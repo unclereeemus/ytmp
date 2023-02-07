@@ -146,7 +146,7 @@ vv view queue with details about the song (same keybinds as v option)
 ** <search> with spaces don't have to be quoted
 
 ls show a numbered list of the queue
-m [p|l|m|#[+|-#]] [p|l|m|#[+|-#]] [s #|v] [x #] [r #] move entry. l means last, p means currently playing, m means a position mark set with passing s # (these are not accepted by 's' and 'x'). set mark by passing s # and see current mark with s v. pass x # to move # to the position of the queue selected in the fzf window that will pop up. pass r to remove; can specify a range to delete by passing start,end (separated by comma; range also accepts p|m|l). examples: ytmp m 10 2; ytmp m m +5; ytmp m m+3 l-1; ytmp m l-1 p-2; ytmp m l p+1; ytmp m s 123; ytmp m r p+2,l-15 l-5 10
+m [p|l|m|#[+|-#]] [p|l|m|#[+|-#]] [s #|v] [x #] [r #] move entry. l means last, p means currently playing, m means a position mark set with passing s #. set mark by passing s # and see current mark with s v. pass x # to move # to the position of the queue selected in the fzf window that will pop up. pass r to remove; can specify a range to delete by passing start,end (separated by comma). you can use p|l|m for all of 'm s|x|r'. examples: ytmp m 10 2; ytmp m s 123; ytmp m m +5; ytmp m p+3 l-1; ytmp x p-2; ytmp m r p+2,l-15 l-5 10
 
 -sd <#> get listen history and other details about entry (accepts p|l|m like 'm')
 -shuf runs shuf on the queue file and overwrites it.
@@ -216,7 +216,7 @@ Other features:
 - put commands you want to run at the start of each song in the script $run_on_next.
 - set settings in $conf.
 
-** unfortunately the program does not check and will not tell you if you've entered something unexpected/wrong
+** unfortunately the program does not check and will not tell you if you've entered something unexpected/wrong but you might get errors from sed to guess that :)
 CAT_EOF
 exit
 }
@@ -575,7 +575,7 @@ queue_manager () {
 		fi
 		if [ "$2" = 's' ]; then
 			[ "$3" = 'v' ] && cat /tmp/ytmpmark && return
-			echo "$3" > /tmp/ytmpmark
+			echo "$3" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc > /tmp/ytmpmark
 			return
 		fi
 		if [ "$2" = 'f' ]; then
@@ -583,7 +583,7 @@ queue_manager () {
 			printf "\nMove entry #$sel to where? "
 			read place </dev/tty
 		elif [ "$2" = 'x' ]; then
-			sel="$3"
+			sel="$( echo "$3" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
 			place="$( grep -n '' "$queue" | fzf --info=hidden --border=bottom --color=hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   Move '$( sed -n "${sel}s/${field_regex}/\2/p" "$queue" )' after what?   }" --separator='' | cut -d':' -f1 )"
 		else
 			place="$3"
