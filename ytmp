@@ -100,7 +100,7 @@ The difference between s and x/z: x/z searches without the added jargon 'auto-ge
   P <search> 		fuzzy search string in queue and play match
 
   v 			view queue
-  vv 			view queue with details about the song (same keybinds as v option)
+  vv 			view queue with fzf preview of details about the song
 
   ls 			show a numbered list of the queue
 
@@ -111,6 +111,8 @@ The difference between s and x/z: x/z searches without the added jargon 'auto-ge
 			by passing start,end (separated by comma). you can use p|l|m for all of 'm s|x|r'.
 			examples: ytmp m 10 2; ytmp m s 123; ytmp m m +5; ytmp m p+3 l-1; ytmp x p-2; ytmp m r p+2,l-15 l-5 10
 
+  E 			edit the queue in nvim and source rc from "$XDG_CONFIG_HOME/nvim/ytmp.vim"
+
   -sd <#> 		get listen history and other details about entry (accepts p|l|m like 'm')
   -shuf 		runs shuf on the queue file and overwrites it.
 
@@ -120,7 +122,7 @@ The difference between s and x/z: x/z searches without the added jargon 'auto-ge
   -rd [c] 		copies or moves songs listed in /tmp/ytmpqdiscards which means songs that were selected to be added
   			to the queue but were already found there; can be copied (when given c option) to or moved (when no
 			options are given) from their current position to the position they would have been added on if they
-			were never found on the queue (broken as of now.)
+			were never found on the queue.
 
   -d [range [k]] 	run daemon to play one song after another or if range is specified with two args then loop in that
   			range unless 'k' is specified in which case exit after reaching the end of range. there's no way to
@@ -139,9 +141,6 @@ The difference between s and x/z: x/z searches without the added jargon 'auto-ge
   -ka 			do all of the above
 
   h/help/-h/--help 	show this help
-
-  E 			edit the queue in nvim and source rc from "$XDG_CONFIG_HOME/nvim/ytmp.vim"
-
   __________________________________________________________
 
   fzf bindings for search (ytmp [z/x/s]):
@@ -268,10 +267,15 @@ Other features:
   - put commands you want to run at the start of each song in the script $run_on_next.
   - set settings in $conf.
 
+You might be interested to know:
+  - songs are downloaded with the 'bestaudio' option
+  - mpv is started with these options: --x11-name='ytmp_mpv' --no-terminal --vid=no --input-ipc-server=/tmp/mpvsocketytmp
+
 ** the config is made for nvim; not all binds are tested to be working in vim
 ** readline commands/binds are available in all fzf instances
 ** <search> with spaces don't have to be quoted
-** unfortunately the program does not check and will not tell you if you've entered something unexpected/wrong but you might get errors from sed to guess that :)
+** unfortunately the program does not check and will not tell you if you've entered something unexpected/wrong
+	but you might get errors from sed to guess that :)
 CAT_EOF
 exit
 }
@@ -327,11 +331,22 @@ transferQDiscards () {
 	cat "$qdiscards_file" | tac | while read -r f; do
 		id="$( echo $f | cut -d' ' -f2 )"
 		found="$( grep -n "$id" "$queue" | cut -d':' -f1 )"
-		place="$( sed -n "${x}s@[][\\/.*^$&]@\\\&@gp" /tmp/ytmpplaces )"
+		# echo $x
+		# place="$( sed -n "${x}s@[][\\/.*^$&]@\\\&@gp" /tmp/ytmpplaces )"
+		# place="$( sed -n "${x}p" /tmp/ytmpplaces )"
+		place="$( sed -n "${x}s/$field_regex/\1/p" /tmp/ytmpplaces )"
+		old_found="$( grep -n "$id" "$queue" | head -1 )"
+		lncount=$( grep -c '.' "$queue" )
+		# [ "$place" -gt "$lncount" ] && place=$lncount
+		# echo $place
 		printf "%s\n" "/$place/" "${found}${ed_opt}." "wq" | ed -s "$queue" >/dev/null
 		x=$(( x-1 ))
-		echo "$action [$found] '$( echo $f | cut -d' ' -f3- )' [[TO AFTER]] $place"
+		# echo $x
+		place="$( grep -n "$place" "$queue" | head -1 )"
+		found="$( grep -n "$id" "$queue" | head -1 )"
+		echo "$action [$( echo $old_found | cut -d':' -f1 )] '$( echo $f | cut -d' ' -f3- )' [[TO AFTER]] [$( echo $place | cut -d':' -f1 )] '$( echo $place | cut -d' ' -f2- )'"
 	done | tac
+	printf "\nNOTE: The line numbers displayed may be inaccurate due to things having been moved about."
 }
 
 # gets the artists listed in the description and places them in $played_artists if first time seeing $id. artists are usually separated by '·' and ':'. also puts things in the queue file.
@@ -599,7 +614,7 @@ move () {
 				printf "${start}${end}" | grep -xq '[0-9]*' && echo "Removed [$start,$end] "$( sed -n "${start},${end}s/$field_regex/\2/p" "$queue" )"" && sed -i ${start},${end}d "$queue"
 			else
 				f="$( echo "$f" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
-				printf "$f" | grep -xq '[0-9]*' && echo "Removed [$f] "$( sed -n "${f}s/$field_regex/\2/p" "$queue" )"" && sed -i ${f}d "$queue"
+				printf "$f" | grep -xq '[0-9]*' && echo "Removed [$f] '$( sed -n "${f}s/$field_regex/\2/p" "$queue" )'" && sed -i ${f}d "$queue"
 			fi
 		done
 		return
@@ -625,7 +640,7 @@ move () {
 	sel="$( echo "$sel" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
 	echo "$place" | grep -Eqx '(\+|-|\*|/)+[0-9]*' && place="$( echo "${sel}${place}" | bc )" || place="$( echo "$place" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
 
-	echo "Moved [$sel] "$( sed -n "${sel}s/${field_regex}/\2/p" "$queue" )" [[TO AFTER]] [$place] "$( sed -n "${place}s/${field_regex}/\2/p" "$queue" )""
+	echo "Moved [$sel] '$( sed -n "${sel}s/${field_regex}/\2/p" "$queue" )' [[TO AFTER]] [$place] '$( sed -n "${place}s/${field_regex}/\2/p" "$queue" )'"
 
 	printf "%s\n" "${sel}m${place}" "wq" | ed -s "$queue" >/dev/null
 }
