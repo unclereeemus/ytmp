@@ -1,7 +1,6 @@
 #!/bin/sh
 # YTMP: a shell script for searching, playing, downloading, and keeping track of music from youtube and local files with extensive queue management using fzf, vim, or cli
 # DEPS: yt-dlp, mpv, socat, fzf, xargs, find, sed, bc, ed, coreutils, (pipe-viewer for playlist search), (notify-send for notifications), (curl for thumbnails), (n/vim)
-# set -xv
 
 [ -z "$prefix" ] && prefix="/home/$USER/Music/ytmp"
 conf="$prefix/conf"
@@ -45,13 +44,13 @@ mkdir -p "$prefix" "$dl_dir" "$songs_dir" "$thumb_dir"
 # also note that ERE might not be available for posix implementation of these utilities
 
 # regex to match <id> ***
-playing_marker_regex="^\(.\{11\}\|.\{12\}\) \*\*\*"
+playing_marker_regex="^\(.\{11,12\}\) \(\*\*\*\)"
 
 # regex to match what's playing with groups
-playing_regex="^\(.\{11\}\|.\{12\}\) \(\*\*\*.*\*\*\*\)$"
+playing_regex="^\(.\{11,12\}\) \(\*\*\*.*\*\*\*\)$"
 
 # regex for the <id> and <title> fields of any entry
-field_regex="^\(.\{11\}\|.\{12\}\) \(.*\)"
+field_regex="^\(.\{11,12\}\) \(.*\)"
 
 # line seperator for preview windows / stdout msgs
 lsp='................................\n'
@@ -66,158 +65,210 @@ On first installing ytmp, there won't be any history to select from when you ent
 
 The difference between s and x/z: x/z searches without the added jargon 'auto-generated provided to youtube' which usually fetches results from youtube music. If you just pass the query from the command line or just run ytmp without options, it will add the jargon to your search. ytmp and ytmp z also accept arguements as search if you don't want to enter fzf for search.
 
-[no arg] enter fzf to make a search with the jargon appended.
+  [no arg] 		enter fzf to make a search with the jargon appended.
+  [<search>] 		search with the jargon.
+  z [<search>] 		search without the jargon. if no args then enter fzf.
 
-[<search>] search with the jargon.
+  s [# of results] 	search with the jargon. view search results and select (can select multiple).
+  			can specify amount of search results to return with a following arguement; defaults to 5.
 
-z [<search>] search without the jargon. if no args then enter fzf.
+  x [# of results] 	search without the jargon. view search results and select (can select multiple).
+			can specify amount of search results to return with a following arguement; defaults to 5.
 
-s [# of results] search with the jargon. view search results and select (can select multiple). can specify amount of search
-   results to return with a following arguement; defaults to 5.
+  sp <search> 		search for playlists (requires https://github.com/trizen/pipe-viewer/); bindings:
 
-x [# of results] search without the jargon. view search results and select (can select multiple). can specify amount of search
-   results to return with a following arguement; defaults to 5.
+  a 			add urls (direct links/playlists), paths, or directory
+  			(pass them as arguement - accepts many of all the kinds mentioned).
+			does not check if file is a media file or not before adding.
 
-sp <search> search for playlists (requires https://github.com/trizen/pipe-viewer/); bindings:
-	tab: toggle selection
-	shift-tab: deselect all
-	enter: add selected playlists to queue
+  -p 			toggle playback
+  -l 			loop what's currently playing
 
-	ctrl-x: see songs in the playlist
-		one can select songs in the playlist to add with <tab> and press <enter> to add them
+  l [n|s] 		play the song that was played before this one or n before this one or
+			pass s to select from the history file with fzf.
 
-fzf bindings for search (ytmp [z/x/s]):
-	ctrl-j: jump
-	ctrl-r: replace input field with selection
-	ctrl-x: send input field as search (none of the selections are passed)
-	enter: search only the selections (query not included)
-	tab: toggle selection and clear query
-	shift-tab: deselect all
-	ctrl-c/esc: quit
+  w 			toggle mpv window. don't press q to close the window because that will close the file as well
+  			instead run ytmp w again to close it.
 
-	* query+selections are only available as background search due to fzf limitations. when you press the binding there isn't any indication that the search has passed through so you can assume that fact and just abort fzf. also these bindings are unavailalbe or mean different things for x/s:
-		ctrl-s: search query in the background
-		alt-s: search query and selection in the background
-		ctrl-z: search query in counterpart of current search in the background
-		alt-z: search query and selection in counterpart of current search in the background
+  mfn 			queue last entry to play next
+  mln 			queue last entry to play next
+  e 			play entry #; can specify relative places with p|l|m like 'm'
+  pf 			play first entry
+  pl 			play last entry
+  n 			play next on queue
+  p 			play prev on queue
+  P <search> 		fuzzy search string in queue and play match
 
-	* what the following mean for ytmp v/vv:
-		ctrl-s: search query in background
-		ctrl-z: search query in background with ytmp z
+  v 			view queue
+  vv 			view queue with details about the song (same keybinds as v option)
 
-a add urls (direct links/playlists), paths, or directory (pass them as arguement - accepts many of all the kinds mentioned). does not check if file is a media file or not before adding.
+  ls 			show a numbered list of the queue
 
--p toggle playback
--l loop what's currently playing
+  m [p|l|m|#[+|-#]] [p|l|m|#[+|-#]] [s #|v] [x #] [r #]
+  			move entry. l means last, p means currently playing, m means a position mark set with passing s #.
+			set mark by passing s # and see current mark with s v. pass x # to move # to the position of the
+			queue selected in the fzf window that will pop up. pass r to remove; can specify a range to delete
+			by passing start,end (separated by comma). you can use p|l|m for all of 'm s|x|r'.
+			examples: ytmp m 10 2; ytmp m s 123; ytmp m m +5; ytmp m p+3 l-1; ytmp x p-2; ytmp m r p+2,l-15 l-5 10
 
-l [n|s] play the song that was played before this one or n before this one or pass s to select from the history file with fzf.
-w toggle mpv window. don't press q to close the window because that will close the file as well instead run ytmp w again to close it.
-mfn queue last entry to play next
-mln queue last entry to play next
-e play entry #; can specify relative places with p|l|m like 'm'
-pf play first entry
-pl play last entry
-n play next on queue
-p play prev on queue
-P <search> fuzzy search string in queue and play match
+  -sd <#> 		get listen history and other details about entry (accepts p|l|m like 'm')
+  -shuf 		runs shuf on the queue file and overwrites it.
 
-v view queue; keybinds:
-	   home: first and reload; end: last and reload
-	   shift-up: move entry up one; shift-down: move entry down one; shift-right: play entry and don't exit fzf window
-	   shift-left: delete entry; page-up: move entry to after currently playing
-	   page-down: move entry to before currently playing; enter: play entry and quit fzf
-	   alt-m: ytmp m; ctrl-\: ytmp E; ctrl-6: ytmp mln; ctrl-]: ytmp w
-	   alt-v: up one page; ctrl-v: down one page
-	   ctrl-alt-p: up half page; ctrl-alt-n: down half page
-	   left-click: play entry; right-click: move entry to after currently playing
-	   ctrl-j: jump; ctrl-s: search query in background
-	   ctrl-z: search query in background with ytmp z
-	   ctrl-alt-d: download selection; alt-r: reload queue
-	   ctrl-o: open entry in web browser
-	   alt-up: move entry to first
-	   alt-down: move entry to last
-	   alt-n: play next song; alt-p: play prev song
-	   ctrl-alt-m: set entry as mark (for 'm' option)
-	   ctrl-space: move entry to the selected position in a new fzf search
+  -vd 			prints /tmp/ytmpqdiscards which contains list of songs that were selected to be added to the queue
+  			but were already found on the queue. it's removed with every search.
 
-vv view queue with details about the song (same keybinds as v option)
+  -rd [c] 		copies or moves songs listed in /tmp/ytmpqdiscards which means songs that were selected to be added
+  			to the queue but were already found there; can be copied (when given c option) to or moved (when no
+			options are given) from their current position to the position they would have been added on if they
+			were never found on the queue (broken as of now.)
 
-** readline commands/binds are available in all fzf instances
-** <search> with spaces don't have to be quoted
+  -d [range [k]] 	run daemon to play one song after another or if range is specified with two args then loop in that
+  			range unless 'k' is specified in which case exit after reaching the end of range. there's no way to
+			remove the range; if you want it to continue playing beyond it, kill it and start it without the range.
+			(range use is broken as of now)
 
-ls show a numbered list of the queue
-m [p|l|m|#[+|-#]] [p|l|m|#[+|-#]] [s #|v] [x #] [r #] move entry. l means last, p means currently playing, m means a position mark set with passing s #. set mark by passing s # and see current mark with s v. pass x # to move # to the position of the queue selected in the fzf window that will pop up. pass r to remove; can specify a range to delete by passing start,end (separated by comma). you can use p|l|m for all of 'm s|x|r'. examples: ytmp m 10 2; ytmp m s 123; ytmp m m +5; ytmp m p+3 l-1; ytmp x p-2; ytmp m r p+2,l-15 l-5 10
+  -r [range] 		play random entries; a range can be specified with two separate arguements. there's no way to remove
+  			the range; if you want it to continue playing beyond it, kill it and start it without the range.
 
--sd <#> get listen history and other details about entry (accepts p|l|m like 'm')
--shuf runs shuf on the queue file and overwrites it.
+  -dl 			download song # (accepts p|l|m like 'm')
+  -n 			get notified when mpv exits (i.e. song finishes)
 
--vd prints /tmp/ytmpqdiscards which contains list of songs that were selected to be added to the queue but were already found on the queue. it's removed with every search.
--rd [c] copies or moves songs listed in /tmp/ytmpqdiscards which means songs that were selected to be added to the queue but were already found there; can be copied (when given c option) to or moved (when no options are given) from their current position to the position they would have been added on if they were never found on the queue (broken as of now.)
+  -qa 			quit audio
+  -kd 			kill daemon
+  -kd 			kill random daemon (-r)
+  -ka 			do all of the above
 
--d [range] run daemon to play one song after another or if range is specified with two args then loop in that range unless 'k' is specified in which case exit after reaching the end of range. there's no way to remove the range; if you want it to continue playing beyond it, kill it and start it without the range. (range use is broken as of now)
--r [# #] play random entries; a range can be specified with two separate arguements. there's no way to remove the range; if you want it to continue playing beyond it, kill it and start it without the range.
--dl download song # (accepts p|l|m like 'm')
--n get notified when mpv exits (i.e. song finishes)
+  h/help/-h/--help 	show this help
 
--qa quit audio
--kd kill daemon
--kd kill random daemon (-r)
--ka do all of the above
+  E 			edit the queue in nvim and source rc from "$XDG_CONFIG_HOME/nvim/ytmp.vim"
 
-h/help/-h/--help show this help
+  __________________________________________________________
 
-E edit the queue in nvim and source rc from "$XDG_CONFIG_HOME/nvim/ytmp.vim"
-** the config is made for nvim; not all binds are tested to be working in vim
+  fzf bindings for search (ytmp [z/x/s]):
+  __________________________________________________________
+  	ctrl-j		jump
+  	ctrl-r		replace input field with selection
+  	ctrl-x		send input field as search (none of the selections are passed)
+  	enter		search only the selections (query not included)
+  	tab		toggle selection and clear query
+  	shift-tab	deselect all
+  	ctrl-c/esc	quit
 
-nvim key bindings:
-__________________________________________________________
-mapleader = '<Space>'
-<leader>v source $XDG_CONFIG_HOME/nvim/init.vim
-<leader>s source $XDG_CONFIG_HOME/nvim/ytmp.vim
-<leader>c edit $XDG_CONFIG_HOME/nvim/ytmp.vim
-<leader>n edit $USER/Music/ytmp/run_on_nextZ
+  * query+selections are only available as background search due to fzf limitations.
+    when you press the binding there isn't any indication that the search has passed through
+    so you can assume that fact and just abort fzf.
+    also these bindings are unavailalbe or mean different things for x/s:
 
-<Up> move entry up 1
-<Down> move entry down 1
-<Left> move entry right before currently playing
-<Right> move entry right next to currently playing
-<S-Up> move last entry right before currently playing
-<S-Down> move last entry right after currently playing
-<S-Right> move entry to the end
-<S-Left> move entry to the start
-<Enter> play entry
+	ctrl-s		search query in the background
+	alt-s		search query and selection in the background
+	ctrl-z		search query in counterpart of current search in the background
+	alt-z		search query and selection in counterpart of current search in the background
 
-d delete line
-r reload file
-R remove *** from line
-W write file
-J go to currently playing
-> play next
-< play previous
-. -sd for entry
+  * what the following mean for ytmp v/vv:
+	ctrl-s		search query in background
+	ctrl-z		search query in background with ytmp z
+  __________________________________________________________
 
-<C-t> :te
-<C-y> :te ytmp
-<C-w> :te ytmp z
-<C-s> :te ytmp v
-<C-v> :te ytmp vv
-<C-p> :silent !ytmpsuite qs
-<C-n> :silent !ytmpsuite qn
+  fzf bindings for playlist search (sp):
+  __________________________________________________________
 
-<leader>v change the value of the \$vol var in the run_on_next file
-<leader>l set volume of what's currently playing
-<leader>w ytmp w
-<leader>y :silent !ytmp
-__________________________________________________________
+	tab		toggle selection
+	shift-tab	deselect all
+	enter		add selected playlists to queue
+
+	ctrl-x		see songs in the playlist
+			one can select songs in the playlist to add with <tab> and press <enter> to add them
+  __________________________________________________________
+
+  fzf bindings for viewing queue (v/vv):
+  __________________________________________________________
+
+	home:		first and reload
+	end:		last and reload
+	shift-up:	move entry up one
+	shift-down:	move entry down one
+	shift-right:	play entry and don't exit fzf window
+	shift-left:	delete entry
+	page-up:	move entry to after currently playing
+	page-down:	move entry to before currently playing
+	enter:		play entry and quit fzf
+	alt-m:		ytmp m
+	ctrl-\:		ytmp E
+	ctrl-6:		ytmp mln
+	ctrl-]:		ytmp w
+	alt-v:		up one page
+	ctrl-v:		down one page
+	ctrl-alt-p:	up half page
+	ctrl-alt-n:	down half page
+	left-click:	play entry
+	right-click:	move entry to after currently playing
+	ctrl-j:		jump
+	ctrl-s:		search query in background
+	ctrl-z:		search query in background with ytmp z
+	ctrl-alt-d:	download selection
+	alt-r:		reload queue
+	ctrl-o:		open entry in web browser
+	alt-up:		move entry to first
+	alt-down:	move entry to last
+	alt-n:		play next song
+	alt-p:		play prev song
+	ctrl-alt-m:	set entry as mark (for 'm' option)
+	ctrl-space:	move entry to the selected position in a new fzf search
+  __________________________________________________________
+
+  nvim key bindings:
+  __________________________________________________________
+	mapleader 	'<Space>'
+	<leader>v 	source $XDG_CONFIG_HOME/nvim/init.vim
+	<leader>s 	source $XDG_CONFIG_HOME/nvim/ytmp.vim
+	<leader>c 	edit $XDG_CONFIG_HOME/nvim/ytmp.vim
+	<leader>n 	edit $USER/Music/ytmp/run_on_nextZ
+
+	<Up> 		move entry up 1
+	<Down> 		move entry down 1
+	<Left> 		move entry right before currently playing
+	<Right> 	move entry right next to currently playing
+	<S-Up> 		move last entry right before currently playing
+	<S-Down> 	move last entry right after currently playing
+	<S-Right> 	move entry to the end
+	<S-Left> 	move entry to the start
+	<Enter> 	play entry
+
+	d 		delete line
+	r 		reload file
+	R 		remove *** from line
+	W 		write file
+	J 		go to currently playing
+	> 		play next
+	< 		play previous
+	. 		-sd for entry
+	o 		open entry in web browser
+
+	<C-t> 		:te
+	<C-y> 		:te ytmp
+	<C-w> 		:te ytmp z
+	<C-s> 		:te ytmp v
+	<C-v> 		:te ytmp vv
+	<C-p> 		:silent !ytmpsuite qs
+	<C-n> 		:silent !ytmpsuite qn
+
+	<leader>v 	change the value of the \$vol var in the run_on_next file
+	<leader>l 	set volume of what's currently playing
+	<leader>w 	ytmp w
+	<leader>y 	:silent !ytmp
+  __________________________________________________________
 
 One can communicate with mpv through the ipc socket the script opens at /tmp/mpvsocketytmp. See https://pastebin.com/23PXxpiD for examples (make sure to pass commands to the /tmp/mpvsocketytmp socket) and \`mpv --list-properties\` for properties that can be controlled.
 
 Other features:
-- you can have multiple entries of the same song in multiple places and the program won't get confused (in case you wanted to move tracks of albums around without changing their place in the album).
-- by default ytmp downloads songs after you have listened to them $max_stream_amount times, if you don't want this feature set \$download_songs to '0' in $conf. the downloads can be found in $songs_dir.
-- put commands you want to run at the start of each song in the script $run_on_next.
-- set settings in $conf.
+  - you can have multiple entries of the same song in multiple places and the program won't get confused (in case you wanted to move tracks of albums around without changing their place in the album).
+  - by default ytmp downloads songs after you have listened to them $max_stream_amount times, if you don't want this feature set \$download_songs to '0' in $conf. the downloads can be found in $songs_dir.
+  - put commands you want to run at the start of each song in the script $run_on_next.
+  - set settings in $conf.
 
+** the config is made for nvim; not all binds are tested to be working in vim
+** readline commands/binds are available in all fzf instances
+** <search> with spaces don't have to be quoted
 ** unfortunately the program does not check and will not tell you if you've entered something unexpected/wrong but you might get errors from sed to guess that :)
 CAT_EOF
 exit
@@ -227,7 +278,7 @@ exit
 # if it is, doesn't add to the queue but notes where the id is found in the queue,
 # the length of the queue, <id>, <title> in /tmp/ytmpqdiscards so the user can be given a choice
 # later to move or copy the entry at the position it would appear as if it weren't in the queue
-add_to_queue () {
+addToQueue () {
 	touch "$qdiscards_file"
 	if [ "$1" = 'f' ]; then
 		id="$( echo $2 | cut -d' ' -f1 )"
@@ -244,22 +295,12 @@ add_to_queue () {
 		found="$( grep -n "$id" "$queue" | cut -d':' -f1 )"
 		echo "'$title' was found at line $found in the queue. It will not be newly added."
 		queue_len="$( grep -c '' "$queue" )"
-
-		if grep -Fq "$queue_len" "$qdiscards_file"; then
-			# this while loop ensures multiple entries don't lay claim to
-			# the end of the qdiscards_file and the proper order is maintained
-			# so if an entry with the end of the line is found, the
-			# number is incremented until it's not
-			while grep -Fq "$queue_len" "$qdiscards_file"; do
-				queue_len=$(( queue_len+1 ))
-			done
-			echo "$queue_len $id $title" >> "$qdiscards_file"
-		else echo "$queue_len $id $title" >> "$qdiscards_file"; fi
+		echo "$queue_len $id $title" >> "$qdiscards_file"
 	fi
 }
 
 # copies or moves entries from $qdiscards_file
-transfer_qdiscards () {
+transferQDiscards () {
 	[ ! -s "$qdiscards_file" ] && echo "'$qdiscards_file' either doesn't exist or is empty." && return
 	[ "$1" = 'v' ] && cat "$qdiscards_file" && return
 
@@ -271,13 +312,24 @@ transfer_qdiscards () {
 		action='Moved'
 	fi
 
-	cat "$qdiscards_file" | while read -r f; do
+	# read lines in from bottom to top (tac) in case multiple entries
+	# are competing for the same spot
+	rm /tmp/ytmpplaces
+	cat "$qdiscards_file" | tac | while read -r f; do
+		sed -n "$( echo "$f" | cut -d' ' -f1 )"p "$queue" >> /tmp/ytmpplaces
+	done
+
+	x="$( grep -c '' /tmp/ytmpplaces )"
+	# get all the lines that are at $place and then /$place/; don't directly move
+	# because as the lines are moved around, the order is destroyed
+	cat "$qdiscards_file" | tac | while read -r f; do
 		id="$( echo $f | cut -d' ' -f2 )"
 		found="$( grep -n "$id" "$queue" | cut -d':' -f1 )"
-		place="$( echo "$f" | cut -d' ' -f1 )"
-		printf "%s\n" "${found}${ed_opt}${place}" "wq" | ed -s "$queue" >/dev/null
-		echo "$action '$( echo $f | cut -d' ' -f3- )' from $found to $place"
-	done
+		place="$( sed -n "${x}s@[][\\/.*^$&]@\\\&@gp" /tmp/ytmpplaces )"
+		printf "%s\n" "/$place/" "${found}${ed_opt}." "wq" | ed -s "$queue" >/dev/null
+		x=$(( x-1 ))
+		echo "$action [$found] '$( echo $f | cut -d' ' -f3- )' [[TO AFTER]] $place"
+	done | tac
 }
 
 # gets the artists listed in the description and places them in $played_artists if first time seeing $id. artists are usually separated by '·' and ':'. also puts things in the queue file.
@@ -287,7 +339,7 @@ register () {
 	dt="$( date +'%m/%d/%y+%T' )"
 	rm -f "$qdiscards_file"
 
-	if ( ls $songs_dir/*"${id}"* >/dev/null 2>&1 ); then add_to_queue "$id" "$title";
+	if ( ls $songs_dir/*"${id}"* >/dev/null 2>&1 ); then addToQueue "$id" "$title";
 	elif ! grep -Fq "$id" "$played_urls"; then
 		desc=$( yt-dlp -q --no-warnings --get-description "https://www.youtube.com/watch?v=$id" )
 		echo "$title" >> $played_titles
@@ -313,8 +365,8 @@ register () {
 				done
 			fi
 		fi
-		add_to_queue "$id" "$title"
-	else add_to_queue "$id" "$title"; fi
+		addToQueue "$id" "$title"
+	else addToQueue "$id" "$title"; fi
 }
 
 # add urls, playlists, dirs, paths
@@ -328,23 +380,23 @@ add () {
 			ids="$( yt-dlp -q --no-warnings --get-id "$f" )"
 			echo "$ids" | while read -r id; do
 				title=$( yt-dlp -q --no-warnings -e "https://www.youtube.com/watch?v=$id" )
-				add_to_queue "$id" "$title"
+				addToQueue "$id" "$title"
 			done
 		elif [ -d "$f" ]; then
 			find "$f" | sed 1d | while read -r f; do
 				entry="$( cksum --untagged --algorithm=blake2b -l 48 "$f" | sed 's@\b  @ @' )"
-				add_to_queue f "$entry"
+				addToQueue f "$entry"
 			done
 		elif [ -e "$f" ]; then
 			entry="$( cksum --untagged --algorithm=blake2b -l 48 "$f" | sed 's@\b  @ @' )"
-			add_to_queue f "$entry"
+			addToQueue f "$entry"
 		else
 			echo "'$f' is not valid; provide a url, path, or directory."
 		fi
 	done
 }
 
-search_youtube () {
+searchYoutube () {
 	# ss = <query> was passed from cli
 	if [ "$1" = 'ss' ]; then
 		query=$( echo "$*" | cut -d' ' -f2- | tr "\n" ' ' | sed -e 's/[ \t]*$//' )
@@ -382,17 +434,17 @@ search_youtube () {
 		echo "$ids" > /tmp/ytmpids
 		titles=$( echo "$ids_titles" | sed -n 'p;n' | grep -n '' )
 		sel=$( printf '%b' "$titles" | fzf --prompt='search: ' --info=inline --padding=2,2,2,2 --border=bottom --color=hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   ytmp select   }" --separator='' \
-		--bind='ctrl-j:jump,ctrl-k:kill-line,tab:toggle+clear-query+down,shift-tab:clear-selection' --layout=reverse --height 60% -m --preview='echo {n}+1 | bc | xargs -I ,, ytmp fzf_preview s ,,' --preview-window='right,70%' )
+		--bind='ctrl-j:jump,ctrl-k:kill-line,tab:toggle+clear-query+down,shift-tab:clear-selection' --layout=reverse --height 60% -m --preview='echo {n}+1 | bc | xargs -I ,, ytmp fzfPreview s ,,' --preview-window='right,70%' )
 		[ -z "$sel" ] && return
 		echo "$sel" | while read -r sel; do
 			num=$( printf '%b' "$titles" | grep -Fx "$sel" | cut -d':' -f1 )
 			id=$( printf '%b' "$ids" | sed -n "${num}"p )
-			[ "$1" = 's' ] && register "$id" "$( echo $sel | cut -d':' -f2- )" || add_to_queue "$id" "$( echo $sel | cut -d':' -f2- )"
+			[ "$1" = 's' ] && register "$id" "$( echo $sel | cut -d':' -f2- )" || addToQueue "$id" "$( echo $sel | cut -d':' -f2- )"
 		done
 	elif [ -n "$query" ]; then
 		if [ "$1" = 'z' ]; then
 			id=$( yt-dlp -q --no-warnings --get-id ytsearch1:"$query" )
-			add_to_queue "$id" "$( yt-dlp -q --no-warnings -e "https://www.youtube.com/watch?v=$id" )"
+			addToQueue "$id" "$( yt-dlp -q --no-warnings -e "https://www.youtube.com/watch?v=$id" )"
 		else
 			id=$( yt-dlp -q --no-warnings --get-id ytsearch1:"$query auto-generated provided to youtube" )
 			[ -n "$id" ] && register "$id"
@@ -400,7 +452,7 @@ search_youtube () {
 	fi
 }
 
-search_playlist () {
+searchPlaylists () {
 	[ -z "$2" ] && echo 'Provide a search string as arguement.' && return
 	query=$( echo "$*" | cut -d' ' -f2- )
 	playlist_sel="$( pipe-viewer --no-use-colors --no-interactive --results=50 -sp --custom-playlist-layout='*URL* *TITLE*' "$query" | sed -n -e 1d -e "\@https://www.youtube.com/playlist?list=@p" | tee /tmp/ytmpplaylists | cut -d" " -f2- | grep -n '' | fzf --prompt='search: ' --info=inline --padding=2,2,2,2 --border=bottom --color=hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   ytmp playlist select   }" --separator='' \
@@ -419,7 +471,7 @@ search_playlist () {
 
 # ticks up the amount a song has been played by one. $played_urls has the format: id amount_played date_played 'dl'(if downloaded) title
 # also downloads the file once it exceeds $max_stream_amount and it can't be found in the $songs_dir
-upd_amnt_played () {
+incrAmntPlayed () {
 	[ -n "$1" ] && id="$1" || id=$( grep "$playing_regex" $queue | cut -d' ' -f1 )
 	[ -n "$2" ] && title=$( echo "$*" | cut -d' ' -f2- ) || title=$( sed -n -e "/$playing_regex/s/$playing_marker_regex//" -e 's/\*\*\*$//p' "$queue" )
 	dt="$( date +'%m/%d/%y+%T' )"
@@ -441,7 +493,7 @@ upd_amnt_played () {
 	fi
 }
 
-dl_thumbnail () {
+dlThumbnail () {
 	if [ "$download_thumbnails" = '1' ]; then
 		id=$( sed -n "s/$playing_regex/\1/p" $queue )
 		[ "$( printf "$id" | wc -m )" != '11' ] && return
@@ -462,16 +514,16 @@ play () {
 	# if the length of id (first field) is 12 then it is a checksum of a local file and not a youtube id so play it and exit
 	if [ "$( printf "$id" | wc -m )" = '12' ]; then
 		setsid -f mpv --x11-name='ytmp_mpv' --no-terminal --vid=no --input-ipc-server=/tmp/mpvsocketytmp "$( sed -n -e "/$id/s/$playing_marker_regex//" -e 's/\*\*\*$//p' "$queue" )"
-		upd_amnt_played
+		incrAmntPlayed
 		return
 	fi
-	upd_amnt_played "$id"
+	incrAmntPlayed "$id"
 	if ( ls $songs_dir/*"${id}"* >/dev/null 2>&1 ); then
 		find $songs_dir/*"${id}"* -print0 | xargs -0 -I ',,' setsid -f mpv --x11-name='ytmp_mpv' --no-terminal --vid=no --input-ipc-server=/tmp/mpvsocketytmp ",,"
-		dl_thumbnail
+		dlThumbnail
 	else
 		setsid -f mpv --x11-name='ytmp_mpv' --no-terminal --vid=no --input-ipc-server=/tmp/mpvsocketytmp --ytdl-format='bestaudio' "https://www.youtube.com/watch?v=$id"
-		dl_thumbnail
+		dlThumbnail
 	fi
 	title="$( sed -n -e "/$playing_regex/s/$playing_marker_regex//" -e 's/\*\*\*$//p' "$queue" )"
 	echo "Playing '$title'"
@@ -480,114 +532,112 @@ play () {
 	[ "$daemonize" = 1 ] && ! pgrep -fa 'ytmp -d' && setsid -f ytmp -d >/dev/null 2>&1
 }
 
-playlist () {
-	# puts stars around line # and removes stars from any other lines
-	if [ "$1" = 'e' ]; then
-		line="$3"
-		line="$( echo "$line" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
-		lncount=$( grep -c '.' "$queue" )
-		[ -z "$line" ] && return
-		if [ "$line" -le 0 ] || [ "$line" -gt "$lncount" ]; then line=1; fi
-		sed -i -e "/$playing_regex/s/$playing_marker_regex/\1 /" -e 's/\*\*\*$//' "$queue"
-		sed -i "${line}s/${field_regex}/\1 \*\*\*\2\*\*\*/" $queue
-		echo quit | socat - /tmp/mpvsocketytmp >/dev/null 2>&1
-		play
+# puts stars around line # and removes stars from any other lines
+markPlaying () {
+	line="$1"
+	line="$( echo "$line" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
+	lncount=$( grep -c '.' "$queue" )
+	[ -z "$line" ] && return
+	if [ "$line" -le 0 ] || [ "$line" -gt "$lncount" ]; then line=1; fi
+	sed -i -e "/$playing_regex/s/$playing_marker_regex/\1 /" -e 's/\*\*\*$//' "$queue"
+	sed -i "${line}s/${field_regex}/\1 \*\*\*\2\*\*\*/" $queue
+	echo quit | socat - /tmp/mpvsocketytmp >/dev/null 2>&1
+	play
+}
 
-	# checks if queue is not empty but nothing is playing, it will set stars around the first line and call play
-	# it also checks if mpv is closed then it calls ytmp n (playlist e p+1) to play the next entry
-	elif [ "$1" = '-d' ]; then
-		while true; do
-			if [ "$( grep -c '.' $queue )" -gt 0 ]; then
-				if [ -z "$3" ] && ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ); then playlist e a 1
-				elif [ -n "$3" ]; then
-					p="$2"
-					# x="$2"
-					! grep -q "$playing_regex" "$queue" && playlist e a "$p"
-					while [ $p -lt $3 ]; do
-						playing="$( grep -n "$playing_regex" "$queue" | cut -d':' -f1 )"
-						# if [ $playing -lt $p ] || [ $playing -gt $3 ]; then playlist a e $p; fi
-						while ( while true; do ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ); sleep .5; break; done ); do break; done
-						sleep 1.5 && ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ) && ( if [ $playing -lt $p ] || [ $playing -gt $3 ]; then playlist a e $2; else playlist e a p+1; fi )
-						p=$(( p+1 ))
-						if [ $p = $3 ]; then
-							[ $4 = k ] && exit || p=$2
-						fi
-					done
-				else
-					# sleep twice in case in between the sleeps some external cmd plays something so there
-					# is no clash between the two
-					sleep 1 && ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ) && sleep 1 && ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ) && playlist e a p+1
-				fi
-			else sleep 1; fi
+# checks if queue is not empty but nothing is playing, it will set stars around the first line and call play
+# it also checks if mpv is closed then it calls ytmp n (markPlaying p+1) to play the next entry
+daemon () {
+	while true; do
+		if [ "$( grep -c '.' $queue )" -gt 0 ]; then
+			if [ -z "$2" ] && ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ); then markPlaying 1
+			elif [ -n "$2" ]; then
+				p="$1"
+				# x="$1"
+				! grep -q "$playing_regex" "$queue" && markPlaying "$p"
+				while [ $p -lt $2 ]; do
+					playing="$( grep -n "$playing_regex" "$queue" | cut -d':' -f1 )"
+					# if [ $playing -lt $p ] || [ $playing -gt $2 ]; then markPlaying $p; fi
+					while ( while true; do ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ); sleep .5; break; done ); do break; done
+					sleep 1.5 && ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ) && ( if [ $playing -lt $p ] || [ $playing -gt $2 ]; then markPlaying $1; else markPlaying p+1; fi )
+					p=$(( p+1 ))
+					if [ $p = $2 ]; then
+						[ $3 = k ] && exit || p=$1
+					fi
+				done
+			else
+				# sleep twice in case in between the sleeps some external cmd plays something so there
+				# is no clash between the two
+				sleep 1 && ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ) && sleep 1 && ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ) && markPlaying p+1
+			fi
+		else sleep 1; fi
+	done
+}
+
+# presents an fzf list of the current queue.
+viewQueue () {
+	[ "$2" = 'p' ] && set -- --height 100% --preview='echo {n}+1 | bc | xargs -I ,, ytmp fzfPreview vv ,,' --preview-window='right,50%' --preview-label='' --bind='focus:transform-preview-label:echo {n}+1 | bc' || set -- --height 60%
+	cmd="cat $queue | cut -d' ' -f2-"
+	cat $queue | cut -d' ' -f2- | fzf --tiebreak=chunk,begin --prompt='search: ' --info=inline --border=bottom --color=hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   ytmp queue   }" --separator='' --padding=2,2,2,2 \
+	"$@" \
+	--layout=reverse --cycle --bind="ctrl-space:execute(echo {n}+1 | bc | xargs -I ,, ytmp m x ,,)+reload($cmd),ctrl-alt-m:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m s ,,),alt-up:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, 0)+reload($cmd),alt-down:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, l)+reload($cmd),ctrl-]:execute-silent(ytmp w),ctrl-r:replace-query,home:first+reload($cmd),end:last+reload($cmd),alt-r:reload($cmd),ctrl-alt-d:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp -dl ,,),ctrl-z:execute-silent(setsid -f ytmp z {q}),ctrl-s:execute-silent(setsid -f ytmp {q}),ctrl-j:down,ctrl-j:jump,shift-left:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m r ,,)+reload($cmd),shift-up:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, -2)+reload($cmd)+up,shift-down:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, +1)+reload($cmd)+down,ctrl-k:kill-line,alt-p:execute-silent(ytmp p)+reload($cmd),alt-n:execute-silent(ytmp n)+reload($cmd),alt-right:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp e ,,)+reload($cmd),return:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp e ,,)+abort,shift-right:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp e ,,)+reload($cmd),pgdn:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, p)+reload($cmd),pgup:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, p-1)+reload($cmd),ctrl-v:page-down,alt-v:page-up,ctrl-alt-p:half-page-up,ctrl-alt-n:half-page-down,left-click:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp e ,,)+abort,right-click:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, p)+reload($cmd),ctrl-^:execute-silent(ytmp mln)+reload($cmd),ctrl-\:execute(ytmp E)+reload($cmd),alt-m:execute(echo {n}+1 | bc | xargs -I ,, ytmp m f ,,)+reload($cmd),ctrl-o:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp openInBrowser ,,)"
+}
+
+# move, remove, set marks.
+move () {
+	shift 1
+	if [ "$1" = 'r' ]; then
+		shift 1
+		for f in "$@"; do
+			if echo "$f" | grep -q ','; then
+				start="$( echo "$f" | cut -d',' -f1 )"
+				end="$( echo "$f" | cut -d',' -f2 )"
+				start="$( echo "$start" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
+				end="$( echo "$end" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
+				printf "${start}${end}" | grep -xq '[0-9]*' && echo "Removed [$start,$end] "$( sed -n "${start},${end}s/$field_regex/\2/p" "$queue" )"" && sed -i ${start},${end}d "$queue"
+			else
+				f="$( echo "$f" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
+				printf "$f" | grep -xq '[0-9]*' && echo "Removed [$f] "$( sed -n "${f}s/$field_regex/\2/p" "$queue" )"" && sed -i ${f}d "$queue"
+			fi
 		done
+		return
 	fi
+	if [ "$1" = 's' ]; then
+		[ "$2" = 'v' ] && cat /tmp/ytmpmark && return
+		echo "$2" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc > /tmp/ytmpmark
+		return
+	fi
+	if [ "$1" = 'f' ]; then
+		sel="$2"
+		printf "\nMove entry #$sel to where? "
+		read place </dev/tty
+	elif [ "$1" = 'x' ]; then
+		sel="$( echo "$2" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
+		place="$( grep -n '' "$queue" | fzf --info=hidden --border=bottom --color=hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   Move '$( sed -n "${sel}s/${field_regex}/\2/p" "$queue" )' after what?   }" --separator='' | cut -d':' -f1 )"
+	else
+		place="$2"
+		sel="$1"
+	fi
+
+	[ -z "$place" ] && return
+	sel="$( echo "$sel" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
+	echo "$place" | grep -Eqx '(\+|-|\*|/)+[0-9]*' && place="$( echo "${sel}${place}" | bc )" || place="$( echo "$place" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
+
+	echo "Moved [$sel] "$( sed -n "${sel}s/${field_regex}/\2/p" "$queue" )" [[TO AFTER]] [$place] "$( sed -n "${place}s/${field_regex}/\2/p" "$queue" )""
+
+	printf "%s\n" "${sel}m${place}" "wq" | ed -s "$queue" >/dev/null
 }
 
-# all the things that can be done to the arrangement of the queue. managed from fzf.
-queue_manager () {
-	# presents an fzf list of the current queue.
-	if [ "$1" = 'v' ]; then
-		[ "$2" = 'p' ] && set -- --height 100% --preview='echo {n}+1 | bc | xargs -I ,, ytmp fzf_preview vv ,,' --preview-window='right,50%' --preview-label='' --bind='focus:transform-preview-label:echo {n}+1 | bc' || set -- --height 60%
-		cmd="cat $queue | cut -d' ' -f2-"
-		cat $queue | cut -d' ' -f2- | fzf --tiebreak=chunk,begin --prompt='search: ' --info=inline --border=bottom --color=hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   ytmp queue   }" --separator='' --padding=2,2,2,2 \
-		"$@" \
-		--layout=reverse --cycle --bind="ctrl-space:execute(echo {n}+1 | bc | xargs -I ,, ytmp m x ,,)+reload($cmd),ctrl-alt-m:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m s ,,),alt-up:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, 0)+reload($cmd),alt-down:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, l)+reload($cmd),ctrl-]:execute-silent(ytmp w),ctrl-r:replace-query,home:first+reload($cmd),end:last+reload($cmd),alt-r:reload($cmd),ctrl-alt-d:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp -dl ,,),ctrl-z:execute-silent(setsid -f ytmp z {q}),ctrl-s:execute-silent(setsid -f ytmp {q}),ctrl-j:down,ctrl-j:jump,shift-left:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m r ,,)+reload($cmd),shift-up:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, -2)+reload($cmd)+up,shift-down:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, +1)+reload($cmd)+down,ctrl-k:kill-line,alt-p:execute-silent(ytmp p)+reload($cmd),alt-n:execute-silent(ytmp n)+reload($cmd),alt-right:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp e ,,)+reload($cmd),return:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp e ,,)+abort,shift-right:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp e ,,)+reload($cmd),pgdn:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, p)+reload($cmd),pgup:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, p-1)+reload($cmd),ctrl-v:page-down,alt-v:page-up,ctrl-alt-p:half-page-up,ctrl-alt-n:half-page-down,left-click:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp e ,,)+abort,right-click:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, p)+reload($cmd),ctrl-^:execute-silent(ytmp mln)+reload($cmd),ctrl-\:execute(ytmp E)+reload($cmd),alt-m:execute(echo {n}+1 | bc | xargs -I ,, ytmp m f ,,)+reload($cmd),ctrl-o:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp open_in_browser ,,)"
-	elif [ "$1" = 'm' ]; then
-		if [ "$2" = 'r' ]; then
-			shift 2
-			for f in "$@"; do
-				if echo "$f" | grep -q ','; then
-					start="$( echo "$f" | cut -d',' -f1 )"
-					end="$( echo "$f" | cut -d',' -f2 )"
-					start="$( echo "$start" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
-					end="$( echo "$end" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
-					echo "Removed [$start,$end] "$( sed -n "${start},${end}s/$field_regex/\2/p" "$queue" )""
-					sed -i ${start},${end}d "$queue"
-				else
-					f="$( echo "$f" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
-					echo "Removed [$f] "$( sed -n "${f}s/$field_regex/\2/p" "$queue" )""
-					sed -i ${f}d "$queue"
-				fi
-			done
-			return
-		fi
-		if [ "$2" = 's' ]; then
-			[ "$3" = 'v' ] && cat /tmp/ytmpmark && return
-			echo "$3" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc > /tmp/ytmpmark
-			return
-		fi
-		if [ "$2" = 'f' ]; then
-			sel="$3"
-			printf "\nMove entry #$sel to where? "
-			read place </dev/tty
-		elif [ "$2" = 'x' ]; then
-			sel="$( echo "$3" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
-			place="$( grep -n '' "$queue" | fzf --info=hidden --border=bottom --color=hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   Move '$( sed -n "${sel}s/${field_regex}/\2/p" "$queue" )' after what?   }" --separator='' | cut -d':' -f1 )"
-		else
-			place="$3"
-			sel="$2"
-		fi
-
-		[ -z "$place" ] && return
-		sel="$( echo "$sel" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
-		echo "$place" | grep -Eqx '(\+|-|\*|/)+[0-9]*' && place="$( echo "${sel}${place}" | bc )" || place="$( echo "$place" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
-
-		echo "Moved [$sel] "$( sed -n "${sel}s/${field_regex}/\2/p" "$queue" )" [[TO AFTER]] [$place] "$( sed -n "${place}s/${field_regex}/\2/p" "$queue" )""
-
-		printf "%s\n" "${sel}m${place}" "wq" | ed -s "$queue" >/dev/null
-	fi
-}
-
-fuzzy_play () {
+fuzzyPlay () {
 	shift 1
 	query="$@"
 	[ -z "$query" ] && echo 'Provide a string to search as argument.' && return
 	match=$( grep -n '' "$queue" | sed -E 's/[Rr]emaster(ed)//g' | fzf --tiebreak=chunk,begin -f "$query" | head -1 | cut -d':' -f1 )
-	if [ -n "$match" ]; then playlist e a "$match"; else echo 'Match not found.'; fi
+	if [ -n "$match" ]; then markPlaying "$match"; else echo 'Match not found.'; fi
 	return
 }
 
-play_history () {
+playFromHistory () {
 	[ -z "$1" ] && tail -2 "$played_urls" | head -1 | cut -d' ' -f1 | xargs -I '{}' ytmp P '{}' && return
 	if ( echo "$1" | grep -qxE '[0-9]*' ); then
 		tail "-$1" "$played_urls" | head -1 | cut -d' ' -f1 | xargs -I '{}' ytmp P '{}'
@@ -599,7 +649,7 @@ play_history () {
 	fi
 }
 
-rand_daemon () {
+randomDaemon () {
 	while ( while true; do ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ) && sleep .5 && break; done ); do
 		if ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ); then
 			if [ -n "$3" ]; then seq "$2" "$3" | shuf -n 1 | xargs ytmp e
@@ -609,7 +659,7 @@ rand_daemon () {
 	done
 }
 
-fzf_preview () {
+fzfPreview () {
 	[ -z "$3" ] && echo 'Provide a line number.' && return
 	fzf_index="$( echo "$3" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
 
@@ -637,7 +687,7 @@ fzf_preview () {
 	printf "$info" | sed -e '/ASDASIDJIASDJIAJDI/d'
 }
 
-download_song () {
+dlSong () {
 	sel="$( echo "$2" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
 	[ "$3" = 'f' ] && sel=$(( sel + 1 ))
 	# echo $sel && return
@@ -648,50 +698,50 @@ download_song () {
 	( ! ls $songs_dir/*"${id}"* >/dev/null 2>&1 ) && setsid -f yt-dlp -q --no-warnings -f bestaudio -o "$songs_dir/%(id)s %(title)s.%(ext)s" "https://www.youtube.com/watch?v=$id" >/dev/null 2>&1 && echo "Downloading '${title}.'" || echo "A file of the name '$title' was found in $songs_dir. It will not be downloaded."
 }
 
-open_in_browser () {
+openInBrowser () {
 	index=$1
 	id=$( sed -n "${index}p" "$queue" | cut -d' ' -f1 )
 	setsid -f $BROWSER "https://www.youtube.com/watch?v=$id" >/dev/null 2>&1
 }
 
-toggle_mpv_window () {
+toggleMpvWin () {
 	state=$( echo '{ "command": ["get_property", "force-window" ] }' | socat - /tmp/mpvsocketytmp | jq .data )
 	[ "$state" = "false" ] && echo '{ "command": ["set_property", "force-window", true ] }' | socat - /tmp/mpvsocketytmp >/dev/null 2>&1 && echo '{ "command": ["keypress", "I"] }' | socat - /tmp/mpvsocketytmp >/dev/null 2>&1 && sleep .5 && echo '{ "command": ["keypress", "O"] }' | socat - /tmp/mpvsocketytmp >/dev/null 2>&1 || echo '{ "command": ["set_property", "force-window", false ] }' | socat - /tmp/mpvsocketytmp >/dev/null 2>&1
 }
 
 case "${1}" in
 	E) nvim -u "$XDG_CONFIG_HOME/nvim/ytmp.vim" --noplugin +/'\*\*\*.*\*\*\*' "$queue" ;;
-	mfn) queue_manager m 1 p ;;
-	mln) queue_manager m l p ;;
-	w) toggle_mpv_window ;;
+	mfn) move 1 p ;;
+	mln) move l p ;;
+	w) toggleMpvWin ;;
 	# the 'a' doesn't mean anything. it's there so the # is in the proper field.
-	pf) playlist e a 1 ;;
-	pl) playlist e a "$(  grep -c '' "$queue" )" ;;
+	pf) markPlaying 1 ;;
+	pl) markPlaying "$(  grep -c '' "$queue" )" ;;
 	-p) echo cycle pause | socat - /tmp/mpvsocketytmp >/dev/null 2>&1 ;;
-	v) queue_manager v ;;
-	vv) queue_manager v p ;;
-	s) search_youtube s "$2" ;;
-	z) search_youtube z "$@" ;;
-	x) search_youtube x "$2" ;;
-	sp) search_playlist "$@" ;;
-	spr) search_youtube p "$3" ;;
+	v) viewQueue v ;;
+	vv) viewQueue v p ;;
+	s) searchYoutube s "$2" ;;
+	z) searchYoutube z "$@" ;;
+	x) searchYoutube x "$2" ;;
+	sp) searchPlaylists "$@" ;;
+	spr) searchYoutube p "$3" ;;
 	a) add "$@" ;;
-	n) playlist e a p+1 ;;
-	p) playlist e a p-1 ;;
-	e) playlist e $* ;;
-	P) fuzzy_play "$@" ;;
-	l) play_history $2 ;;
-	m) queue_manager "$@" ;;
+	n) markPlaying p+1 ;;
+	p) markPlaying p-1 ;;
+	e) markPlaying $2 ;;
+	P) fuzzyPlay "$@" ;;
+	l) playFromHistory $2 ;;
+	m) move "$@" ;;
 	ls) grep --color=auto -n '' "$queue" ;;
-	open_in_browser) open_in_browser $2 ;;
-	fzf_preview) fzf_preview "$@" ;;
-	-sd) fzf_preview a c "$2" ;;
+	openInBrowser) openInBrowser $2 ;;
+	fzfPreview) fzfPreview "$@" ;;
+	-sd) fzfPreview a c "$2" ;;
 	-shuf) shuf "$queue" -o "$queue" ;;
-	-vd) transfer_qdiscards v ;;
-	-rd) transfer_qdiscards "$2" ;;
-	-dl) download_song $* ;;
-	-d) playlist "$@" ;;
-	-r) rand_daemon $* ;;
+	-vd) transferQDiscards v ;;
+	-rd) transferQDiscards "$2" ;;
+	-dl) dlSong $* ;;
+	-d) daemon "$@" ;;
+	-r) randomDaemon $* ;;
 	-n) while true; do ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ) && sleep .5 && exit; done ;;
 	-l) echo '{ "command": ["set_property", "loop", true] }' | socat - /tmp/mpvsocketytmp >/dev/null 2>&1 ;;
 	-qa) echo quit | socat - /tmp/mpvsocketytmp ;;
@@ -699,7 +749,7 @@ case "${1}" in
 	-kr) pkill -f 'ytmp -r'; exit ;;
 	-ka) echo quit | socat - /tmp/mpvsocketytmp; pkill -f 'ytmp -d'; pkill -f 'ytmp -r'; exit ;;
 	h|help|-h|--help) helper ;;
-	*) search_youtube ss "$*" ;;
+	*) searchYoutube ss "$*" ;;
 esac
 
-[ -z "$1" ] && search_youtube
+[ -z "$1" ] && searchYoutube
