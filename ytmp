@@ -124,13 +124,14 @@ The difference between s and x/z: x/z searches without the added jargon 'auto-ge
 			options are given) from their current position to the position they would have been added on if they
 			were never found on the queue.
 
-  -d [range [k]] 	run daemon to play one song after another or if range is specified with two args then loop in that
+  -d [[[<from>] [<to>]] [k]]
+			run daemon to play one song after another or if range is specified with two args then loop in that
   			range unless 'k' is specified in which case exit after reaching the end of range. there's no way to
 			remove the range; if you want it to continue playing beyond it, kill it and start it without the range.
 			(range use is broken as of now)
 
-  -r [range] 		play random entries; a range can be specified with two separate arguements. there's no way to remove
-  			the range; if you want it to continue playing beyond it, kill it and start it without the range.
+  -r [[<from>] [<to>]] 	play random entries; a range can be specified with two separate arguements. there's no way to remove
+  			the range; if you want it to continue play beyond it, kill it and start it without the range.
 
   -dl 			download song # (accepts p|l|m like 'm')
   -n 			get notified when mpv exits (i.e. song finishes)
@@ -205,6 +206,7 @@ The difference between s and x/z: x/z searches without the added jargon 'auto-ge
 	ctrl-j:		jump
 	ctrl-s:		search query in background
 	ctrl-z:		search query in background with ytmp z
+	ctrl-r:		replace input field with selection
 	ctrl-alt-d:	download selection
 	alt-r:		reload queue
 	ctrl-o:		open entry in web browser
@@ -220,20 +222,20 @@ The difference between s and x/z: x/z searches without the added jargon 'auto-ge
   __________________________________________________________
 
 	mapleader 	'<Space>'
-	<leader>v 	source $XDG_CONFIG_HOME/nvim/init.vim
-	<leader>s 	source $XDG_CONFIG_HOME/nvim/ytmp.vim
-	<leader>c 	edit $XDG_CONFIG_HOME/nvim/ytmp.vim
-	<leader>n 	edit $USER/Music/ytmp/run_on_nextZ
+	leader-v 	source $XDG_CONFIG_HOME/nvim/init.vim
+	leader-s 	source $XDG_CONFIG_HOME/nvim/ytmp.vim
+	leader-c 	edit $XDG_CONFIG_HOME/nvim/ytmp.vim
+	leader-n 	edit $USER/Music/ytmp/run_on_nextZ
 
-	<Up> 		move entry up 1
-	<Down> 		move entry down 1
-	<Left> 		move entry right before currently playing
-	<Right> 	move entry right next to currently playing
-	<S-Up> 		move last entry right before currently playing
-	<S-Down> 	move last entry right after currently playing
-	<S-Right> 	move entry to the end
-	<S-Left> 	move entry to the start
-	<Enter> 	play entry
+	up 		move entry up 1
+	down 		move entry down 1
+	left 		move entry right before currently playing
+	right 		move entry right next to currently playing
+	shift-Up 	move last entry right before currently playing
+	shift-Down 	move last entry right after currently playing
+	shift-Right 	move entry to the end
+	shift-Left 	move entry to the start
+	enter 		play entry
 
 	d 		delete line
 	r 		reload file
@@ -245,18 +247,18 @@ The difference between s and x/z: x/z searches without the added jargon 'auto-ge
 	. 		-sd for entry
 	o 		open entry in web browser
 
-	<C-t> 		:te
-	<C-y> 		:te ytmp
-	<C-w> 		:te ytmp z
-	<C-s> 		:te ytmp v
-	<C-v> 		:te ytmp vv
-	<C-p> 		:silent !ytmpsuite qs
-	<C-n> 		:silent !ytmpsuite qn
+	ctrl-t 		:te
+	ctrl-y 		:te ytmp
+	ctrl-w 		:te ytmp z
+	ctrl-s 		:te ytmp v
+	ctrl-v 		:te ytmp vv
+	ctrl-p 		:silent !ytmpsuite qs
+	ctrl-n 		:silent !ytmpsuite qn
 
-	<leader>v 	change the value of the \$vol var in the run_on_next file
-	<leader>l 	set volume of what's currently playing
-	<leader>w 	ytmp w
-	<leader>y 	:silent !ytmp
+	leader-v 	change the value of the \$vol var in the run_on_next file
+	leader-l 	set volume of what's currently playing
+	leader-w 	ytmp w
+	leader-y 	:silent !ytmp
   __________________________________________________________
 
 One can communicate with mpv through the ipc socket the script opens at /tmp/mpvsocketytmp. See https://pastebin.com/23PXxpiD for examples (make sure to pass commands to the /tmp/mpvsocketytmp socket) and \`mpv --list-properties\` for properties that can be controlled.
@@ -270,11 +272,12 @@ Other features:
 You might be interested to know:
   - songs are downloaded with the 'bestaudio' option
   - mpv is started with these options: --x11-name='ytmp_mpv' --no-terminal --vid=no --input-ipc-server=/tmp/mpvsocketytmp
-
-** the config is made for nvim; not all binds are tested to be working in vim
-** readline commands/binds are available in all fzf instances
-** <search> with spaces don't have to be quoted
-** unfortunately the program does not check and will not tell you if you've entered something unexpected/wrong
+  - readline commands/binds are available in all fzf instances
+  - <search> with spaces don't have to be quoted
+  - when allowed to multi-select in fzf, if no selections are made and enter is pressed, the entry under the cursor
+  	is sent; if selections are made only the selections are passed
+  - the config is made for nvim; not all binds are tested to be working in vim
+  - unfortunately the program does not check and will not tell you if you've entered something unexpected/wrong
 	but you might get errors from sed to guess that :)
 CAT_EOF
 exit
