@@ -331,17 +331,11 @@ transferQDiscards () {
 	cat "$qdiscards_file" | tac | while read -r f; do
 		id="$( echo $f | cut -d' ' -f2 )"
 		found="$( grep -n "$id" "$queue" | cut -d':' -f1 )"
-		# echo $x
-		# place="$( sed -n "${x}s@[][\\/.*^$&]@\\\&@gp" /tmp/ytmpplaces )"
-		# place="$( sed -n "${x}p" /tmp/ytmpplaces )"
 		place="$( sed -n "${x}s/$field_regex/\1/p" /tmp/ytmpplaces )"
 		old_found="$( grep -n "$id" "$queue" | head -1 )"
 		lncount=$( grep -c '.' "$queue" )
-		# [ "$place" -gt "$lncount" ] && place=$lncount
-		# echo $place
 		printf "%s\n" "/$place/" "${found}${ed_opt}." "wq" | ed -s "$queue" >/dev/null
 		x=$(( x-1 ))
-		# echo $x
 		place="$( grep -n "$place" "$queue" | head -1 )"
 		found="$( grep -n "$id" "$queue" | head -1 )"
 		echo "$action [$( echo $old_found | cut -d':' -f1 )] '$( echo $f | cut -d' ' -f3- )' [[TO AFTER]] [$( echo $place | cut -d':' -f1 )] '$( echo $place | cut -d' ' -f2- )'"
