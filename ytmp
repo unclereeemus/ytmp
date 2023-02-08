@@ -601,7 +601,7 @@ play_history () {
 
 rand_daemon () {
 	while ( while true; do ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ) && sleep .5 && break; done ); do
-		if ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' ); then
+		if ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ); then
 			if [ -n "$3" ]; then seq "$2" "$3" | shuf -n 1 | xargs ytmp e
 			else grep -c '' "$queue" | xargs seq | shuf -n 1 | xargs ytmp e; fi
 		fi
