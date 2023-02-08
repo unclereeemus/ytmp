@@ -608,7 +608,7 @@ move () {
 				end="$( echo "$f" | cut -d',' -f2 )"
 				start="$( echo "$start" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
 				end="$( echo "$end" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
-				printf "${start}${end}" | grep -xq '[0-9]*' && echo "Removed [$start,$end] "$( sed -n "${start},${end}s/$field_regex/\2/p" "$queue" )"" && sed -i ${start},${end}d "$queue"
+				printf "${start}${end}" | grep -xq '[0-9]*' && printf '%b' "${lsp}Removing from $start to $end\n" && sed -n "${start},${end}s/$field_regex/Removed '\2'/p" "$queue" && printf "$lsp" && sed -i ${start},${end}d "$queue"
 			else
 				f="$( echo "$f" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
 				printf "$f" | grep -xq '[0-9]*' && echo "Removed [$f] '$( sed -n "${f}s/$field_regex/\2/p" "$queue" )'" && sed -i ${f}d "$queue"
