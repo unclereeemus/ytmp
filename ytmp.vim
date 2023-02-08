@@ -46,8 +46,9 @@ nnoremap <C-n> :silent !ytmpsuite qn
 nnoremap < :silent !ytmp p<Enter>
 nnoremap > :silent !ytmp n<Enter>
 nnoremap . :let l = line('.')<Enter>:execute '! ytmp -sd '.shellescape(l)<Enter>
+nnoremap o :let l = line('.')<Enter>:execute '! ytmp openInBrowser '.shellescape(l)<Enter> | execute ':redraw!'
 
-" replace the volume level in the run_on_next file
+" replace the contents of the $vol var in run_on_next
 nnoremap <leader>v :te echo '' \| dmenu \| xargs -r -I ',,' sed -i 's@vol=.*@vol=,,@' /home/$USER/Music/ytmp/run_on_next<Enter>i
 " set volume
 nnoremap <leader>l :te echo '' \| dmenu \| xargs -r -I ',,' mpv_socket_commands s volume ',,' st /tmp/mpvsocketytmp <Enter>i
