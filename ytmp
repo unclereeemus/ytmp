@@ -135,7 +135,7 @@ The difference between s and x/z: x/z searches without the added jargon 'auto-ge
 
   -qa 			quit audio
   -kd 			kill daemon
-  -kd 			kill random daemon (-r)
+  -kd 			kill the random daemon (-r)
   -ka 			do all of the above
 
   h/help/-h/--help 	show this help
@@ -146,6 +146,7 @@ The difference between s and x/z: x/z searches without the added jargon 'auto-ge
 
   fzf bindings for search (ytmp [z/x/s]):
   __________________________________________________________
+
   	ctrl-j		jump
   	ctrl-r		replace input field with selection
   	ctrl-x		send input field as search (none of the selections are passed)
@@ -218,6 +219,7 @@ The difference between s and x/z: x/z searches without the added jargon 'auto-ge
 
   nvim key bindings:
   __________________________________________________________
+
 	mapleader 	'<Space>'
 	<leader>v 	source $XDG_CONFIG_HOME/nvim/init.vim
 	<leader>s 	source $XDG_CONFIG_HOME/nvim/ytmp.vim
