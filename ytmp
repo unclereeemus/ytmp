@@ -692,7 +692,7 @@ case "${1}" in
 	-dl) download_song $* ;;
 	-d) playlist "$@" ;;
 	-r) rand_daemon $* ;;
-	-n) while true; do ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ) && sleep .5 && return 0; done ;;
+	-n) while true; do ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ) && sleep .5 && exit; done ;;
 	-l) echo '{ "command": ["set_property", "loop", true] }' | socat - /tmp/mpvsocketytmp >/dev/null 2>&1 ;;
 	-qa) echo quit | socat - /tmp/mpvsocketytmp ;;
 	-kd) pkill -f 'ytmp -d'; exit ;;
