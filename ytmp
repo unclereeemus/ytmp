@@ -423,7 +423,7 @@ searchSongs () {
 	else
 		songs_dir_ls=$( ls $songs_dir | cut -d' ' -f2- | sed 's/\.webm$//' )
 		entries=$( cat $search_history $played_titles $played_artists )
-		query=$( echo "$entries $songs_dir_ls" | fzf --prompt='search: ' --info=inline --padding=2,2,2,2 --border=bottom --color=hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   ytmp search   }" --separator='' \
+		query=$( echo "$entries $songs_dir_ls" | fzf --prompt='search: ' --info=inline --padding=2,2,2,2 --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   ytmp search   }" --separator='' \
 		--layout=reverse --height 60% -m --bind='ctrl-j:jump,ctrl-k:kill-line,tab:toggle+clear-query+down,shift-tab:clear-selection,ctrl-z:execute-silent(setsid -f ytmp z {q}),alt-z:execute-silent(setsid -f ytmp z {+} {q} ),alt-s:execute-silent(setsid -f ytmp {+} {q}),tab:select+clear-query,return:accept,ctrl-r:replace-query,ctrl-x:print-query,ctrl-s:execute-silent(setsid -f ytmp {q})' | tr "\n" ' ' | sed -e 's/[ \t]*$//' )
 	fi
 
@@ -448,7 +448,7 @@ searchSongs () {
 		ids=$( echo "$ids_titles" | sed -n 'n;p' )
 		echo "$ids" > /tmp/ytmpids
 		titles=$( echo "$ids_titles" | sed -n 'p;n' | grep -n '' )
-		sel=$( printf '%b' "$titles" | fzf --prompt='search: ' --info=inline --padding=2,2,2,2 --border=bottom --color=hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   ytmp select   }" --separator='' \
+		sel=$( printf '%b' "$titles" | fzf --prompt='search: ' --info=inline --padding=2,2,2,2 --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   ytmp select   }" --separator='' \
 		--bind='ctrl-j:jump,ctrl-k:kill-line,tab:toggle+clear-query+down,shift-tab:clear-selection' --layout=reverse --height 60% -m --preview='echo {n}+1 | bc | xargs -I ,, ytmp fzfPreview s ,,' --preview-window='right,70%' )
 		[ -z "$sel" ] && return
 		echo "$sel" | while read -r sel; do
@@ -470,7 +470,7 @@ searchSongs () {
 searchPlaylists () {
 	[ -z "$2" ] && echo 'Provide a search string as arguement.' && return
 	query=$( echo "$*" | cut -d' ' -f2- )
-	playlist_sel="$( pipe-viewer --no-use-colors --no-interactive --results=50 -sp --custom-playlist-layout='*URL* *TITLE*' "$query" | sed -n -e 1d -e "\@https://www.youtube.com/playlist?list=@p" | tee /tmp/ytmpplaylists | cut -d" " -f2- | grep -n '' | fzf --prompt='search: ' --info=inline --padding=2,2,2,2 --border=bottom --color=hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   ytmp playlist select   }" --separator='' \
+	playlist_sel="$( pipe-viewer --no-use-colors --no-interactive --results=50 -sp --custom-playlist-layout='*URL* *TITLE*' "$query" | sed -n -e 1d -e "\@https://www.youtube.com/playlist?list=@p" | tee /tmp/ytmpplaylists | cut -d" " -f2- | grep -n '' | fzf --prompt='search: ' --info=inline --padding=2,2,2,2 --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   ytmp playlist select   }" --separator='' \
 	--layout=reverse --height 60% -m --bind='ctrl-j:jump,home:first,end:last,ctrl-k:kill-line,shift-tab:clear-selection,tab:toggle+down,ctrl-x:execute(echo {n}+1 | bc | xargs -I ,, ytmp spr p ,,)' --preview='echo {n}+1 | bc | xargs -I ",," sed -n ,,p /tmp/ytmpplaylists | xargs -0 -I ",," pipe-viewer --no-use-colors --results=50 --custom-layout="*AUTHOR* *TIME* *TITLE*" --no-interactive ",," | sed 1d' | grep '^[0-9]*:' )"
 
 	[ -z "$playlist_sel" ] && return
@@ -593,7 +593,7 @@ daemon () {
 viewQueue () {
 	[ "$2" = 'p' ] && set -- --height 100% --preview='echo {n}+1 | bc | xargs -I ,, ytmp fzfPreview vv ,,' --preview-window='right,50%' --preview-label='' --bind='focus:transform-preview-label:echo {n}+1 | bc' || set -- --height 60%
 	cmd="cat $queue | cut -d' ' -f2-"
-	cat $queue | cut -d' ' -f2- | fzf --tiebreak=chunk,begin --prompt='search: ' --info=inline --border=bottom --color=hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   ytmp queue   }" --separator='' --padding=2,2,2,2 \
+	cat $queue | cut -d' ' -f2- | fzf --tiebreak=chunk,begin --prompt='search: ' --info=inline --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   ytmp queue   }" --separator='' --padding=2,2,2,2 \
 	"$@" \
 	--layout=reverse --cycle --bind="ctrl-space:execute(echo {n}+1 | bc | xargs -I ,, ytmp m x ,,)+reload($cmd),ctrl-alt-m:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m s ,,),alt-up:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, 0)+reload($cmd),alt-down:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, l)+reload($cmd),ctrl-]:execute-silent(ytmp w),ctrl-r:replace-query,home:first+reload($cmd),end:last+reload($cmd),alt-r:reload($cmd),ctrl-alt-d:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp -dl ,,),ctrl-z:execute-silent(setsid -f ytmp z {q}),ctrl-s:execute-silent(setsid -f ytmp {q}),ctrl-j:down,ctrl-j:jump,shift-left:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m r ,,)+reload($cmd),shift-up:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, -2)+reload($cmd)+up,shift-down:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, +1)+reload($cmd)+down,ctrl-k:kill-line,alt-p:execute-silent(ytmp p)+reload($cmd),alt-n:execute-silent(ytmp n)+reload($cmd),alt-right:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp e ,,)+reload($cmd),return:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp e ,,)+abort,shift-right:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp e ,,)+reload($cmd),pgdn:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, p)+reload($cmd),pgup:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, p-1)+reload($cmd),ctrl-v:page-down,alt-v:page-up,ctrl-alt-p:half-page-up,ctrl-alt-n:half-page-down,left-click:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp e ,,)+abort,right-click:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, p)+reload($cmd),ctrl-^:execute-silent(ytmp mln)+reload($cmd),ctrl-\:execute(ytmp E)+reload($cmd),alt-m:execute(echo {n}+1 | bc | xargs -I ,, ytmp m f ,,)+reload($cmd),ctrl-o:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp openInBrowser ,,)"
 }
@@ -628,7 +628,7 @@ move () {
 		read place </dev/tty
 	elif [ "$1" = 'x' ]; then
 		sel="$( echo "$2" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
-		place="$( grep -n '' "$queue" | fzf --info=hidden --border=bottom --color=hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   Move '$( sed -n "${sel}s/${field_regex}/\2/p" "$queue" )' after what?   }" --separator='' | cut -d':' -f1 )"
+		place="$( grep -n '' "$queue" | fzf --info=hidden --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   Move '$( sed -n "${sel}s/${field_regex}/\2/p" "$queue" )' after what?   }" --separator='' | cut -d':' -f1 )"
 	else
 		place="$2"
 		sel="$1"
@@ -657,7 +657,7 @@ playFromHistory () {
 	if ( echo "$1" | grep -qxE '[0-9]*' ); then
 		tail "-$1" "$played_urls" | head -1 | cut -d' ' -f1 | xargs -I '{}' ytmp P '{}'
 	elif [ "$1" = 's' ]; then
-		cat "$played_urls" | fzf --prompt='search: ' --info=inline --border=bottom --color=hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   ytmp history   }" --separator='' \
+		cat "$played_urls" | fzf --prompt='search: ' --info=inline --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   ytmp history   }" --separator='' \
 		--layout=reverse --height 60% --tac | cut -d' ' -f1 | xargs -I '{}' ytmp P '{}'
 	else
 		tail -2 "$played_urls" | head -1 | cut -d' ' -f1 | xargs -I '{}' ytmp P '{}'
