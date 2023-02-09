@@ -115,6 +115,7 @@ The difference between s and x/z: x/z searches without the added jargon 'auto-ge
   E 			edit the queue in nvim and source rc from "$XDG_CONFIG_HOME/nvim/ytmp.vim"
 
   -sd <#> 		get listen history and other details about entry (accepts p|l|m like 'm')
+  -dl 			download song # (accepts p|l|m like 'm')
   -shuf 		runs shuf on the queue file and overwrites it.
 
   -vd 			prints /tmp/ytmpqdiscards which contains list of songs that were selected to be added to the queue
@@ -133,12 +134,11 @@ The difference between s and x/z: x/z searches without the added jargon 'auto-ge
   -r [[<from>] [<to>]] 	play random entries; a range can be specified with two separate arguements. there's no way to remove
   			the range; if you want it to continue play beyond it, kill it and start it without the range.
 
-  -dl 			download song # (accepts p|l|m like 'm')
   -n 			get notified when mpv exits (i.e. song finishes)
 
   -qa 			quit audio
   -kd 			kill daemon
-  -kd 			kill the random daemon (-r)
+  -kr 			kill the random daemon (-r)
   -ka 			do all of the above
 
   h/help/-h/--help 	show this help
