@@ -86,6 +86,7 @@ The difference between s and x/z: x/z searches without the added jargon 'auto-ge
 
   l [n|s] 		play the song that was played before this one or n before this one or
 			pass s to select from the history file with fzf.
+			single fzf binding: ctrl-o: open entry in web browser.
 
   w 			toggle mpv window. don't press q to close the window because that will close the file as well
   			instead run ytmp w again to close it.
@@ -143,12 +144,13 @@ The difference between s and x/z: x/z searches without the added jargon 'auto-ge
   h/help/-h/--help 	show this help
   __________________________________________________________
 
-  fzf bindings for search (ytmp [z/x/s]):
+  fzf bindings for search (ytmp x|s):
   __________________________________________________________
 
   	ctrl-j		jump
   	ctrl-r		replace input field with selection
   	ctrl-x		send input field as search (none of the selections are passed)
+	ctrl-o:		open entry in web browser
   	enter		search only the selections (query not included)
   	tab		toggle selection and clear query
   	shift-tab	deselect all
@@ -176,11 +178,12 @@ The difference between s and x/z: x/z searches without the added jargon 'auto-ge
 	shift-tab	deselect all
 	enter		add selected playlists to queue
 
+	ctrl-o:		open entry in web browser
 	ctrl-x		see songs in the playlist
 			one can select songs in the playlist to add with <tab> and press <enter> to add them
   __________________________________________________________
 
-  fzf bindings for viewing queue (v/vv):
+  fzf bindings for viewing queue (v|vv):
   __________________________________________________________
 
 	home:		first and reload
@@ -279,6 +282,7 @@ You might be interested to know:
   - when allowed to multi-select in fzf, if no selections are made and enter is pressed, the entry under the cursor
   	is sent; if selections are made only the selections are passed
   - the config is made for nvim; not all binds are tested to be working in vim
+  - artists are only parsed for in a song if the search is made with no args or 's'
   - unfortunately the program does not check and will not tell you if you've entered something unexpected/wrong
 	but you might get errors from sed to guess that :)
 CAT_EOF
@@ -449,7 +453,7 @@ searchSongs () {
 		echo "$ids" > /tmp/ytmpids
 		titles=$( echo "$ids_titles" | sed -n 'p;n' | grep -n '' )
 		sel=$( printf '%b' "$titles" | fzf --prompt='search: ' --info=inline --padding=2,2,2,2 --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   ytmp select   }" --separator='' \
-		--bind='ctrl-j:jump,ctrl-k:kill-line,tab:toggle+clear-query+down,shift-tab:clear-selection' --layout=reverse --height 60% -m --preview='echo {n}+1 | bc | xargs -I ,, ytmp fzfPreview s ,,' --preview-window='right,70%' )
+		--bind='ctrl-o:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp openInBrowser id ,,),ctrl-j:jump,ctrl-k:kill-line,tab:toggle+clear-query+down,shift-tab:clear-selection' --layout=reverse --height 60% -m --preview='echo {n}+1 | bc | xargs -I ,, ytmp fzfPreview s ,,' --preview-window='right,70%' )
 		[ -z "$sel" ] && return
 		echo "$sel" | while read -r sel; do
 			num=$( printf '%b' "$titles" | grep -Fx "$sel" | cut -d':' -f1 )
@@ -471,7 +475,7 @@ searchPlaylists () {
 	[ -z "$2" ] && echo 'Provide a search string as arguement.' && return
 	query=$( echo "$*" | cut -d' ' -f2- )
 	playlist_sel="$( pipe-viewer --no-use-colors --no-interactive --results=50 -sp --custom-playlist-layout='*URL* *TITLE*' "$query" | sed -n -e 1d -e "\@https://www.youtube.com/playlist?list=@p" | tee /tmp/ytmpplaylists | cut -d" " -f2- | grep -n '' | fzf --prompt='search: ' --info=inline --padding=2,2,2,2 --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   ytmp playlist select   }" --separator='' \
-	--layout=reverse --height 60% -m --bind='ctrl-j:jump,home:first,end:last,ctrl-k:kill-line,shift-tab:clear-selection,tab:toggle+down,ctrl-x:execute(echo {n}+1 | bc | xargs -I ,, ytmp spr p ,,)' --preview='echo {n}+1 | bc | xargs -I ",," sed -n ,,p /tmp/ytmpplaylists | xargs -0 -I ",," pipe-viewer --no-use-colors --results=50 --custom-layout="*AUTHOR* *TIME* *TITLE*" --no-interactive ",," | sed 1d' | grep '^[0-9]*:' )"
+		--layout=reverse --height 60% -m --bind='ctrl-o:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp openInBrowser pl ,,),ctrl-j:jump,home:first,end:last,ctrl-k:kill-line,shift-tab:clear-selection,tab:toggle+down,ctrl-x:execute(echo {n}+1 | bc | xargs -I ,, ytmp spr p ,,)' --preview='echo {n}+1 | bc | xargs -I ",," sed -n ,,p /tmp/ytmpplaylists | xargs -0 -I ",," pipe-viewer --no-use-colors --results=50 --custom-layout="*AUTHOR* *TIME* *TITLE*" --no-interactive ",," | sed 1d' | grep '^[0-9]*:' )"
 
 	[ -z "$playlist_sel" ] && return
 	printf "Adding:\n${lsp}$playlist_sel\n${lsp}"
@@ -548,7 +552,7 @@ play () {
 }
 
 # puts stars around line # and removes stars from any other lines
-markPlaying () {
+markAsPlaying () {
 	line="$1"
 	line="$( echo "$line" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
 	lncount=$( grep -c '.' "$queue" )
@@ -561,15 +565,15 @@ markPlaying () {
 }
 
 # checks if queue is not empty but nothing is playing, it will set stars around the first line and call play
-# it also checks if mpv is closed then it calls markPlaying p+1 (ytmp n) to play the next entry
+# it also checks if mpv is closed then it calls markAsPlaying p+1 (ytmp n) to play the next entry
 daemon () {
 	shift 1
 	while true; do
 		if [ "$( grep -c '.' $queue )" -gt 0 ]; then
-			if [ -z "$2" ] && ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ); then markPlaying 1
+			if [ -z "$2" ] && ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ); then markAsPlaying 1
 			elif [ -n "$2" ]; then
 				counter="$1"
-				! grep -q "$playing_regex" "$queue" && markPlaying "$counter"
+				! grep -q "$playing_regex" "$queue" && markAsPlaying "$counter"
 				while true; do
 					if [ $counter = $2 ]; then
 						[ "$3" = 'k' ] && return || counter=$1
@@ -578,12 +582,12 @@ daemon () {
 					fi
 					while true; do ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ) && sleep 1 && break; done
 					playing="$( grep -n "$playing_regex" "$queue" | cut -d':' -f1 )"
-					( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ) && ( if [ $playing -lt $1 ] || [ $playing -gt $2 ]; then markPlaying $(( counter+1 )); else markPlaying p+1; fi )
+					( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ) && ( if [ $playing -lt $1 ] || [ $playing -gt $2 ]; then markAsPlaying $(( counter+1 )); else markAsPlaying p+1; fi )
 				done
 			else
 				# sleep twice in case in between the sleeps some external cmd plays something so there
 				# is no clash between the two
-				sleep 1 && ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ) && sleep 1 && ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ) && markPlaying p+1
+				sleep 1 && ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ) && sleep 1 && ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ) && markAsPlaying p+1
 			fi
 		else sleep 1; fi
 	done
@@ -648,7 +652,7 @@ fuzzyPlay () {
 	query="$@"
 	[ -z "$query" ] && echo 'Provide a string to search as argument.' && return
 	match=$( grep -n '' "$queue" | sed -E 's/[Rr]emaster(ed)//g' | fzf --tiebreak=chunk,begin -f "$query" | head -1 | cut -d':' -f1 )
-	if [ -n "$match" ]; then markPlaying "$match"; else echo 'Match not found.'; fi
+	if [ -n "$match" ]; then markAsPlaying "$match"; else echo 'Match not found.'; fi
 	return
 }
 
@@ -657,7 +661,7 @@ playFromHistory () {
 	if ( echo "$1" | grep -qxE '[0-9]*' ); then
 		tail "-$1" "$played_urls" | head -1 | cut -d' ' -f1 | xargs -I '{}' ytmp P '{}'
 	elif [ "$1" = 's' ]; then
-		cat "$played_urls" | fzf --prompt='search: ' --info=inline --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   ytmp history   }" --separator='' \
+		cat "$played_urls" | fzf --bind="ctrl-o:execute-silent(echo {} | cut -d' ' -f1 | xargs -I ,, ytmp openInBrowser -id ',,')" --prompt='search: ' --info=inline --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   ytmp history   }" --separator='' \
 		--layout=reverse --height 60% --tac | cut -d' ' -f1 | xargs -I '{}' ytmp P '{}'
 	else
 		tail -2 "$played_urls" | head -1 | cut -d' ' -f1 | xargs -I '{}' ytmp P '{}'
@@ -714,8 +718,10 @@ dlSong () {
 }
 
 openInBrowser () {
-	index=$1
-	id=$( sed -n "${index}p" "$queue" | cut -d' ' -f1 )
+	if [ $1 = 'pl' ]; then url="$( sed -n ${2}p /tmp/ytmpplaylists | cut -d' ' -f1 )"; setsid -f $BROWSER "$url" >/dev/null 2>&1; exit
+	elif [ $1 = 'id' ]; then id="$( sed -n ${2}p /tmp/ytmpids )"
+	elif [ $1 = '-id' ]; then id="$2"
+	else id=$( sed -n "${1}s/$field_regex/\1/p" "$queue" ); fi
 	setsid -f $BROWSER "https://www.youtube.com/watch?v=$id" >/dev/null 2>&1
 }
 
@@ -729,8 +735,8 @@ case "${1}" in
 	mfn) move 1 p ;;
 	mln) move l p ;;
 	w) toggleMpvWin ;;
-	pf) markPlaying 1 ;;
-	pl) markPlaying l ;;
+	pf) markAsPlaying 1 ;;
+	pl) markAsPlaying l ;;
 	-p) echo cycle pause | socat - /tmp/mpvsocketytmp >/dev/null 2>&1 ;;
 	v) viewQueue v ;;
 	vv) viewQueue v p ;;
@@ -740,14 +746,14 @@ case "${1}" in
 	sp) searchPlaylists "$@" ;;
 	spr) searchSongs p "$3" ;;
 	a) add "$@" ;;
-	n) markPlaying p+1 ;;
-	p) markPlaying p-1 ;;
-	e) markPlaying $2 ;;
+	n) markAsPlaying p+1 ;;
+	p) markAsPlaying p-1 ;;
+	e) markAsPlaying $2 ;;
 	P) fuzzyPlay "$@" ;;
 	l) playFromHistory $2 ;;
 	m) move "$@" ;;
 	ls) grep --color=auto -n '' "$queue" ;;
-	openInBrowser) openInBrowser $2 ;;
+	openInBrowser) openInBrowser $2 $3 ;;
 	fzfPreview) fzfPreview "$@" ;;
 	-sd) fzfPreview a c "$2" ;;
 	-shuf) shuf "$queue" -o "$queue" ;;
