@@ -128,7 +128,6 @@ The difference between s and x/z: x/z searches without the added jargon 'auto-ge
 			run daemon to play one song after another or if range is specified with two args then loop in that
   			range unless 'k' is specified in which case exit after reaching the end of range. there's no way to
 			remove the range; if you want it to continue playing beyond it, kill it and start it without the range.
-			(range use is broken as of now)
 
   -r [[<from>] [<to>]] 	play random entries; a range can be specified with two separate arguements. there's no way to remove
   			the range; if you want it to continue play beyond it, kill it and start it without the range.
@@ -261,11 +260,14 @@ The difference between s and x/z: x/z searches without the added jargon 'auto-ge
 	leader-y 	:silent !ytmp
   __________________________________________________________
 
-One can communicate with mpv through the ipc socket the script opens at /tmp/mpvsocketytmp. See https://pastebin.com/23PXxpiD for examples (make sure to pass commands to the /tmp/mpvsocketytmp socket) and \`mpv --list-properties\` for properties that can be controlled.
-
 Other features:
-  - you can have multiple entries of the same song in multiple places and the program won't get confused (in case you wanted to move tracks of albums around without changing their place in the album).
-  - by default ytmp downloads songs after you have listened to them $max_stream_amount times, if you don't want this feature set \$download_songs to '0' in $conf. the downloads can be found in $songs_dir.
+  - One can communicate with mpv through the ipc socket the script opens at /tmp/mpvsocketytmp.
+  	See https://pastebin.com/23PXxpiD for examples (make sure to pass commands to the /tmp/mpvsocketytmp socket)
+	and \`mpv --list-properties\` for properties that can be controlled.
+  - you can have multiple entries of the same song in multiple places and the program won't get confused
+  	(in case you wanted to move tracks of albums around without changing their place in the album).
+  - by default ytmp downloads songs after you have listened to them $max_stream_amount times, if you don't want this feature
+  	set \$download_songs to '0' in $conf. the downloads can be found in $songs_dir.
   - put commands you want to run at the start of each song in the script $run_on_next.
   - set settings in $conf.
 
@@ -336,7 +338,6 @@ transferQDiscards () {
 		found="$( grep -n "$id" "$queue" | cut -d':' -f1 )"
 		place="$( sed -n "${x}s/$field_regex/\1/p" /tmp/ytmpplaces )"
 		old_found="$( grep -n "$id" "$queue" | head -1 )"
-		lncount=$( grep -c '.' "$queue" )
 		printf "%s\n" "/$place/" "${found}${ed_opt}." "wq" | ed -s "$queue" >/dev/null
 		x=$(( x-1 ))
 		place="$( grep -n "$place" "$queue" | head -1 )"
@@ -410,7 +411,7 @@ add () {
 	done
 }
 
-searchYoutube () {
+searchSongs () {
 	# ss = <query> was passed from cli
 	if [ "$1" = 'ss' ]; then
 		query=$( echo "$*" | cut -d' ' -f2- | tr "\n" ' ' | sed -e 's/[ \t]*$//' )
@@ -560,24 +561,24 @@ markPlaying () {
 }
 
 # checks if queue is not empty but nothing is playing, it will set stars around the first line and call play
-# it also checks if mpv is closed then it calls ytmp n (markPlaying p+1) to play the next entry
+# it also checks if mpv is closed then it calls markPlaying p+1 (ytmp n) to play the next entry
 daemon () {
+	shift 1
 	while true; do
 		if [ "$( grep -c '.' $queue )" -gt 0 ]; then
 			if [ -z "$2" ] && ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ); then markPlaying 1
 			elif [ -n "$2" ]; then
-				p="$1"
-				# x="$1"
-				! grep -q "$playing_regex" "$queue" && markPlaying "$p"
-				while [ $p -lt $2 ]; do
-					playing="$( grep -n "$playing_regex" "$queue" | cut -d':' -f1 )"
-					# if [ $playing -lt $p ] || [ $playing -gt $2 ]; then markPlaying $p; fi
-					while ( while true; do ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ); sleep .5; break; done ); do break; done
-					sleep 1.5 && ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ) && ( if [ $playing -lt $p ] || [ $playing -gt $2 ]; then markPlaying $1; else markPlaying p+1; fi )
-					p=$(( p+1 ))
-					if [ $p = $2 ]; then
-						[ $3 = k ] && exit || p=$1
+				counter="$1"
+				! grep -q "$playing_regex" "$queue" && markPlaying "$counter"
+				while true; do
+					if [ $counter = $2 ]; then
+						[ "$3" = 'k' ] && return || counter=$1
+					else
+						counter=$(( counter+1 ))
 					fi
+					while true; do ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ) && sleep 1 && break; done
+					playing="$( grep -n "$playing_regex" "$queue" | cut -d':' -f1 )"
+					( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ) && ( if [ $playing -lt $1 ] || [ $playing -gt $2 ]; then markPlaying $(( counter+1 )); else markPlaying p+1; fi )
 				done
 			else
 				# sleep twice in case in between the sleeps some external cmd plays something so there
@@ -728,17 +729,16 @@ case "${1}" in
 	mfn) move 1 p ;;
 	mln) move l p ;;
 	w) toggleMpvWin ;;
-	# the 'a' doesn't mean anything. it's there so the # is in the proper field.
 	pf) markPlaying 1 ;;
-	pl) markPlaying "$(  grep -c '' "$queue" )" ;;
+	pl) markPlaying l ;;
 	-p) echo cycle pause | socat - /tmp/mpvsocketytmp >/dev/null 2>&1 ;;
 	v) viewQueue v ;;
 	vv) viewQueue v p ;;
-	s) searchYoutube s "$2" ;;
-	z) searchYoutube z "$@" ;;
-	x) searchYoutube x "$2" ;;
+	s) searchSongs s "$2" ;;
+	z) searchSongs z "$@" ;;
+	x) searchSongs x "$2" ;;
 	sp) searchPlaylists "$@" ;;
-	spr) searchYoutube p "$3" ;;
+	spr) searchSongs p "$3" ;;
 	a) add "$@" ;;
 	n) markPlaying p+1 ;;
 	p) markPlaying p-1 ;;
@@ -763,7 +763,7 @@ case "${1}" in
 	-kr) pkill -f 'ytmp -r'; exit ;;
 	-ka) echo quit | socat - /tmp/mpvsocketytmp; pkill -f 'ytmp -d'; pkill -f 'ytmp -r'; exit ;;
 	h|help|-h|--help) helper ;;
-	*) searchYoutube ss "$*" ;;
+	*) searchSongs ss "$*" ;;
 esac
 
-[ -z "$1" ] && searchYoutube
+[ -z "$1" ] && searchSongs
