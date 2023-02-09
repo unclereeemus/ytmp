@@ -47,6 +47,8 @@ nnoremap < :silent !ytmp p<Enter>
 nnoremap > :silent !ytmp n<Enter>
 nnoremap . :let l = line('.')<Enter>:execute '! ytmp -sd '.shellescape(l)<Enter>
 nnoremap o :let l = line('.')<Enter>:execute '! ytmp openInBrowser '.shellescape(l)<Enter> | execute ':redraw!'
+" left click to play entry
+" nnoremap <LeftMouse> <LeftMouse> :let l = line('.')<Enter>:silent execute '! ytmp e '.shellescape(l)<Enter> | execute ':redraw!'
 
 " replace the contents of the $vol var in run_on_next
 nnoremap <leader>v :te echo '' \| dmenu \| xargs -r -I ',,' sed -i 's@vol=.*@vol=,,@' /home/$USER/Music/ytmp/run_on_next<Enter>i
