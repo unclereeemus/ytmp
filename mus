@@ -3,14 +3,14 @@ mpvsocket="$( cat /tmp/active_mpvsocket )"
 case "$1" in
 	"title")
 		title=$( echo '{ "command": ["get_property", "media-title" ] }' | socat - "$mpvsocket" | jq -r .data )
-		[ -z "$title" ] && echo '●ᴥ●'|| echo "$title"
+		[ -z "$title" ] && echo 'Nothing Playing'|| echo "$title"
 		;;
 	"statusicon")
-		state=$( echo '{ "command": ["get_property", "pause"] }' | socat - "$mpvsocket" | jq .data )
+i		state=$( echo '{ "command": ["get_property", "pause"] }' | socat - "$mpvsocket" | jq -r .data )
 		[ "$state" = "false" ] && echo "󰏤" || echo "󰐊"
 		;;
 	"prog")
-		perc=$( echo '{ "command": ["get_property", "percent-pos" ] }' | socat - "$mpvsocket" | jq .data | cut -d'.' -f1 )
+		perc=$( echo '{ "command": ["get_property", "percent-pos" ] }' | socat - "$mpvsocket" | jq -r .data | cut -d'.' -f1 )
 		echo "$perc"
 		;;
 	"seek")
@@ -45,16 +45,22 @@ case "$1" in
 		st -e less /tmp/lyrics
 		;;
 	"vol")
-		vol=$( echo '{ "command": ["get_property", "volume" ] }' | socat - "$mpvsocket" | jq .data )
+		vol=$( echo '{ "command": ["get_property", "volume" ] }' | socat - "$mpvsocket" | jq -r .data )
 		echo $vol
 		;;
 	"volch")
 		echo "{ \"command\": [ \"set_property\", \"volume\", \"${2}\" ] }" | socat - "$mpvsocket"
 		;;
 	"dur")
-		duration=$( echo '{ "command": ["get_property", "duration" ] }' | socat - "$mpvsocket" | jq .data | cut -d'.' -f1 )
-		position=$( echo '{ "command": ["get_property", "time-pos" ] }' | socat - "$mpvsocket" | jq .data | cut -d'.' -f1 )
-		[ "null" != "duration" ] && printf "%02d:%02d" $((position%3600/60)) $((position%60)) && printf " / " && printf "%02d:%02d" $((duration%3600/60)) $((duration%60)) || printf "00:00 / 00:00"
+		duration=$( echo '{ "command": ["get_property", "duration" ] }' | socat - "$mpvsocket" | jq -r .data | cut -d'.' -f1 )
+		position=$( echo '{ "command": ["get_property", "time-pos" ] }' | socat - "$mpvsocket" | jq -r .data | cut -d'.' -f1 )
+		if [ -z "$duration" ]; then
+			printf "00:00 / 00:00"
+		elif [ "$duration" -lt 3600 ]; then
+			printf "%02d:%02d / %02d:%02d" $((position%3600/60)) $((position%60)) $((duration%3600/60)) $((duration%60))
+		else
+			printf "%d:%02d:%02d / %d:%02d:%02d" $((position/3600)) $((position%3600/60)) $((position%60)) $((duration/3600)) $((duration%3600/60)) $((duration%60))
+		fi
 		;;
 	"micvol")
 		mic=$(amixer sget Capture | grep "Mono:")
@@ -71,7 +77,7 @@ case "$1" in
 		echo 'exit' | socat - "$mpvsocket" && rm "$mpvsocket"
 		;;
 	"w")
-		state=$( echo '{ "command": ["get_property", "force-window" ] }' | socat - $mpvsocket | jq .data )
+		state=$( echo '{ "command": ["get_property", "force-window" ] }' | socat - $mpvsocket | jq -r .data )
 		[ "$state" = "false" ] && echo '{ "command": ["set_property", "force-window", true ] }' | socat - $mpvsocket &>/dev/null && ( mpv_socket_commands s 'load-stats-overlay' 'true' ) || echo '{ "command": ["set_property", "force-window", false ] }' | socat - $mpvsocket &>/dev/null
 		;;
 esac
