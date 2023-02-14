@@ -59,93 +59,119 @@ qdiscards_file="/tmp/ytmpqdiscards"
 
 helper () {
 cat << CAT_EOF
-Usage: ytmp [z] [<search>]/s|x [# of results]/sp <search>/a <local path|dir|url>/e # OR v/ls/m [p|l|m|#[+|-#]] [p|l|m|#[+|-#]] [s #|v]/E OR -l/-p OR n/p/pl/pf/mln/mfn/l [#|s]/P OR -r/-d
+Usage: ytmp [z] [<search>]/s|x [# of results]/sp <search>/a <local path|dir|url>/e #
+       OR v/ls/m [p|l|m|#[+|-#]] [p|l|m|#[+|-#]] [s #|v]/E
+       OR -l/-p OR n/p/pl/pf/mln/mfn/l [#|s]/P OR -r/-d
 
-On first installing ytmp, there won't be any history to select from when you enter ytmp so either pass arguements from the cli with ytmp [z] <search> or to search what's on the fzf input field press ctrl-x or to background search press ctrl-s / ctrl-z (difference explained below)
+On first installing ytmp, there won't be any history to select from when you enter ytmp
+so either pass arguements from the cli with ytmp [z] <search> or to search what's on the
+fzf input field press ctrl-x or to background search press ctrl-s / ctrl-z
+(difference explained below)
 
-The difference between s and x/z: x/z searches without the added jargon 'auto-generated provided to youtube' which usually fetches results from youtube music. If you just pass the query from the command line or just run ytmp without options, it will add the jargon to your search. ytmp and ytmp z also accept arguements as search if you don't want to enter fzf for search.
+The difference between s and x/z: x/z searches without the added jargon 'auto-generated
+provided to youtube' which usually fetches results from youtube music. If you just pass
+the query from the command line or just run ytmp without options, it will add the jargon
+to your search. ytmp and ytmp z also accept arguements as search if you don't want to
+enter fzf for search.
 
-  [no arg] 		enter fzf to make a search with the jargon appended.
-  [<search>] 		search with the jargon.
-  z [<search>] 		search without the jargon. if no args then enter fzf.
+  [no arg] 	enter fzf to make a search with the jargon appended.
+  [<search>] 	search with the jargon.
+  z [<search>] 	search without the jargon. if no args then enter fzf.
 
-  s [# of results] 	search with the jargon. view search results and select (can select multiple).
-  			can specify amount of search results to return with a following arguement; defaults to 5.
+  s [<# of results>]
+  		search with the jargon. view search results and select (can select multiple).
+		can specify amount of search results to return with a following arguement;
+		defaults to 5.
 
-  x [# of results] 	search without the jargon. view search results and select (can select multiple).
-			can specify amount of search results to return with a following arguement; defaults to 5.
+  x [<# of results>]
+  		search without the jargon. view search results and select (can select multiple).
+		can specify amount of search results to return with a following arguement;
+		defaults to 5.
 
-  sp <search> 		search for playlists (requires https://github.com/trizen/pipe-viewer/); bindings:
+  sp <search> 	search for playlists (requires https://github.com/trizen/pipe-viewer/); bindings:
 
-  a 			add urls (direct links/playlists), paths, or directory
-  			(pass them as arguement - accepts many of all the kinds mentioned).
-			does not check if file is a media file or not before adding.
+  a 		add urls (direct links/playlists), paths, or directory
+  		(pass them as arguement - accepts many of all the kinds mentioned).
+		does not check if file is a media file or not before adding.
 
-  -p 			toggle playback
-  -l 			loop what's currently playing
+  -p 		toggle playback
+  -l 		loop what's currently playing
+  -ff <secs>	seek forward <seconds>
+  -bb <secs>	seek backward <seconds>
 
-  l [n|s] 		play the song that was played before this one or n before this one or
-			pass s to select from the history file with fzf.
-			single fzf binding: ctrl-o: open entry in web browser.
+  l [n|s] 	play the song that was played before this one or n before this one or
+		pass s to select from the history file with fzf.
+		single fzf binding: ctrl-o: open entry in web browser.
 
-  w 			toggle mpv window. don't press q to close the window because that will close the file as well
-  			instead run ytmp w again to close it.
+  w 		toggle mpv window. don't press q to close the window because that will close
+  		the file as well instead run ytmp w again to close it.
 
-  mfn 			queue last entry to play next
-  mln 			queue last entry to play next
-  e 			play entry #; can specify relative places with p|l|m like 'm'
-  pf 			play first entry
-  pl 			play last entry
-  n 			play next on queue
-  p 			play prev on queue
-  P <search> 		fuzzy search string in queue and play match
+  mfn 		queue last entry to play next
+  mln 		queue last entry to play next
+  e 		play entry #; can specify relative places with p|l|m like 'm'
+  pf 		play first entry
+  pl 		play last entry
+  n 		play next on queue
+  p 		play prev on queue
+  P <search> 	fuzzy search string in queue and play match
 
-  v 			view queue
-  vv 			view queue with fzf preview of details about the song
+  v 		view queue
+  vv 		view queue with fzf preview of details about the song
 
-  ls 			show a numbered list of the queue
+  ls 		show a numbered list of the queue
 
   m [p|l|m|#[+|-#]] [p|l|m|#[+|-#]] [s #|v] [x #] [r #]
-  			move entry. l means last, p means currently playing, m means a position mark set with passing s #.
-			set mark by passing s # and see current mark with s v. pass x # to move # to the position of the
-			queue selected in the fzf window that will pop up. pass r to remove; can specify a range to delete
-			by passing start,end (separated by comma). you can use p|l|m for all of 'm s|x|r'.
-			examples: ytmp m 10 2; ytmp m s 123; ytmp m m +5; ytmp m p+3 l-1; ytmp x p-2; ytmp m r p+2,l-15 l-5 10
+  		move entry. l means last, p means currently playing, m means a position mark
+		set with passing s #. set mark by passing s # and see current mark with s v.
+		pass x # to move # to the position of the queue selected in the fzf window
+		that will pop up. pass r to remove; can specify a range to delete
+		by passing start,end (separated by comma). you can use p|l|m for all of 'm s|x|r'.
+		examples: ytmp m 10 2; ytmp m s 123; ytmp m m +5; ytmp m p+3 l-1; ytmp x p-2;
+		ytmp m r p+2,l-15 l-5 10
 
-  E 			edit the queue in nvim and source rc from "$XDG_CONFIG_HOME/nvim/ytmp.vim"
+  E 		edit the queue in nvim and source rc from "$XDG_CONFIG_HOME/nvim/ytmp.vim"
 
-  -sd <#> 		get listen history and other details about entry (accepts p|l|m like 'm')
-  -dl 			download song # (accepts p|l|m like 'm')
-  -shuf 		runs shuf on the queue file and overwrites it.
+  -sd <#> 	get listen history and other details about entry (accepts p|l|m like 'm')
+  -dl 		download song # (accepts p|l|m like 'm'). does not respect \$max_len_for_dl.
+  -shuf 	runs shuf on the queue file and overwrites it.
 
-  -vd 			prints /tmp/ytmpqdiscards which contains list of songs that were selected to be added to the queue
-  			but were already found on the queue. it's removed with every search.
+  -vd 		prints /tmp/ytmpqdiscards which contains list of songs that were selected to
+  		be added to the queue but were already found on the queue. it's removed with
+		every search.
 
-  -rd [c] 		copies or moves songs listed in /tmp/ytmpqdiscards which means songs that were selected to be added
-  			to the queue but were already found there; can be copied (when given c option) to or moved (when no
-			options are given) from their current position to the position they would have been added on if they
-			were never found on the queue.
+  -rd [c] 	copies or moves songs listed in /tmp/ytmpqdiscards which means songs that were
+  		selected to be added to the queue but were already found there; can be copied
+		(when given c option) to or moved (when no options are given) from their current
+		position to the position they would have been added on if they were never found
+		on the queue.
 
-  -d [[[<from>] [<to>]] [k]]
-			run daemon to play one song after another or if range is specified with two args then loop in that
-  			range unless 'k' is specified in which case exit after reaching the end of range. there's no way to
-			remove the range; if you want it to continue playing beyond it, kill it and start it without the range.
+  -d [<start on>] [[[<from>] [<to>]] [k]]
+		run daemon to play one song after another or if a range is specified with two args
+		then loop in that range unless 'k' is specified in which case exit after reaching
+		the end of range. there's no way to remove the range; if you want it to continue
+		playing beyond it, run it again without the range. also optionally accepts
+		an entry # to start playing from (if another song is playing, it will wait
+		for it to end to start playing from the entry provided)
+		(kills any other instances of -r or -d running on start.)
 
-  -r [[<from>] [<to>]] 	play random entries; a range can be specified with two separate arguements. there's no way to remove
-  			the range; if you want it to continue play beyond it, kill it and start it without the range.
+  -r [[<from>] [<to>]]
+  		play random entries; a range can be specified with two separate arguements.
+  		there's no way to remove the range; if you want it to continue play beyond it,
+		run it again. (kills any other instances of -r or -d running on start.)
 
-  -n 			get notified when mpv exits (i.e. song finishes)
+  -n 		get notified when mpv exits (i.e. song finishes)
 
-  -qa 			quit audio
-  -kd 			kill daemon
-  -kr 			kill the random daemon (-r)
-  -ka 			do all of the above
+  -qa 		quit audio
+  -kd 		kill daemon
+  -kr 		kill the random daemon (-r)
+  -ka 		do all of the above
 
-  h/help/-h/--help 	show this help
-  __________________________________________________________
+  h|help|-h|--help
+  		show this help
 
+  ----------------------------------------------
   fzf bindings for search (ytmp x|s):
-  __________________________________________________________
+  ----------------------------------------------
 
   	ctrl-j		jump
   	ctrl-r		replace input field with selection
@@ -166,13 +192,9 @@ The difference between s and x/z: x/z searches without the added jargon 'auto-ge
 	ctrl-z		search query in counterpart of current search in the background
 	alt-z		search query and selection in counterpart of current search in the background
 
-  * what the following mean for ytmp v/vv:
-	ctrl-s		search query in background
-	ctrl-z		search query in background with ytmp z
-  __________________________________________________________
-
+  ----------------------------------------------
   fzf bindings for playlist search (sp):
-  __________________________________________________________
+  ----------------------------------------------
 
 	tab		toggle selection
 	shift-tab	deselect all
@@ -181,10 +203,10 @@ The difference between s and x/z: x/z searches without the added jargon 'auto-ge
 	ctrl-o:		open entry in web browser
 	ctrl-x		see songs in the playlist
 			one can select songs in the playlist to add with <tab> and press <enter> to add them
-  __________________________________________________________
 
+  ----------------------------------------------
   fzf bindings for viewing queue (v|vv):
-  __________________________________________________________
+  ----------------------------------------------
 
 	home:		first and reload
 	end:		last and reload
@@ -218,10 +240,10 @@ The difference between s and x/z: x/z searches without the added jargon 'auto-ge
 	alt-p:		play prev song
 	ctrl-alt-m:	set entry as mark (for 'm' option)
 	ctrl-space:	move entry to the selected position in a new fzf search
-  __________________________________________________________
 
+  ----------------------------------------------
   nvim key bindings:
-  __________________________________________________________
+  ----------------------------------------------
 
 	mapleader 	'<Space>'
 	leader-v 	source $XDG_CONFIG_HOME/nvim/init.vim
@@ -261,16 +283,18 @@ The difference between s and x/z: x/z searches without the added jargon 'auto-ge
 	leader-l 	set volume of what's currently playing
 	leader-w 	ytmp w
 	leader-y 	:silent !ytmp
-  __________________________________________________________
+
+  ----------------------------------------------
 
 Other features:
   - One can communicate with mpv through the ipc socket the script opens at /tmp/mpvsocketytmp.
-  	See https://pastebin.com/23PXxpiD for examples (make sure to pass commands to the /tmp/mpvsocketytmp socket)
-	and \`mpv --list-properties\` for properties that can be controlled.
+  	See https://pastebin.com/23PXxpiD for examples (make sure to pass commands to the
+	/tmp/mpvsocketytmp socket) and \`mpv --list-properties\` for properties that can be controlled.
   - you can have multiple entries of the same song in multiple places and the program won't get confused
   	(in case you wanted to move tracks of albums around without changing their place in the album).
-  - by default ytmp downloads songs after you have listened to them $max_stream_amount times, if you don't want this feature
-  	set \$download_songs to '0' in $conf. the downloads can be found in $songs_dir.
+  - by default ytmp downloads songs after you have listened to them $max_stream_amount times,
+  	if you don't want this feature set \$download_songs to '0' in $conf. the downloads can be found
+	in $songs_dir.
   - put commands you want to run at the start of each song in the script $run_on_next.
   - set settings in $conf.
 
@@ -279,12 +303,17 @@ You might be interested to know:
   - mpv is started with these options: --x11-name='ytmp_mpv' --no-terminal --vid=no --input-ipc-server=/tmp/mpvsocketytmp
   - readline commands/binds are available in all fzf instances
   - <search> with spaces don't have to be quoted
-  - when allowed to multi-select in fzf, if no selections are made and enter is pressed, the entry under the cursor
-  	is sent; if selections are made only the selections are passed
-  - the config is made for nvim; not all binds are tested to be working in vim
+  - when allowed to multi-select in fzf, if no selections are made and enter is pressed, the entry under
+  	the cursor is sent; if selections are made only the selections are passed
+  - entries for local files are created with \`cksum --untagged --algorithm=blake2b -l 48 <file> | sed 's@\b  @ @'\`
+  - the editor config is made for nvim; not all binds are tested to be working in vim
+  - thumbnails are not automatically deleted. if \$download_thumbnails option is set to 1 then thumbnails are
+	downloaded and not removed regardless of whether the song is downloaded or not
   - artists are only parsed for in a song if the search is made with no args or 's'
-  - unfortunately the program does not check and will not tell you if you've entered something unexpected/wrong
-	but you might get errors from sed to guess that :)
+  - sadly there's no way to customize the fzf keybinds without modifying the source so if something doesn't
+	work for you feel free to do a global replace of the bind (the keynames are what's shown in this help).
+  - also unfortunately the program does not check and will not tell you if you've entered something unexpected/wrong
+	or do not have all the dependencies installed
 CAT_EOF
 exit
 }
@@ -327,14 +356,15 @@ transferQDiscards () {
 		action='Moved'
 	fi
 
-	# read lines in from bottom to top (tac) in case multiple entries
-	# are competing for the same spot
 	rm /tmp/ytmpplaces
-	cat "$qdiscards_file" | tac | while read -r f; do
+	# record the entries that are in where the entries should be moved to
+	cat "$qdiscards_file" | while read -r f; do
 		sed -n "$( echo "$f" | cut -d' ' -f1 )"p "$queue" >> /tmp/ytmpplaces
 	done
 
 	x="$( grep -c '' /tmp/ytmpplaces )"
+	# read lines in from bottom to top (tac) in case multiple entries
+	# are competing for the same spot
 	# get all the lines that are at $place and then /$place/; don't directly move
 	# because as the lines are moved around, the order is destroyed
 	cat "$qdiscards_file" | tac | while read -r f; do
@@ -547,16 +577,16 @@ play () {
 	title="$( sed -n -e "/$playing_regex/s/$playing_marker_regex//" -e 's/\*\*\*$//p' "$queue" )"
 	echo "Playing '$title'"
 	[ "$notifications" = '1' ] && notify-send 'Now Playing' "$title"
-	sh "$run_on_next" >/dev/null 2>&1 &
+	setsid -f sh "$run_on_next" >/dev/null 2>&1
 	[ "$daemonize" = 1 ] && ! pgrep -fa 'ytmp -d' && setsid -f ytmp -d >/dev/null 2>&1
 }
 
 # puts stars around line # and removes stars from any other lines
 markAsPlaying () {
 	line="$1"
+	[ -z "$line" ] && return
 	line="$( echo "$line" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
 	lncount=$( grep -c '.' "$queue" )
-	[ -z "$line" ] && return
 	if [ "$line" -le 0 ] || [ "$line" -gt "$lncount" ]; then line=1; fi
 	sed -i -e "/$playing_regex/s/$playing_marker_regex/\1 /" -e 's/\*\*\*$//' "$queue"
 	sed -i "${line}s/${field_regex}/\1 \*\*\*\2\*\*\*/" "$queue"
@@ -568,21 +598,43 @@ markAsPlaying () {
 # it also checks if mpv is closed then it calls markAsPlaying p+1 (ytmp n) to play the next entry
 daemon () {
 	shift 1
+	if [ -n "$1" ] && [ -z "$2" ]; then ytmp -n && markAsPlaying "$1"; fi
+	if [ -z "$2" ] && ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ); then markAsPlaying 1; fi
 	while true; do
 		if [ "$( grep -c '.' "$queue" )" -gt 0 ]; then
-			if [ -z "$2" ] && ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ); then markAsPlaying 1
-			elif [ -n "$2" ]; then
+			if [ -n "$2" ]; then
+				# counts how many times songs outside of the range have been played
+				beyond_range=0
 				counter="$1"
-				! grep -q "$playing_regex" "$queue" && markAsPlaying "$counter"
+				! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 && markAsPlaying "$counter"
 				while true; do
-					if [ "$counter" = "$2" ]; then
-						[ "$3" = 'k' ] && return || counter=$1
-					else
-						counter=$(( counter+1 ))
+					while true; do ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ) && sleep .5 && break; done
+					# if the song didn't end and it was the user who changed the song (evidenced
+					# by another mpv being spawned immediately after) then note it
+					if pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1; then
+						beyond_range=$(( beyond_range+1 ))
+						# increment counter only once regardless of how many times songs
+						# outside the range have been played.
+						[ "$beyond_range" = '1' ] && counter=$(( counter+1 ))
+						continue
 					fi
-					while true; do ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ) && sleep 1 && break; done
+
+					beyond_range=0
 					playing="$( grep -n "$playing_regex" "$queue" | cut -d':' -f1 )"
-					( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ) && ( if [ "$playing" -lt "$1" ] || [ "$playing" -gt "$2" ]; then markAsPlaying $(( counter+1 )); else markAsPlaying p+1; fi )
+					# if things are outside the range ...
+					if [ "$playing" -lt "$1" ] || [ "$playing" -ge "$2" ]; then
+						if [ "$counter" -ge "$2" ] && [ "$3" != 'k' ]; then
+							markAsPlaying $1
+							counter=$1
+						else
+							markAsPlaying $counter
+						fi
+					else markAsPlaying p+1; counter=$playing; fi
+					counter=$(( counter+1 ))
+
+					if [ "$playing" = "$2" ]; then
+						[ "$3" = 'k' ] && return || counter="$1"
+					fi
 				done
 			else
 				# sleep twice in case in between the sleeps some external cmd plays something so there
@@ -597,7 +649,7 @@ daemon () {
 viewQueue () {
 	[ "$2" = 'p' ] && set -- --height 100% --preview='echo {n}+1 | bc | xargs -I ,, ytmp fzfPreview vv ,,' --preview-window='right,50%' --preview-label='' --bind='focus:transform-preview-label:echo {n}+1 | bc' || set -- --height 60%
 	cmd="cat $queue | cut -d' ' -f2-"
-	cat "$queue" | cut -d' ' -f2- | fzf --tiebreak=chunk,begin --prompt='search: ' --info=inline --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   ytmp queue   }" --separator='' --padding=2,2,2,2 \
+	cat "$queue" | cut -d' ' -f2- | fzf --pointer='_' --tiebreak=chunk,begin --prompt='search: ' --info=inline --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   ytmp queue   }" --separator='' --padding=2,2,2,2 \
 	"$@" \
 	--layout=reverse --cycle --bind="ctrl-space:execute(echo {n}+1 | bc | xargs -I ,, ytmp m x ,,)+reload($cmd),ctrl-alt-m:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m s ,,),alt-up:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, 0)+reload($cmd),alt-down:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, l)+reload($cmd),ctrl-]:execute-silent(ytmp w),ctrl-r:replace-query,home:first+reload($cmd),end:last+reload($cmd),alt-r:reload($cmd),ctrl-alt-d:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp -dl ,,),ctrl-z:execute-silent(setsid -f ytmp z {q}),ctrl-s:execute-silent(setsid -f ytmp {q}),ctrl-j:down,ctrl-j:jump,shift-left:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m r ,,)+reload($cmd),shift-up:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, -2)+reload($cmd)+up,shift-down:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, +1)+reload($cmd)+down,ctrl-k:kill-line,alt-p:execute-silent(ytmp p)+reload($cmd),alt-n:execute-silent(ytmp n)+reload($cmd),alt-right:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp e ,,)+reload($cmd),return:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp e ,,)+abort,shift-right:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp e ,,)+reload($cmd),pgdn:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, p)+reload($cmd),pgup:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, p-1)+reload($cmd),ctrl-v:page-down,alt-v:page-up,ctrl-alt-p:half-page-up,ctrl-alt-n:half-page-down,left-click:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp e ,,)+abort,right-click:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, p)+reload($cmd),ctrl-^:execute-silent(ytmp mln)+reload($cmd),ctrl-\:execute(ytmp E)+reload($cmd),alt-m:execute(echo {n}+1 | bc | xargs -I ,, ytmp m f ,,)+reload($cmd),ctrl-o:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp openInBrowser ,,)"
 }
@@ -685,7 +737,7 @@ fzfPreview () {
  	[ "$2" = s ] && id="$( sed -n "${fzf_index}"p /tmp/ytmpids | cut -d" " -f1 )" || id="$( sed -n "${fzf_index}s/${field_regex}/\1/p" "$queue" )"
 
 	if [ "$2" = 'vv' ] || [ "$2" = 'c' ]; then
-		entry="$( grep "$id" "$played_urls" )"
+		entry="$( grep "$id" "$played_urls" | head -1 )"
 		last_played="$( echo "$entry" | cut -s -d' ' -f3 )"
 		amnt_played="$( echo "$entry" | cut -s -d' ' -f2 )"
 		[ -z "$last_played" ] && last_played='Never'
@@ -737,7 +789,6 @@ case "${1}" in
 	w) toggleMpvWin ;;
 	pf) markAsPlaying 1 ;;
 	pl) markAsPlaying l ;;
-	-p) echo cycle pause | socat - /tmp/mpvsocketytmp >/dev/null 2>&1 ;;
 	v) viewQueue v ;;
 	vv) viewQueue v p ;;
 	s) searchSongs s "$2" ;;
@@ -760,14 +811,17 @@ case "${1}" in
 	-vd) transferQDiscards v ;;
 	-rd) transferQDiscards "$2" ;;
 	-dl) dlSong "$*" ;;
-	-d) daemon "$@" ;;
-	-r) randomDaemon "$*" ;;
+	-d) pgrep -f 'ytmp (-d|-r)+' | grep -v $$ | xargs kill >/dev/null 2>&1; daemon "$@" ;;
+	-r) pgrep -f 'ytmp (-d|-r)+' | grep -v $$ | xargs kill >/dev/null 2>&1; randomDaemon "$*" ;;
 	-n) while true; do ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ) && sleep .5 && exit; done ;;
 	-l) echo '{ "command": ["set_property", "loop", true] }' | socat - /tmp/mpvsocketytmp >/dev/null 2>&1 ;;
+	-p) echo cycle pause | socat - /tmp/mpvsocketytmp >/dev/null 2>&1 ;;
+	-ff) [ -n "$2" ] && echo "{ \"command\": [\"seek\", \"+${2}\", \"exact\"] }" | socat - /tmp/mpvsocketytmp >/dev/null 2>&1 && echo "Seeked forward $2 seconds." || echo 'Provide how many seconds to seek forward.' ;;
+	-bb) [ -n "$2" ] && echo "{ \"command\": [\"seek\", \"-${2}\", \"exact\"] }" | socat - /tmp/mpvsocketytmp >/dev/null 2>&1 && echo "Seeked backward $2 seconds." || echo 'Provide how many seconds to seek backward.' ;;
 	-qa) echo quit | socat - /tmp/mpvsocketytmp ;;
 	-kd) pkill -f 'ytmp -d'; exit ;;
 	-kr) pkill -f 'ytmp -r'; exit ;;
-	-ka) echo quit | socat - /tmp/mpvsocketytmp; pkill -f 'ytmp -d'; pkill -f 'ytmp -r'; exit ;;
+	-ka) echo quit | socat - /tmp/mpvsocketytmp; pkill -f 'ytmp (-d|-r)+' ;;
 	h|help|-h|--help) helper ;;
 	*) searchSongs ss "$*" ;;
 esac
