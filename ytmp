@@ -784,8 +784,8 @@ toggleMpvWin () {
 
 case "${1}" in
 	E) nvim -u "$XDG_CONFIG_HOME/nvim/ytmp.vim" --noplugin +/'\*\*\*.*\*\*\*' "$queue" ;;
-	mfn) move 1 p ;;
-	mln) move l p ;;
+	mfn) move a 1 p ;;
+	mln) move a l p ;;
 	w) toggleMpvWin ;;
 	pf) markAsPlaying 1 ;;
 	pl) markAsPlaying l ;;
