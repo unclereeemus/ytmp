@@ -98,6 +98,7 @@ enter fzf for search.
 
   -p 		toggle playback
   -l 		toggle loop
+  -vl <[+|-]#>	set volume. can be an absolute number or [+|-]#.
   -ff <secs>	seek forward <seconds>
   -bb <secs>	seek backward <seconds>
 
@@ -818,6 +819,7 @@ case "${1}" in
 	-n) while true; do ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && sleep .5 && exit; done ;;
 	-l) [ "$( echo '{ "command": ["get_property_string", "loop" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 )" = 'no' ] && ( echo '{ "command": ["set_property", "loop", true] }' | socat - "$mpvsocket" >/dev/null 2>&1; echo 'Loop on.' ) || ( echo '{ "command": ["set_property", "loop", false] }' | socat - "$mpvsocket" >/dev/null 2>&1; echo 'Loop off.' ) ;;
 	-p) echo cycle pause | socat - "$mpvsocket" >/dev/null 2>&1 ;;
+	-vl) [ -n "$2" ] && ( echo "$2" | grep -Exq '(\+|-)+[0-9]*' && echo "{ \"command\": [\"add\", \"volume\", \"${2}\"] }" | socat - "$mpvsocket" >/dev/null 2>&1 && echo "Set volume to $2." || ( echo "{ \"command\": [\"set_property\", \"volume\", ${2}] }" | socat - "$mpvsocket" >/dev/null 2>&1 && echo "Volume set to $2." ) ) || echo 'Provide what to set volume to.' ;;
 	-ff) [ -n "$2" ] && echo "{ \"command\": [\"seek\", \"+${2}\", \"exact\"] }" | socat - "$mpvsocket" >/dev/null 2>&1 && echo "Seeked forward $2 seconds." || echo 'Provide how many seconds to seek forward.' ;;
 	-bb) [ -n "$2" ] && echo "{ \"command\": [\"seek\", \"-${2}\", \"exact\"] }" | socat - "$mpvsocket" >/dev/null 2>&1 && echo "Seeked backward $2 seconds." || echo 'Provide how many seconds to seek backward.' ;;
 	-qa) echo quit | socat - "$mpvsocket" ;;
