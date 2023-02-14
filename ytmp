@@ -155,6 +155,9 @@ enter fzf for search.
 		playing beyond it, run it again without the range. also optionally accepts
 		an entry # to start playing from (if another song is playing, it will wait
 		for it to end to start playing from the entry provided)
+		if you happen to play something outside of the range while it's running,
+		the program will pick up from where you left off when you left the range.
+		but if you play something inside the range, it will continue on playing from there.
 		(kills any other instances of -r or -d running on start.)
 
   -r [[<from>] [<to>]]
@@ -601,7 +604,7 @@ markAsPlaying () {
 # it also checks if mpv is closed then it calls markAsPlaying p+1 (ytmp n) to play the next entry
 daemon () {
 	shift 1
-	if [ -n "$1" ] && [ -z "$2" ]; then ytmp -n && markAsPlaying "$1"; fi
+	if [ -n "$1" ] && [ -z "$2" ]; then ( while true; do ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && sleep .5 && exit; done ) && markAsPlaying "$1"; fi
 	if [ -z "$2" ] && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ); then markAsPlaying 1; fi
 	while true; do
 		if [ "$( grep -c '.' "$queue" )" -gt 0 ]; then
