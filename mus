@@ -6,7 +6,7 @@ case "$1" in
 		[ -z "$title" ] && echo 'Nothing Playing'|| echo "$title"
 		;;
 	"statusicon")
-i		state=$( echo '{ "command": ["get_property", "pause"] }' | socat - "$mpvsocket" | jq -r .data )
+		state=$( echo '{ "command": ["get_property", "pause"] }' | socat - "$mpvsocket" | jq -r .data )
 		[ "$state" = "false" ] && echo "󰏤" || echo "󰐊"
 		;;
 	"prog")
