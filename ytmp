@@ -780,16 +780,10 @@ openInBrowser () {
 	setsid -f "$BROWSER" "https://www.youtube.com/watch?v=$id" >/dev/null 2>&1
 }
 
-toggleMpvWin () {
-	state=$( echo '{ "command": ["get_property", "force-window" ] }' | socat - "$mpvsocket" | jq .data )
-	[ "$state" = "false" ] && echo '{ "command": ["set_property", "force-window", true ] }' | socat - "$mpvsocket" >/dev/null 2>&1 && echo '{ "command": ["keypress", "I"] }' | socat - "$mpvsocket" >/dev/null 2>&1 && sleep .5 && echo '{ "command": ["keypress", "O"] }' | socat - "$mpvsocket" >/dev/null 2>&1 || echo '{ "command": ["set_property", "force-window", false ] }' | socat - "$mpvsocket" >/dev/null 2>&1
-}
-
 case "${1}" in
 	E) nvim -u "$XDG_CONFIG_HOME/nvim/ytmp.vim" --noplugin +/'\*\*\*.*\*\*\*' "$queue" ;;
 	mfn) move a 1 p ;;
 	mln) move a l p ;;
-	w) toggleMpvWin ;;
 	pf) markAsPlaying 1 ;;
 	pl) markAsPlaying l ;;
 	v) viewQueue v ;;
@@ -817,15 +811,22 @@ case "${1}" in
 	-d) pgrep -f 'ytmp (-d|-r)+' | grep -v $$ | xargs kill >/dev/null 2>&1; daemon "$@" ;;
 	-r) pgrep -f 'ytmp (-d|-r)+' | grep -v $$ | xargs kill >/dev/null 2>&1; randomDaemon "$*" ;;
 	-n) while true; do ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && sleep .5 && exit; done ;;
-	-l) [ "$( echo '{ "command": ["get_property_string", "loop" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 )" = 'no' ] && ( echo '{ "command": ["set_property", "loop", true] }' | socat - "$mpvsocket" >/dev/null 2>&1; echo 'Loop on.' ) || ( echo '{ "command": ["set_property", "loop", false] }' | socat - "$mpvsocket" >/dev/null 2>&1; echo 'Loop off.' ) ;;
 	-p) echo cycle pause | socat - "$mpvsocket" >/dev/null 2>&1 ;;
-	-vl) [ -n "$2" ] && ( echo "$2" | grep -Exq '(\+|-)+[0-9]*' && echo "{ \"command\": [\"add\", \"volume\", \"${2}\"] }" | socat - "$mpvsocket" >/dev/null 2>&1 && echo "Set volume to $2." || ( echo "{ \"command\": [\"set_property\", \"volume\", ${2}] }" | socat - "$mpvsocket" >/dev/null 2>&1 && echo "Volume set to $2." ) ) || echo 'Provide what to set volume to.' ;;
 	-ff) [ -n "$2" ] && echo "{ \"command\": [\"seek\", \"+${2}\", \"exact\"] }" | socat - "$mpvsocket" >/dev/null 2>&1 && echo "Seeked forward $2 seconds." || echo 'Provide how many seconds to seek forward.' ;;
 	-bb) [ -n "$2" ] && echo "{ \"command\": [\"seek\", \"-${2}\", \"exact\"] }" | socat - "$mpvsocket" >/dev/null 2>&1 && echo "Seeked backward $2 seconds." || echo 'Provide how many seconds to seek backward.' ;;
 	-qa) echo quit | socat - "$mpvsocket" ;;
 	-kd) pkill -f 'ytmp -d'; exit ;;
 	-kr) pkill -f 'ytmp -r'; exit ;;
 	-ka) echo quit | socat - "$mpvsocket"; pkill -f 'ytmp (-d|-r)+' ;;
+	w)
+		[ "$( echo '{ "command": ["get_property_string", "force-window" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 )" = 'no' ] && ( echo '{ "command": ["set_property", "force-window", true] }' | socat - "$mpvsocket" >/dev/null 2>&1; echo 'Opened mpv window.'; echo '{ "command": ["keypress", "I"] }' | socat - "$mpvsocket" >/dev/null 2>&1 && sleep .5; echo '{ "command": ["keypress", "O"] }' | socat - "$mpvsocket" >/dev/null 2>&1 ) || ( echo '{ "command": ["set_property", "force-window", false] }' | socat - "$mpvsocket" >/dev/null 2>&1; echo 'Closed mpv window.' )
+		;;
+	-l)
+		[ "$( echo '{ "command": ["get_property_string", "loop" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 )" = 'no' ] && ( echo '{ "command": ["set_property", "loop", true] }' | socat - "$mpvsocket" >/dev/null 2>&1; echo 'Loop on.' ) || ( echo '{ "command": ["set_property", "loop", false] }' | socat - "$mpvsocket" >/dev/null 2>&1; echo 'Loop off.' )
+		;;
+	-vl)
+		[ -n "$2" ] && ( echo "$2" | grep -Exq '(\+|-)+[0-9]*' && echo "{ \"command\": [\"add\", \"volume\", \"${2}\"] }" | socat - "$mpvsocket" >/dev/null 2>&1 && echo "Set volume to $2." || ( echo "{ \"command\": [\"set_property\", \"volume\", ${2}] }" | socat - "$mpvsocket" >/dev/null 2>&1 && echo "Volume set to $2." ) ) || echo 'Provide what to set volume to.'
+		;;
 	h|help|-h|--help) helper ;;
 	*) searchSongs ss "$*" ;;
 esac
