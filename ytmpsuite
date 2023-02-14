@@ -32,9 +32,9 @@ case "$1" in
 	v) mpv_socket_commands s volume $2 st /tmp/mpvsocketytmp ;;
 	rv) mpv_socket_commands s volume 100 st /tmp/mpvsocketytmp ;;
 	# see $2 entries around currently playing
-	acp) num=$2; grep -A $num -B $num -F '***' $queue | cut -d' ' -f2- ;;
+	acp) num=$2; grep -C $num -F '***' $queue | cut -d' ' -f2- ;;
 	# see $2 entries around currently playing
-	acpn) notify-send "$( num=$2; grep -A $num -B $num -F '***' $queue | cut -d' ' -f2- )" ;;
+	acpn) notify-send "$( num=$2; grep -C $num -F '***' $queue | cut -d' ' -f2- )" ;;
 	# a dmenu wrapper
 	dm) cmd="$( printf ' ' | dmenu -p 'which ytmp cmd to run? ' )" && if ( printf "$cmd" | grep -Eq '^( |x( [0-9]*)?|s( [0-9]*)?|z|l s|v|vv|E|sp .*)+$' ); then setsid -f $TERMINAL -e ytmp $cmd >/dev/null 2>&1; else ytmp $cmd; fi ;;
 	# queue up songs that fuzzy match args to play one after another; ex ytmpsuite qs '<search1>' '<search2>' '<search3>'
@@ -43,18 +43,34 @@ case "$1" in
 	qn) mpv_socket_commands s loop false st /tmp/mpvsocketytmp >/dev/null 2>&1; shift 1; printf '%s\n' "$@" | while read p; do ( while (ytmp -n); do ytmp e $p; break; done; ) done ;;
 	# search searches contained in (newline separated) $2 and put results in $prefix/playlists/"$3"
 	sa) [ -n "$3" ] && xargs -d '\n' -a "$2" -I ,, yt-dlp --print id --print title ",," | paste -s -d ' \n' > $prefix/playlists/"$3" ;;
+
 	# make a queue file from playlist url and put it in $prefix/playlists/"$3"
 	ap) [ -n "$3" ] && yt-dlp --print id --print title "$2" | paste -s -d ' \n' > $prefix/playlists/"$3" ;;
+
 	# select songs from playlists to add to $prefix/playlists/"$3"; $3=filename
 	a) pipe-viewer -e="*ID*" --results=50 --no-interactive --no-use-colors --custom-playlist-layout='*ID* *TITLE*' --custom-layout='*ID* *TITLE*' "$2" | sed 1,3d | fzf -m --preview="echo {} | cut -d' ' -f1 | xargs -I ,, pipe-viewer --results=1 -e='*ID*' --no-interactive --no-use-colors --custom-layout='Length: *TIME* \nUploader: *AUTHOR* \nDate: *PUBLISHED* \nURL: *URL*\n--------------\nDescription:\n--------------\n*DESCRIPTION*\nDESCEND\n--------------' ,," >> $prefix/playlists/"$3" ;;
+
 	# search for playlists and make a queue file with the selected one at $prefix/playlists/"$3"; $3=filename
 	# add playlists with yt-dlp -- pipe-viewer doesn't return all videos in a playlist and yt-dlp is slow so choose your trade off
 	spy) [ -n "$3" ] && query="$2" && pipe-viewer --results=50 --no-interactive -sp --custom-playlist-layout='*VIDEOS*VIDS *TITLE* *URL*' "$query" | fzf -m --bind="ctrl-x:execute(echo {} | awk -F ' ' '{print \$NF}' | xargs -r -0 -I ',,' ytmpsuite a ,, $3),ctrl-o:execute-silent(echo {} | awk -F ' ' '{print \$NF}' | xargs -0 -I ',,' $BROWSER ,, )" \
 		--preview='echo {} | awk "{print $NF}" | xargs -0 -I ",," pipe-viewer -e="*ID*" --no-use-colors --results=50 --custom-layout="*AUTHOR* *TIME* *TITLE*" --no-interactive ",,"' | awk '{print $NF}' | xargs -r -0 -I ',,' yt-dlp --print id --print title ',,' | paste -s -d ' \n' > $prefix/playlists/"$3"
 		;;
+
 	sp) [ -n "$3" ] && query="$2" && pipe-viewer -e="*ID*" --results=50 --no-interactive --no-use-colors -sp --custom-playlist-layout='*VIDEOS*VIDS *TITLE* *URL*' "$query" | grep 'youtube\.com' | fzf -m \
 		--bind="ctrl-x:execute(echo {} | awk -F ' ' '{print \$NF}' | xargs -0 -I ',,' ytmpsuite a ,, $3),ctrl-o:execute-silent(echo {} | awk -F ' ' '{print \$NF}' | xargs -0 -I ',,' $BROWSER ,, )" \
 		--preview='echo {} | awk "{print $NF}" | xargs -0 -I ",," pipe-viewer -e="*ID*" --no-use-colors --results=50 --custom-layout="*AUTHOR* *TIME* *TITLE*" --no-interactive ",," | sed 1d' | awk '{print $NF}' | \
 		xargs -r -I ',,' pipe-viewer -e='*ID*' --no-use-colors --results=50 --custom-layout='*ID* *TITLE*' --no-interactive ',,' | sed 1d >> $prefix/playlists/"$3" ;;
 
+	# search for playlists and add the very first result
+	# use case: add individual songs of albums instead of a long video containing all songs
+	# pipe-viewer is used instead of yt-dlp because it's quicker and only
+	# rarely would albums track count exceed the videos pipe-viewer can return
+	# args: <file-with-what-to-search> <path-to-dump-the-results> [<optional-string-to-add-to-the-end-of-all-search>]
+	# for the last optional arg - put a space before the string like: ' full album'
+	pvpl)
+		[ -z "$3" ] && exit
+		cat "$2" | while read -r search; do
+			pipe-viewer --no-use-colors --no-interactive --results=1 -e='*URL*' --custom-playlist-layout='*URL*' -sp "${search}${4}" | sed -n 2p | xargs -d '\n' -I ',,' pipe-viewer --results=50 --no-use-colors --no-interactive -e='*ID* *TITLE*' --custom-layout='*ID* *TITLE*' ",," | sed 1d >> "$3"
+		done
+	;;
 esac
