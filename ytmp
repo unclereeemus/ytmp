@@ -52,6 +52,8 @@ playing_regex="^\(.\{11,12\}\) \(\*\*\*.*\*\*\*\)$"
 # regex for the <id> and <title> fields of any entry
 field_regex="^\(.\{11,12\}\) \(.*\)"
 
+mpvsocket='/tmp/mpvsocketytmp'
+
 # line seperator for preview windows / stdout msgs
 lsp='................................\n'
 
@@ -95,7 +97,7 @@ enter fzf for search.
 		does not check if file is a media file or not before adding.
 
   -p 		toggle playback
-  -l 		loop what's currently playing
+  -l 		toggle loop
   -ff <secs>	seek forward <seconds>
   -bb <secs>	seek backward <seconds>
 
@@ -287,9 +289,9 @@ enter fzf for search.
   ----------------------------------------------
 
 Other features:
-  - One can communicate with mpv through the ipc socket the script opens at /tmp/mpvsocketytmp.
+  - One can communicate with mpv through the ipc socket the script opens at $mpvsocket.
   	See https://pastebin.com/23PXxpiD for examples (make sure to pass commands to the
-	/tmp/mpvsocketytmp socket) and \`mpv --list-properties\` for properties that can be controlled.
+	$mpvsocket socket) and \`mpv --list-properties\` for properties that can be controlled.
   - you can have multiple entries of the same song in multiple places and the program won't get confused
   	(in case you wanted to move tracks of albums around without changing their place in the album).
   - by default ytmp downloads songs after you have listened to them $max_stream_amount times,
@@ -300,7 +302,7 @@ Other features:
 
 You might be interested to know:
   - songs are downloaded with the 'bestaudio' option
-  - mpv is started with these options: --x11-name='ytmp_mpv' --no-terminal --vid=no --input-ipc-server=/tmp/mpvsocketytmp
+  - mpv is started with these options: --x11-name='ytmp_mpv' --no-terminal --vid=no --input-ipc-server=$mpvsocket
   - readline commands/binds are available in all fzf instances
   - <search> with spaces don't have to be quoted
   - when allowed to multi-select in fzf, if no selections are made and enter is pressed, the entry under
@@ -562,16 +564,16 @@ play () {
 	[ -z "$id" ] && return
 	# if the length of id (first field) is 12 then it is a checksum of a local file and not a youtube id so play it and exit
 	if [ "$( printf "$id" | wc -m )" = '12' ]; then
-		setsid -f mpv --x11-name='ytmp_mpv' --no-terminal --vid=no --input-ipc-server=/tmp/mpvsocketytmp "$( sed -n -e "/$id/s/$playing_marker_regex//" -e 's/\*\*\*$//p' "$queue" )"
+		setsid -f mpv --x11-name='ytmp_mpv' --no-terminal --vid=no --input-ipc-server="$mpvsocket" "$( sed -n -e "/$id/s/$playing_marker_regex//" -e 's/\*\*\*$//p' "$queue" )"
 		incrAmntPlayed
 		return
 	fi
 	incrAmntPlayed "$id"
 	if ( ls "$songs_dir"/*"${id}"* >/dev/null 2>&1 ); then
-		find "$songs_dir"/*"${id}"* -print0 | xargs -0 -I ',,' setsid -f mpv --x11-name='ytmp_mpv' --no-terminal --vid=no --input-ipc-server=/tmp/mpvsocketytmp ",,"
+		find "$songs_dir"/*"${id}"* -print0 | xargs -0 -I ',,' setsid -f mpv --x11-name='ytmp_mpv' --no-terminal --vid=no --input-ipc-server="$mpvsocket" ",,"
 		dlThumbnail
 	else
-		setsid -f mpv --x11-name='ytmp_mpv' --no-terminal --vid=no --input-ipc-server=/tmp/mpvsocketytmp --ytdl-format='bestaudio' "https://www.youtube.com/watch?v=$id"
+		setsid -f mpv --x11-name='ytmp_mpv' --no-terminal --vid=no --input-ipc-server="$mpvsocket" --ytdl-format='bestaudio' "https://www.youtube.com/watch?v=$id"
 		dlThumbnail
 	fi
 	title="$( sed -n -e "/$playing_regex/s/$playing_marker_regex//" -e 's/\*\*\*$//p' "$queue" )"
@@ -590,7 +592,7 @@ markAsPlaying () {
 	if [ "$line" -le 0 ] || [ "$line" -gt "$lncount" ]; then line=1; fi
 	sed -i -e "/$playing_regex/s/$playing_marker_regex/\1 /" -e 's/\*\*\*$//' "$queue"
 	sed -i "${line}s/${field_regex}/\1 \*\*\*\2\*\*\*/" "$queue"
-	echo quit | socat - /tmp/mpvsocketytmp >/dev/null 2>&1
+	echo quit | socat - "$mpvsocket" >/dev/null 2>&1
 	play
 }
 
@@ -599,19 +601,19 @@ markAsPlaying () {
 daemon () {
 	shift 1
 	if [ -n "$1" ] && [ -z "$2" ]; then ytmp -n && markAsPlaying "$1"; fi
-	if [ -z "$2" ] && ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ); then markAsPlaying 1; fi
+	if [ -z "$2" ] && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ); then markAsPlaying 1; fi
 	while true; do
 		if [ "$( grep -c '.' "$queue" )" -gt 0 ]; then
 			if [ -n "$2" ]; then
 				# counts how many times songs outside of the range have been played
 				beyond_range=0
 				counter="$1"
-				! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 && markAsPlaying "$counter"
+				! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 && markAsPlaying "$counter"
 				while true; do
-					while true; do ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ) && sleep .5 && break; done
+					while true; do ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && sleep .5 && break; done
 					# if the song didn't end and it was the user who changed the song (evidenced
 					# by another mpv being spawned immediately after) then note it
-					if pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1; then
+					if pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1; then
 						beyond_range=$(( beyond_range+1 ))
 						# increment counter only once regardless of how many times songs
 						# outside the range have been played.
@@ -639,7 +641,7 @@ daemon () {
 			else
 				# sleep twice in case in between the sleeps some external cmd plays something so there
 				# is no clash between the two
-				sleep 1 && ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ) && sleep 1 && ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ) && markAsPlaying p+1
+				sleep 1 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && sleep 1 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && markAsPlaying p+1
 			fi
 		else sleep 1; fi
 	done
@@ -721,8 +723,8 @@ playFromHistory () {
 }
 
 randomDaemon () {
-	while ( while true; do ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ) && sleep .5 && break; done ); do
-		if ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ); then
+	while ( while true; do ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && sleep .5 && break; done ); do
+		if ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ); then
 			if [ -n "$3" ]; then seq "$2" "$3" | shuf -n 1 | xargs ytmp e
 			else grep -c '' "$queue" | xargs seq | shuf -n 1 | xargs ytmp e; fi
 		fi
@@ -778,8 +780,8 @@ openInBrowser () {
 }
 
 toggleMpvWin () {
-	state=$( echo '{ "command": ["get_property", "force-window" ] }' | socat - /tmp/mpvsocketytmp | jq .data )
-	[ "$state" = "false" ] && echo '{ "command": ["set_property", "force-window", true ] }' | socat - /tmp/mpvsocketytmp >/dev/null 2>&1 && echo '{ "command": ["keypress", "I"] }' | socat - /tmp/mpvsocketytmp >/dev/null 2>&1 && sleep .5 && echo '{ "command": ["keypress", "O"] }' | socat - /tmp/mpvsocketytmp >/dev/null 2>&1 || echo '{ "command": ["set_property", "force-window", false ] }' | socat - /tmp/mpvsocketytmp >/dev/null 2>&1
+	state=$( echo '{ "command": ["get_property", "force-window" ] }' | socat - "$mpvsocket" | jq .data )
+	[ "$state" = "false" ] && echo '{ "command": ["set_property", "force-window", true ] }' | socat - "$mpvsocket" >/dev/null 2>&1 && echo '{ "command": ["keypress", "I"] }' | socat - "$mpvsocket" >/dev/null 2>&1 && sleep .5 && echo '{ "command": ["keypress", "O"] }' | socat - "$mpvsocket" >/dev/null 2>&1 || echo '{ "command": ["set_property", "force-window", false ] }' | socat - "$mpvsocket" >/dev/null 2>&1
 }
 
 case "${1}" in
@@ -813,15 +815,15 @@ case "${1}" in
 	-dl) dlSong "$*" ;;
 	-d) pgrep -f 'ytmp (-d|-r)+' | grep -v $$ | xargs kill >/dev/null 2>&1; daemon "$@" ;;
 	-r) pgrep -f 'ytmp (-d|-r)+' | grep -v $$ | xargs kill >/dev/null 2>&1; randomDaemon "$*" ;;
-	-n) while true; do ( ! pgrep -fa 'mpv.*--input-ipc-server=/tmp/mpvsocketytmp' >/dev/null 2>&1 ) && sleep .5 && exit; done ;;
-	-l) echo '{ "command": ["set_property", "loop", true] }' | socat - /tmp/mpvsocketytmp >/dev/null 2>&1 ;;
-	-p) echo cycle pause | socat - /tmp/mpvsocketytmp >/dev/null 2>&1 ;;
-	-ff) [ -n "$2" ] && echo "{ \"command\": [\"seek\", \"+${2}\", \"exact\"] }" | socat - /tmp/mpvsocketytmp >/dev/null 2>&1 && echo "Seeked forward $2 seconds." || echo 'Provide how many seconds to seek forward.' ;;
-	-bb) [ -n "$2" ] && echo "{ \"command\": [\"seek\", \"-${2}\", \"exact\"] }" | socat - /tmp/mpvsocketytmp >/dev/null 2>&1 && echo "Seeked backward $2 seconds." || echo 'Provide how many seconds to seek backward.' ;;
-	-qa) echo quit | socat - /tmp/mpvsocketytmp ;;
+	-n) while true; do ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && sleep .5 && exit; done ;;
+	-l) [ "$( echo '{ "command": ["get_property_string", "loop" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 )" = 'no' ] && ( echo '{ "command": ["set_property", "loop", true] }' | socat - "$mpvsocket" >/dev/null 2>&1; echo 'Loop on.' ) || ( echo '{ "command": ["set_property", "loop", false] }' | socat - "$mpvsocket" >/dev/null 2>&1; echo 'Loop off.' ) ;;
+	-p) echo cycle pause | socat - "$mpvsocket" >/dev/null 2>&1 ;;
+	-ff) [ -n "$2" ] && echo "{ \"command\": [\"seek\", \"+${2}\", \"exact\"] }" | socat - "$mpvsocket" >/dev/null 2>&1 && echo "Seeked forward $2 seconds." || echo 'Provide how many seconds to seek forward.' ;;
+	-bb) [ -n "$2" ] && echo "{ \"command\": [\"seek\", \"-${2}\", \"exact\"] }" | socat - "$mpvsocket" >/dev/null 2>&1 && echo "Seeked backward $2 seconds." || echo 'Provide how many seconds to seek backward.' ;;
+	-qa) echo quit | socat - "$mpvsocket" ;;
 	-kd) pkill -f 'ytmp -d'; exit ;;
 	-kr) pkill -f 'ytmp -r'; exit ;;
-	-ka) echo quit | socat - /tmp/mpvsocketytmp; pkill -f 'ytmp (-d|-r)+' ;;
+	-ka) echo quit | socat - "$mpvsocket"; pkill -f 'ytmp (-d|-r)+' ;;
 	h|help|-h|--help) helper ;;
 	*) searchSongs ss "$*" ;;
 esac
