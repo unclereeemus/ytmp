@@ -11,6 +11,7 @@ demo: https://www.reddit.com/r/bash/comments/10i7cb2/ytmp_shell_script_for_yt_an
   - Search and add youtube playlists to the queue (or only select songs of playlists)
   - Download songs after they have been played a chosen amount of times (and play the download in the future)
   - Fzf preview of song/playlist details
+  - Select from past searches in fzf to reduce typing
   - Manage the queue from fzf, vim, cli
   - Control mpv through its ipc server
   - Run commands on song change
@@ -20,11 +21,12 @@ demo: https://www.reddit.com/r/bash/comments/10i7cb2/ytmp_shell_script_for_yt_an
 
 # setup
 ## DEPS: fzf, yt-dlp, mpv, socat, (n/vim, pipe-viewer(https://github.com/trizen/pipe-viewer/))
+## NOT A DEP: YT credentials of any sort
 `git clone --depth 1 'https://github.com/unclereeemus/ytmp/'`
 
 `cd ytmp`
 
-`chmod +x ytmp mpv_socket_commands mpv_socket_selector run_on_next`
+`chmod +x ytmp run_on_next`
 
 (link/move ytmp to one of your paths like) `[ln -s/mv] $(pwd)/ytmp /home/$USER/.local/bin/`
 
@@ -49,17 +51,22 @@ it should (mostly) look like this (bottom left - music widget only): https://git
 the thumbnail is located at /tmp/muscover.webp
 
 # scripts
+
+**mightfinduseful** a script to play music outside of ytmp either with local files, youtube search, or the ytmp queue file. also dynamically names the mpvsocket so you don't overwrite an old one.
+
 **mpv_socket_selector** prints a dmenu of active mpv sockets and puts the selected one in /tmp/active_mpvsocket (options: n(ext), p(rev), s(elect))
 
 **mpv_socket_commands** sends commands to the mpv socket in /tmp/active_mpvsocket or another specfied with st option (see -h)
 
-**run_on_next** runs on the start of every song which can be used to keep some consistent settings within mpv (volume, loop, seek, etc)
-
 **eww.scss/eww.yuck** contain the eww music widget
 
-**mus** is used by the eww config for various information
+**mus** is used by the eww config for various information. put it in the same dir as eww.scss and eww.yuck.
 
-**mightfinduseful** a script to play music outside of ytmp either with local files, youtube search, or the ytmp queue file. also dynamically names the mpvsocket so you don't overwrite an old one.
+**ytmp** main script; none of the other scripts need to be set up to get it working.
+
+**run_on_next** runs at the start of every song which can be used to keep some consistent settings within mpv (volume, loop, seek, etc). looked for in ~/Music/ytmp/ by default.
+
+**conf** for setting ytmp variables/directories. looked for in ~/Music/ytmp/ by default.
 
 **ytmp.vim** a vim config with useful keybinds relevant to ytmp
 
@@ -76,7 +83,7 @@ the thumbnail is located at /tmp/muscover.webp
 
 - convert spotify playlists to something ytmp can use: export the playlist to csv with https://github.com/watsonbox/exportify then run `cut -d'"' --output-delimiter=' ' -f4,8 PLAYLIST_PATH.csv | sed -n 1d | sed -E -e 's/\(?.*[Rr]emaster(ed)? ?\)? ?[0-9]*//g' -e 's/([)?(])?( - )?(  )?(\)$)?( $)?//g' | xargs -d '\n' -I ',,' yt-dlp --print id --print title ytsearch1:",, auto-generated provided to youtube" | paste -s -d ' \n' > file`
 
-- see `$num` songs immediately before and after currently playing: `num=3; grep -A $num -B $num -F '***' /home/$USER/Music/ytmp/queue | cut -d' ' -f2-` or send a notification: `num=1; notify-send "$( grep -A $num -B $num -F '***' /home/$USER/Music/ytmp/queue | cut -d' ' -f2- )"`
+- see `$num` songs immediately before and after currently playing: `num=3; grep -C $num -F '***' /home/$USER/Music/ytmp/queue | cut -d' ' -f2-` or send a notification: `num=1; notify-send "$( grep -C $num -F '***' /home/$USER/Music/ytmp/queue | cut -d' ' -f2- )"`
 
 - to play a random song once, run `grep -c '' "/home/$USER/Music/ytmp/queue" | xargs seq | shuf -n 1 | xargs ytmp e`
 
