@@ -98,7 +98,7 @@ enter fzf for search.
 
   -p 		toggle playback
   -l 		toggle loop
-  -vl <[+|-]#>	set volume. can be an absolute number or [+|-]# current volume (as in -vl +30, -vl -30, -vl 80)
+  -vl <[+|-]#>	set volume. can be an absolute number or <+|-># current volume (as in -vl +30, -vl -30, -vl 80)
   -ff <secs>	seek forward <seconds>
   -bb <secs>	seek backward <seconds>
 
@@ -294,14 +294,14 @@ enter fzf for search.
   ----------------------------------------------
 
 Other features:
-  - One can communicate with mpv through the ipc socket the script opens at $mpvsocket.
+  - one can communicate with mpv through the ipc socket the script opens at $mpvsocket.
   	See https://pastebin.com/23PXxpiD for examples (make sure to pass commands to the
 	$mpvsocket socket) and \`mpv --list-properties\` for properties that can be controlled.
-  - you can have multiple entries of the same song in multiple places and the program won't get confused
-  	(in case you wanted to move tracks of albums around without changing their place in the album).
   - by default ytmp downloads songs after you have listened to them $max_stream_amount times,
   	if you don't want this feature set \$download_songs to '0' in $conf. the downloads can be found
 	in $songs_dir.
+  - you can have multiple entries of the same song in multiple places and the program won't get confused
+  	(in case you wanted to move tracks of albums around without changing their place in the album).
   - put commands you want to run at the start of each song in the script $run_on_next.
   - set settings in $conf.
 
@@ -352,7 +352,7 @@ addToQueue () {
 
 # copies or moves entries from $qdiscards_file
 transferQDiscards () {
-	[ ! -s "$qdiscards_file" ] && echo "'$qdiscards_file' either doesn't exist or is empty." && return
+	[ ! -s "$qdiscards_file" ] && echo "'$qdiscards_file' either doesn't exist or is empty." && return 1
 	[ "$1" = 'v' ] && cat "$qdiscards_file" && return
 
 	if [ "$1" = 'c' ]; then
@@ -428,7 +428,7 @@ register () {
 # add urls, playlists, dirs, paths
 add () {
 	shift 1
-	[ -z "$1" ] && echo 'Provide a url, path, or directory to add as arguement' && return
+	[ -z "$1" ] && echo 'Provide a url, path, or directory to add as arguement' && return 1
 
 	rm -f "$qdiscards_file"
 	for f in "$@"; do
@@ -468,7 +468,7 @@ searchSongs () {
 		--layout=reverse --height 60% -m --bind='ctrl-j:jump,ctrl-k:kill-line,tab:toggle+clear-query+down,shift-tab:clear-selection,ctrl-z:execute-silent(setsid -f ytmp z {q}),alt-z:execute-silent(setsid -f ytmp z {+} {q} ),alt-s:execute-silent(setsid -f ytmp {+} {q}),tab:select+clear-query,return:accept,ctrl-r:replace-query,ctrl-x:print-query,ctrl-s:execute-silent(setsid -f ytmp {q})' | tr "\n" ' ' | sed -e 's/[ \t]*$//' )
 	fi
 
-	if [ -n "$query" ]; then [ "$1" != 'p' ] && echo "Searching for '$query'"; else return; fi
+	if [ -n "$query" ]; then [ "$1" != 'p' ] && echo "Searching for '$query'"; else return 1; fi
 
 	( ! grep -Fxq "$query" "$search_history" ) && ( ! echo "$songs_dir_ls" | grep -Fq "$query" ) && echo "$query" >> "$search_history"
 	rm -f "$qdiscards_file"
@@ -491,7 +491,7 @@ searchSongs () {
 		titles=$( echo "$ids_titles" | sed -n 'p;n' | grep -n '' )
 		sel=$( printf '%b' "$titles" | fzf --prompt='search: ' --info=inline --padding=2,2,2,2 --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   ytmp select   }" --separator='' \
 		--bind='ctrl-o:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp openInBrowser id ,,),ctrl-j:jump,ctrl-k:kill-line,tab:toggle+clear-query+down,shift-tab:clear-selection' --layout=reverse --height 60% -m --preview='echo {n}+1 | bc | xargs -I ,, ytmp fzfPreview s ,,' --preview-window='right,70%' )
-		[ -z "$sel" ] && return
+		[ -z "$sel" ] && return 1
 		echo "$sel" | while read -r sel; do
 			num=$( printf '%b' "$titles" | grep -Fx "$sel" | cut -d':' -f1 )
 			id=$( printf '%b' "$ids" | sed -n "${num}"p )
@@ -509,12 +509,12 @@ searchSongs () {
 }
 
 searchPlaylists () {
-	[ -z "$2" ] && echo 'Provide a search string as arguement.' && return
+	[ -z "$2" ] && echo 'Provide a search string as arguement.' && return 1
 	query=$( echo "$*" | cut -d' ' -f2- )
 	playlist_sel="$( pipe-viewer --no-use-colors --no-interactive --results=50 -sp --custom-playlist-layout='*URL* *TITLE*' "$query" | sed -n -e 1d -e "\@https://www.youtube.com/playlist?list=@p" | tee /tmp/ytmpplaylists | cut -d" " -f2- | grep -n '' | fzf --prompt='search: ' --info=inline --padding=2,2,2,2 --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   ytmp playlist select   }" --separator='' \
 		--layout=reverse --height 60% -m --bind='ctrl-o:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp openInBrowser pl ,,),ctrl-j:jump,home:first,end:last,ctrl-k:kill-line,shift-tab:clear-selection,tab:toggle+down,ctrl-x:execute(echo {n}+1 | bc | xargs -I ,, ytmp spr p ,,)' --preview='echo {n}+1 | bc | xargs -I ",," sed -n ,,p /tmp/ytmpplaylists | xargs -0 -I ",," pipe-viewer --no-use-colors --results=50 --custom-layout="*AUTHOR* *TIME* *TITLE*" --no-interactive ",," | sed 1d' | grep '^[0-9]*:' )"
 
-	[ -z "$playlist_sel" ] && return
+	[ -z "$playlist_sel" ] && return 1
 	printf "Adding:\n${lsp}$playlist_sel\n${lsp}"
 	printf "yt-dlp is a little slow retrieving things, give it some time to add everything.\n${lsp}"
 
@@ -535,7 +535,7 @@ incrAmntPlayed () {
 	amnt_played=$((amnt_played + 1))
 	sed -i "/$id/d" "$played_urls"
 	[ "$( printf "$id" | wc -m )" = '12' ] && echo "$id $amnt_played $dt $title" >> "$played_urls" && return
-	[ -z "$id" ] && return
+	[ -z "$id" ] && return 1
 	if [ $download_songs = "1" ] && [ "$amnt_played" -gt "$max_stream_amount" ]; then
 		if ( ls "$songs_dir"/*"${id}"* >/dev/null 2>&1 ); then
 			echo "$id $amnt_played $dt dl $title" >> "$played_urls"
@@ -552,7 +552,7 @@ incrAmntPlayed () {
 dlThumbnail () {
 	if [ "$download_thumbnails" = '1' ]; then
 		id=$( sed -n "s/$playing_regex/\1/p" "$queue" )
-		[ "$( printf "$id" | wc -m )" != '11' ] && return
+		[ "$( printf "$id" | wc -m )" != '11' ] && return 1
 		if ( ! ls "$thumb_dir"/*"${id}"* >/dev/null 2>&1 ); then
 			title=$( sed -n -e "/$playing_regex/s/$playing_marker_regex//" -e 's/\*\*\*$//p' "$queue" )
 			yt-dlp -q --no-warnings --get-thumbnail "https://www.youtube.com/watch?v=$id" | xargs curl --output "$thumb_dir/$id $title.webp"
@@ -566,7 +566,7 @@ dlThumbnail () {
 # plays the $id passed to it. if no arguements, it sets id to whatever is surrounded by ***
 play () {
 	[ -n "$1" ] && id="$1" || id=$( sed -n "s/$playing_regex/\1/p" "$queue" )
-	[ -z "$id" ] && return
+	[ -z "$id" ] && return 1
 	# if the length of id (first field) is 12 then it is a checksum of a local file and not a youtube id so play it and exit
 	if [ "$( printf "$id" | wc -m )" = '12' ]; then
 		setsid -f mpv --x11-name='ytmp_mpv' --no-terminal --vid=no --input-ipc-server="$mpvsocket" "$( sed -n -e "/$id/s/$playing_marker_regex//" -e 's/\*\*\*$//p' "$queue" )"
@@ -586,12 +586,13 @@ play () {
 	[ "$notifications" = '1' ] && notify-send 'Now Playing' "$title"
 	setsid -f sh "$run_on_next" >/dev/null 2>&1
 	[ "$daemonize" = 1 ] && ! pgrep -fa 'ytmp -d' && setsid -f ytmp -d >/dev/null 2>&1
+	return 0
 }
 
 # puts stars around line # and removes stars from any other lines
 markAsPlaying () {
 	line="$1"
-	[ -z "$line" ] && return
+	[ -z "$line" ] && return 1
 	line="$( echo "$line" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
 	lncount=$( grep -c '.' "$queue" )
 	if [ "$line" -le 0 ] || [ "$line" -gt "$lncount" ]; then line=1; fi
@@ -697,7 +698,7 @@ move () {
 		sel="$1"
 	fi
 
-	[ -z "$place" ] && return
+	[ -z "$place" ] && return 1
 	sel="$( echo "$sel" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
 	echo "$place" | grep -Eqx '(\+|-|\*|/)+[0-9]*' && place="$( echo "${sel}${place}" | bc )" || place="$( echo "$place" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
 
@@ -709,7 +710,7 @@ move () {
 fuzzyPlay () {
 	shift 1
 	query="$@"
-	[ -z "$query" ] && echo 'Provide a string to search as argument.' && return
+	[ -z "$query" ] && echo 'Provide a string to search as argument.' && return 1
 	match=$( grep -n '' "$queue" | sed -E 's/[Rr]emaster(ed)//g' | fzf --tiebreak=chunk,begin -f "$query" | head -1 | cut -d':' -f1 )
 	if [ -n "$match" ]; then markAsPlaying "$match"; else echo 'Match not found.'; fi
 	return
@@ -738,7 +739,7 @@ randomDaemon () {
 }
 
 fzfPreview () {
-	[ -z "$3" ] && echo 'Provide a line number.' && return
+	[ -z "$3" ] && echo 'Provide a line number.' && return 1
 	fzf_index="$( echo "$3" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
 
  	[ "$2" = s ] && id="$( sed -n "${fzf_index}"p /tmp/ytmpids | cut -d" " -f1 )" || id="$( sed -n "${fzf_index}s/${field_regex}/\1/p" "$queue" )"
@@ -766,13 +767,12 @@ fzfPreview () {
 }
 
 dlSong () {
+	[ -z "$2" ] && echo 'Provide an entry to download.' && return 1
 	sel="$( echo "$2" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
 	[ "$3" = 'f' ] && sel=$(( sel + 1 ))
-	# echo $sel && return
 	id="$( sed -n "${sel}s/${field_regex}/\1/p" "$queue" )"
 	title="$( sed -n "${sel}s/${field_regex}/\2/p" "$queue" )"
-	[ "$( printf "$id" | wc -m )" != '11' ] && return
-	# echo $id && return
+	[ "$( printf "$id" | wc -m )" != '11' ] && echo 'Invalid entry.' && return 1
 	( ! ls "$songs_dir"/*"${id}"* >/dev/null 2>&1 ) && setsid -f yt-dlp -q --no-warnings -f bestaudio -o "$songs_dir/%(id)s %(title)s.%(ext)s" "https://www.youtube.com/watch?v=$id" >/dev/null 2>&1 && echo "Downloading '${title}.'" || echo "A file of the name '$title' was found in $songs_dir. It will not be downloaded."
 }
 
@@ -783,6 +783,8 @@ openInBrowser () {
 	else id=$( sed -n "${1}s/$field_regex/\1/p" "$queue" ); fi
 	setsid -f "$BROWSER" "https://www.youtube.com/watch?v=$id" >/dev/null 2>&1
 }
+
+[ -z "$1" ] && searchSongs && return 0
 
 case "${1}" in
 	E) nvim -u "$XDG_CONFIG_HOME/nvim/ytmp.vim" --noplugin +/'\*\*\*.*\*\*\*' "$queue" ;;
@@ -830,10 +832,8 @@ case "${1}" in
 		[ "$( echo '{ "command": ["get_property_string", "loop" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 )" = 'no' ] && ( echo '{ "command": ["set_property", "loop", true] }' | socat - "$mpvsocket" >/dev/null 2>&1; echo 'Loop on.' ) || ( echo '{ "command": ["set_property", "loop", false] }' | socat - "$mpvsocket" >/dev/null 2>&1; echo 'Loop off.' )
 		;;
 	-vl)
-		[ -n "$2" ] && ( echo "$2" | grep -Exq '(\+|-)+[0-9]*' && echo "{ \"command\": [\"add\", \"volume\", \"${2}\"] }" | socat - "$mpvsocket" >/dev/null 2>&1 && echo "Set volume to $2." || ( echo "{ \"command\": [\"set_property\", \"volume\", ${2}] }" | socat - "$mpvsocket" >/dev/null 2>&1 && echo "Volume set to $2." ) ) || echo 'Provide what to set volume to.'
+		[ -n "$2" ] && ( echo "$2" | grep -Exq '(\+|-)+[0-9]*' && echo "{ \"command\": [\"add\", \"volume\", \"${2}\"] }" | socat - "$mpvsocket" >/dev/null 2>&1 && echo "Added $2 to volume." || ( echo "{ \"command\": [\"set_property\", \"volume\", ${2}] }" | socat - "$mpvsocket" >/dev/null 2>&1 && echo "Set volume to $2." ) ) || ( echo 'Provide what to set volume to.' && return 1 )
 		;;
 	h|help|-h|--help) helper ;;
 	*) searchSongs ss "$*" ;;
 esac
-
-[ -z "$1" ] && searchSongs
