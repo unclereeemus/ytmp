@@ -32,8 +32,8 @@ played_titles="$prefix/played_titles"
 search_history="$prefix/search_history"
 
 # queue="/home/$USER/Music/ytmp/altqueue"
-queue="/home/$USER/Music/ytmp/queue"
+queue="$prefix/queue"
 
 # this is run everytime a song is played so if you want certain
 # mpv settings to remain consistent (volume, loop, seek, etc) then put them in this file
-run_on_next="/home/$USER/Music/ytmp/run_on_next"
+run_on_next="$prefix/run_on_next"
