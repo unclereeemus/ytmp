@@ -35,7 +35,7 @@ conf="$prefix/conf"
 
 # this is run on everytime a song is played so if you want certain
 # mpv settings to remain consistent (volume, loop, seek, etc), then put them in this file
-[ -z "$run_on_next" ] && run_on_next="/home/$USER/Music/ytmp/run_on_next"
+[ -z "$run_on_next" ] && run_on_next="$prefix/run_on_next"
 
 mkdir -p "$prefix" "$dl_dir" "$songs_dir" "$thumb_dir"
 
