@@ -586,7 +586,7 @@ play () {
 	echo "Playing '$title'"
 	[ "$notifications" = '1' ] && notify-send 'Now Playing' "$title"
 	setsid -f sh "$run_on_next" >/dev/null 2>&1
-	[ "$daemonize" = 1 ] && ! pgrep -fa 'ytmp -d' && setsid -f ytmp -d >/dev/null 2>&1
+	[ "$daemonize" = 1 ] && ! pgrep -fa 'ytmp -d' >/dev/null 2>&1 && setsid -f ytmp -d >/dev/null 2>&1
 	return 0
 }
 
