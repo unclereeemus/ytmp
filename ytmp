@@ -347,6 +347,7 @@ addToQueue () {
 		echo "'$title' was found at line $found in the queue. It will not be newly added."
 		queue_len="$( grep -c '' "$queue" )"
 		echo "$queue_len $id $title" >> "$qdiscards_file"
+		return 1
 	fi
 }
 
