@@ -98,7 +98,7 @@ enter fzf for search.
 
   -p 		toggle playback
   -l 		toggle loop
-  -vl <[+|-]#>	set volume. can be an absolute number or [+|-]#.
+  -vl <[+|-]#>	set volume. can be an absolute number or [+|-]# current volume (as in -vl +30, -vl -30, -vl 80)
   -ff <secs>	seek forward <seconds>
   -bb <secs>	seek backward <seconds>
 
@@ -168,8 +168,9 @@ enter fzf for search.
   -n 		get notified when mpv exits (i.e. song finishes)
 
   -qa 		quit audio
-  -kd 		kill daemon
+  -kd 		kill daemon (-d)
   -kr 		kill the random daemon (-r)
+  -kdr 		kill both -d and -r
   -ka 		do all of the above
 
   h|help|-h|--help
@@ -820,6 +821,7 @@ case "${1}" in
 	-qa) echo quit | socat - "$mpvsocket" ;;
 	-kd) pkill -f 'ytmp -d'; exit ;;
 	-kr) pkill -f 'ytmp -r'; exit ;;
+	-kdr) pkill -f 'ytmp (-d|-r)+' ;;
 	-ka) echo quit | socat - "$mpvsocket"; pkill -f 'ytmp (-d|-r)+' ;;
 	w)
 		[ "$( echo '{ "command": ["get_property_string", "force-window" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 )" = 'no' ] && ( echo '{ "command": ["set_property", "force-window", true] }' | socat - "$mpvsocket" >/dev/null 2>&1; echo 'Opened mpv window.'; echo '{ "command": ["keypress", "I"] }' | socat - "$mpvsocket" >/dev/null 2>&1 && sleep .5; echo '{ "command": ["keypress", "O"] }' | socat - "$mpvsocket" >/dev/null 2>&1 ) || ( echo '{ "command": ["set_property", "force-window", false] }' | socat - "$mpvsocket" >/dev/null 2>&1; echo 'Closed mpv window.' )
