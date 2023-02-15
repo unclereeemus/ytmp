@@ -586,7 +586,7 @@ play () {
 	echo "Playing '$title'"
 	[ "$notifications" = '1' ] && notify-send 'Now Playing' "$title"
 	setsid -f sh "$run_on_next" >/dev/null 2>&1
-	[ "$daemonize" = 1 ] && ! pgrep -fa 'ytmp -d' >/dev/null 2>&1 && setsid -f ytmp -d >/dev/null 2>&1
+	[ "$daemonize" = 1 ] && ! pgrep -fa 'ytmp (-d|-r)+' >/dev/null 2>&1 && setsid -f ytmp -d >/dev/null 2>&1
 	return 0
 }
 
@@ -833,7 +833,7 @@ case "${1}" in
 		[ "$( echo '{ "command": ["get_property_string", "loop" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 )" = 'no' ] && ( echo '{ "command": ["set_property", "loop", true] }' | socat - "$mpvsocket" >/dev/null 2>&1; echo 'Loop on.' ) || ( echo '{ "command": ["set_property", "loop", false] }' | socat - "$mpvsocket" >/dev/null 2>&1; echo 'Loop off.' )
 		;;
 	-vl)
-		[ -n "$2" ] && ( echo "$2" | grep -Exq '(\+|-)+[0-9]*' && echo "{ \"command\": [\"add\", \"volume\", \"${2}\"] }" | socat - "$mpvsocket" >/dev/null 2>&1 && echo "Added $2 to volume." || ( echo "{ \"command\": [\"set_property\", \"volume\", ${2}] }" | socat - "$mpvsocket" >/dev/null 2>&1 && echo "Set volume to $2." ) ) || ( echo 'Provide what to set volume to.' && return 1 )
+		[ -n "$2" ] && ( echo "$2" | grep -Exq '(\+|-)+[0-9]*' && echo "{ \"command\": [\"add\", \"volume\", \"${2}\"] }" | socat - "$mpvsocket" >/dev/null 2>&1 && echo "Added $2 to volume. The volume is now "$( echo "{ \"command\": [\"get_property_string\", \"volume\"] }" | socat - "$mpvsocket" | cut -d '"' -f4 | cut -d '.' -f1 )"." || ( echo "{ \"command\": [\"set_property\", \"volume\", ${2}] }" | socat - "$mpvsocket" >/dev/null 2>&1 && echo "Set volume to $2." ) ) || ( echo 'Provide what to set volume to.' && return 1 )
 		;;
 	h|help|-h|--help) helper ;;
 	*) searchSongs ss "$*" ;;
