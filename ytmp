@@ -420,7 +420,7 @@ suggestsForFzf () {
 	if [ -z "$1" ]; then
 		( ls "$songs_dir" | cut -d' ' -f2- | sed 's/\.webm$//'; cat "$played_urls" | cut -s -d' ' -f4- | sed 's/^dl //'; cat "$search_history"; cat "$queue" | cut -d' ' -f2- ) | sort -u
 	else
-		! grep "$@" "$search_history" && echo "$@" >> "$search_history"
+		! grep -Fx "$@" "$search_history" && echo "$@" >> "$search_history"
 	fi
 }
 
