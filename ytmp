@@ -176,7 +176,7 @@ enter fzf for search.
   		show this help
 
   ----------------------------------------------
-  fzf bindings for search (ytmp [z|x|s|sp]):
+  fzf bindings for creating search string (ytmp [z|x|s|sp]):
   ----------------------------------------------
 
   	ctrl-r		replace input field with selection
@@ -199,7 +199,7 @@ enter fzf for search.
 	alt-z		search query and selection with ytmp z
 
   ----------------------------------------------
-  fzf bindings for playlist search (sp):
+  fzf bindings for selecting playlists (sp):
   ----------------------------------------------
 
 	tab		toggle selection
@@ -262,10 +262,10 @@ enter fzf for search.
 	down 		move entry down 1
 	left 		move entry right before currently playing
 	right 		move entry right next to currently playing
-	shift-Up 	move last entry right before currently playing
-	shift-Down 	move last entry right after currently playing
-	shift-Right 	move entry to the end
-	shift-Left 	move entry to the start
+	shift-up 	move last entry right before currently playing
+	shift-down 	move last entry right after currently playing
+	shift-right 	move entry to the end
+	shift-left 	move entry to the start
 	enter 		play entry
 
 	d 		delete line
@@ -353,7 +353,7 @@ addToQueue () {
 	fi
 }
 
-# copies or moves entries from $qdiscards_file
+# copies or moves entries found in $qdiscards_file from their place in the $queue
 transferQDiscards () {
 	[ ! -s "$qdiscards_file" ] && echo "'$qdiscards_file' either doesn't exist or is empty." && return 1
 	[ "$1" = 'v' ] && cat "$qdiscards_file" && return
@@ -388,7 +388,6 @@ transferQDiscards () {
 		found="$( grep -n "$id" "$queue" | head -1 )"
 		echo "$action [$( echo "$old_found" | cut -d':' -f1 )] '$( echo "$f" | cut -d' ' -f3- )' [[TO AFTER]] [$( echo "$place" | cut -d':' -f1 )] '$( echo "$place" | cut -d' ' -f2- )'"
 	done | tac
-	printf "\nNOTE: The line numbers displayed may be inaccurate due to things having been moved about."
 }
 
 # add urls, playlists, dirs, paths
@@ -633,13 +632,13 @@ viewQueue () {
 	cmd="cat $queue | cut -d' ' -f2-"
 	cat "$queue" | cut -d' ' -f2- | fzf -q '*** ***' -m --info=hidden --marker=' ' --bind 'load:select+clear-query,ctrl-alt-j:prev-selected' --pointer='_' --tiebreak=chunk,begin --prompt='search: ' --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   ytmp queue   }" --separator='' --padding=2,2,2,2 \
 	"$@" \
-	--layout=reverse --cycle --bind="ctrl-space:execute(echo {n}+1 | bc | xargs -I ,, ytmp m x ,,)+reload($cmd),ctrl-alt-m:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m s ,,),alt-up:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, 0)+reload($cmd),alt-down:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, l)+reload($cmd),ctrl-]:execute-silent(ytmp w),ctrl-r:replace-query,home:first+reload($cmd),end:last+reload($cmd),alt-r:reload($cmd),ctrl-alt-d:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp -dl ,,),ctrl-z:execute-silent(setsid -f ytmp z {q}),ctrl-s:execute-silent(setsid -f ytmp {q}),ctrl-j:down,ctrl-j:jump,shift-left:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m r ,,)+reload($cmd),shift-up:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, -2)+reload($cmd)+up,shift-down:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, +1)+reload($cmd)+down,ctrl-k:kill-line,alt-p:execute-silent(ytmp p)+reload($cmd),alt-n:execute-silent(ytmp n)+reload($cmd),alt-right:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp e ,,)+reload($cmd),return:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp e ,,)+abort,shift-right:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp e ,,)+reload($cmd),pgdn:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, p)+reload($cmd),pgup:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, p-1)+reload($cmd),ctrl-v:page-down,alt-v:page-up,ctrl-alt-p:half-page-up,ctrl-alt-n:half-page-down,left-click:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp e ,,)+abort,right-click:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, p)+reload($cmd),ctrl-^:execute-silent(ytmp mln)+reload($cmd),ctrl-\:execute(ytmp E)+reload($cmd),alt-m:execute(echo {n}+1 | bc | xargs -I ,, ytmp m f ,,)+reload($cmd),ctrl-o:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp openInBrowser ,,)"
+	--layout=reverse --cycle --bind="ctrl-space:execute(echo {n}+1 | bc | xargs -I ,, ytmp m x ,,)+reload($cmd),ctrl-alt-m:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m s ,,),alt-up:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, 0)+reload($cmd),alt-down:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, l)+reload($cmd),ctrl-]:execute-silent(ytmp w),ctrl-r:replace-query,home:first+reload($cmd),end:last+reload($cmd),alt-r:reload($cmd),ctrl-alt-d:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp -dl ,,),ctrl-z:execute-silent(setsid -f ytmp z {q}),ctrl-s:execute-silent(setsid -f ytmp {q}),ctrl-j:down,ctrl-j:jump,shift-left:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m r ,,)+reload($cmd),shift-up:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, -2)+reload($cmd)+up,shift-down:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, +1)+reload($cmd)+down,ctrl-k:kill-line,alt-p:execute-silent(ytmp p)+reload($cmd),alt-n:execute-silent(ytmp n)+reload($cmd),alt-right:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp e ,,)+reload($cmd),return:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp e ,,)+abort,shift-right:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp e ,,)+reload($cmd),pgdn:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, p)+reload($cmd)+put(*** ***)+select+clear-query,pgup:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, p-1)+reload($cmd),ctrl-v:page-down,alt-v:page-up,ctrl-alt-p:half-page-up,ctrl-alt-n:half-page-down,left-click:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp e ,,)+abort,right-click:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, p)+reload($cmd),ctrl-^:execute-silent(ytmp mln)+reload($cmd),ctrl-\:execute(ytmp E)+reload($cmd),alt-m:execute(echo {n}+1 | bc | xargs -I ,, ytmp m f ,,)+reload($cmd),ctrl-o:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp openInBrowser ,,)"
 }
 
 # move, remove, set marks.
 move () {
 	if [ "$1" = 'r' ]; then
-		shift 1
+		shift
 		for f in "$@"; do
 			if echo "$f" | grep -q ','; then
 				start="$( echo "$f" | cut -d',' -f1 )"
