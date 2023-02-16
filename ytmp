@@ -87,32 +87,34 @@ enter fzf for search.
 
   sp [<search>] search for playlists (requires https://github.com/trizen/pipe-viewer/)
 
-  a 		add urls (direct links/playlists), paths, or directory
+  a <local path|dir|url>
+	        add urls (direct links/playlists), paths, or directory
   		(pass them as arguement - accepts many of all the kinds mentioned).
 		does not check if file is a media file or not before adding.
 
+  e 		play entry #; can specify relative places with p|l|m like 'm'
+  n 		play next on queue
+  p 		play prev on queue
+  pf 		play first entry
+  pl 		play last entry
+  mfn 		move first entry to after currently playing
+  mln 		move last entry to after currently playing
+  P <search> 	fuzzy search string in queue and play match
+
   -p 		toggle playback
   -l 		toggle loop
-  -vl <[+|-]#>	set volume. can be an absolute number or <+|-># current volume (as in -vl +30, -vl -30, -vl 80)
+  -vl <[+|-]#>	set volume. can be an absolute number or <+|-># to current volume (as in -vl +30, -vl -30, -vl 80)
   -ff <secs>	seek forward <seconds>
   -bb <secs>	seek backward <seconds>
   -dur		learn the position and duration of song
 
-  l [n|s] 	play the song that was played before this one or n before this one or
+  l [#|s] 	play the song that was played before this one or # before this one or
 		pass s to select from the history file with fzf.
 		single fzf binding: ctrl-o: open entry in web browser.
 
   w 		toggle mpv window. don't press q to close the window because that will close
   		the file as well instead run ytmp w again to close it.
 
-  mfn 		queue last entry to play next
-  mln 		queue last entry to play next
-  e 		play entry #; can specify relative places with p|l|m like 'm'
-  pf 		play first entry
-  pl 		play last entry
-  n 		play next on queue
-  p 		play prev on queue
-  P <search> 	fuzzy search string in queue and play match
 
   v 		view queue
   vv 		view queue with fzf preview of details about the song
@@ -125,7 +127,7 @@ enter fzf for search.
 		pass x # to move # to the position of the queue selected in the fzf window
 		that will pop up. pass r to remove; can specify a range to delete
 		by passing start,end (separated by comma). you can use p|l|m for all of 'm s|x|r'.
-		examples: ytmp m 10 2; ytmp m s 123; ytmp m m +5; ytmp m p+3 l-1; ytmp x p-2;
+		examples: ytmp m 10 2; ytmp m s 126; ytmp m m +5; ytmp m p+3 l-1; ytmp x p-2;
 		ytmp m r p+2,l-15 l-5 10
 
   E 		edit the queue in nvim and source rc from "$XDG_CONFIG_HOME/nvim/ytmp.vim"
@@ -135,14 +137,12 @@ enter fzf for search.
   -shuf 	runs shuf on the queue file and overwrites it.
 
   -vd 		prints /tmp/ytmpqdiscards which contains list of songs that were selected to
-  		be added to the queue but were already found on the queue. it's removed with
-		every search.
+  		be added to the queue in the last search but were already found on the queue.
+		it's removed with every search.
 
-  -rd [c] 	copies or moves songs listed in /tmp/ytmpqdiscards which means songs that were
-  		selected to be added to the queue but were already found there; can be copied
-		(when given c option) to or moved (when no options are given) from their current
-		position to the position they would have been added on if they were never found
-		on the queue.
+  -rd [c] 	copies or moves songs listed in /tmp/ytmpqdiscards; can be copied (when given c option)
+  		to or moved (when no options are given) from their current position to the position they
+		would have been added on if they were never found on the queue.
 
   -d [<start on>] [[[<from>] [<to>]] [k]]
 		run daemon to play one song after another or if a range is specified with two args
@@ -150,7 +150,7 @@ enter fzf for search.
 		the end of range. there's no way to remove the range; if you want it to continue
 		playing beyond it, run it again without the range. also optionally accepts
 		an entry # to start playing from (if another song is playing, it will wait
-		for it to end to start playing from the entry provided)
+		for it to end to start playing from the entry provided.)
 		if you happen to play something outside of the range while it's running,
 		the program will pick up from where you left off when you left the range.
 		but if you play something inside the range, it will continue on playing from there.
@@ -158,7 +158,7 @@ enter fzf for search.
 
   -r [[<from>] [<to>]]
   		play random entries; a range can be specified with two separate arguements.
-  		there's no way to remove the range; if you want it to continue play beyond it,
+  		there's no way to remove the range; if you want it to play beyond it,
 		run it again. (kills any other instances of -r or -d running on start.)
 
   -n 		get notified when mpv exits (i.e. song finishes)
@@ -172,9 +172,9 @@ enter fzf for search.
   h|help|-h|--help
   		show this help
 
-  ----------------------------------------------
-  fzf bindings for creating search string (ytmp [z|x|s|sp]):
-  ----------------------------------------------
+  --------------------------------------------------------
+  fzf bindings when making search (for ytmp [z|x|s|sp]):
+  --------------------------------------------------------
 
   	ctrl-r		replace input field with selection
   	ctrl-g		search query and selection
@@ -183,77 +183,79 @@ enter fzf for search.
 	ctrl-o		open entry in web browser
 	ctrl-/		turn query into an entry one can select
   	enter		search only the selections (query not included)
-  	tab		toggle selection and clear query
-  	shift-tab	deselect all
   	ctrl-c/esc	quit
 
-  * when you press the binding for background search there isn't any indication that the
-    search has passed through so you can assume that fact and just abort fzf.
+  * the following do background searches; there isn't any indication that the search
+    has passed through so you can assume the fact and just abort fzf when done.
 
-	ctrl-s		search query in the background
-	alt-s		search query and selection in the background
+	ctrl-s		search query
+	alt-s		search query and selection
 	ctrl-z		search query with ytmp z
 	alt-z		search query and selection with ytmp z
 
-  ----------------------------------------------
-  fzf bindings for selecting playlists (sp):
-  ----------------------------------------------
+  --------------------------------------------------------
+  fzf bindings for selecting songs(x|s) and playlists(sp):
+  --------------------------------------------------------
 
 	tab		toggle selection
 	shift-tab	deselect all
-	enter		add selected playlists to queue
+	enter		add selected entries to queue
+  	ctrl-j		jump
+	ctrl-o		open entry in web browser
 
-	ctrl-o:		open entry in web browser
-	ctrl-x		see songs in the playlist
-			one can select songs in the playlist to add with <tab> and press <enter> to add them
+  * sp only:
 
-  ----------------------------------------------
+	ctrl-x		see songs in the playlist; one can select
+			songs in the playlist to add with
+			<tab> and press <enter> to add them
+
+  --------------------------------------------------------
   fzf bindings for viewing queue (v|vv):
-  ----------------------------------------------
+  --------------------------------------------------------
 
-	home:		first and reload
-	end:		last and reload
-	shift-up:	move entry up one
-	shift-down:	move entry down one
-	shift-right:	play entry and don't exit fzf window
-	shift-left:	delete entry
-	page-up:	move entry to after currently playing
-	page-down:	move entry to before currently playing
-	return:		play entry and quit fzf
-	alt-m:		ytmp m
-	ctrl-\:		ytmp E
-	ctrl-6:		ytmp mln
-	ctrl-]:		ytmp w
-	alt-v:		up one page
-	ctrl-v:		down one page
-	ctrl-alt-p:	up half page
-	ctrl-alt-n:	down half page
-	left-click:	play entry
-	right-click:	move entry to after currently playing
-	ctrl-j:		jump
-	ctrl-s:		search query in background
-	ctrl-z:		search query in background with ytmp z
-	ctrl-r:		replace input field with selection
-	ctrl-alt-d:	download selection
-	ctrl-alt-j:	jump to currently playing
-	alt-r:		reload queue
-	ctrl-o:		open entry in web browser
-	alt-up:		move entry to first
-	alt-down:	move entry to last
-	alt-n:		play next song
-	alt-p:		play prev song
-	ctrl-alt-m:	set entry as mark (for 'm' option)
-	ctrl-space:	move entry to the selected position in a new fzf search
+	home		first and reload
+	end		last and reload
+	shift-up	move entry up one
+	shift-down	move entry down one
+	shift-right	play entry and don't exit fzf window
+	shift-left	delete entry
+	page-up		move entry to after currently playing
+	page-down	move entry to before currently playing
+	return		play entry and quit fzf
+	alt-m		ytmp m
+	ctrl-\		ytmp E
+	ctrl-6		ytmp mln
+	ctrl-]		ytmp w
+	alt-v		up one page
+	ctrl-v		down one page
+	ctrl-alt-p	up half page
+	ctrl-alt-n	down half page
+	left-click	play entry
+	right-click	move entry to after currently playing
+	ctrl-j		jump
+	ctrl-s		search query in background
+	ctrl-z		search query in background with ytmp z
+	ctrl-r		replace input field with selection
+	ctrl-alt-d	download selection
+	ctrl-alt-j	jump to currently playing
+	alt-r		reload queue
+	ctrl-o		open entry in web browser
+	alt-up		move entry to first
+	alt-down	move entry to last
+	alt-n		play next song
+	alt-p		play prev song
+	ctrl-alt-m	set entry as mark (for 'm' option)
+	ctrl-space	move entry to the selected position in a new fzf search
 
-  ----------------------------------------------
+  --------------------------------------------------------
   nvim key bindings:
-  ----------------------------------------------
+  --------------------------------------------------------
 
 	mapleader 	'<Space>'
 	leader-v 	source $XDG_CONFIG_HOME/nvim/init.vim
 	leader-s 	source $XDG_CONFIG_HOME/nvim/ytmp.vim
 	leader-c 	edit $XDG_CONFIG_HOME/nvim/ytmp.vim
-	leader-n 	edit $USER/Music/ytmp/run_on_nextZ
+	leader-n 	edit $HOME/Music/ytmp/run_on_next
 
 	up 		move entry up 1
 	down 		move entry down 1
@@ -288,34 +290,32 @@ enter fzf for search.
 	leader-w 	ytmp w
 	leader-y 	:silent !ytmp
 
-  ----------------------------------------------
+  --------------------------------------------------------
 
 Other features:
   - one can communicate with mpv through the ipc socket the script opens at $mpvsocket.
   	See https://pastebin.com/23PXxpiD for examples (make sure to pass commands to the
 	$mpvsocket socket) and \`mpv --list-properties\` for properties that can be controlled.
-  - by default ytmp downloads songs after you have listened to them $max_stream_amount times,
-  	if you don't want this feature set \$download_songs to 'n' in $conf. the downloads can be found
-	in $songs_dir.
+  - by default ytmp downloads songs after you have listened to them $max_stream_amount times, if you
+  	don't want this feature set \$download_songs to 'n' in $conf. the downloads can be found in $songs_dir.
   - you can have multiple entries of the same song in multiple places and the program won't get confused
   	(in case you wanted to move tracks of albums around without changing their place in the album).
   - put commands you want to run at the start of each song in the script $run_on_next.
   - set settings in $conf.
 
 You might be interested to know:
+  - the editor config is made for nvim; not all binds are tested to be working in vim
   - songs are streamed/downloaded with the 'bestaudio' option
   - mpv is started with these options: --x11-name='ytmp_mpv' --no-terminal --vid=no --input-ipc-server=$mpvsocket
   	--ytdl-format='bestaudio'
-  - readline commands/binds are available in all fzf instances
   - <search> with spaces don't have to be quoted
   - when allowed to multi-select in fzf, if no selections are made and enter is pressed, the entry under
-  	the cursor is sent; if selections are made only the selections are passed
+  	the cursor is sent; if selections are made and enter is pressed, only the selections are passed
   - entries for local files are created with \`cksum --untagged --algorithm=blake2b -l 48 <file> | sed 's@\b  @ @'\`
-  - the editor config is made for nvim; not all binds are tested to be working in vim
   - thumbnails are not automatically deleted. if \$download_thumbnails option is set to 1 then thumbnails are
 	downloaded and not removed regardless of whether the song is downloaded or not
   - sadly there's no way to customize the fzf keybinds without modifying the source so if something doesn't
-	work for you feel free to do a global replace of the bind (the keynames are what's shown in this help).
+	work for you feel free to do a global replace of the bind (the keynames are what's shown in this help)
   - also unfortunately the program does not check and will not tell you if you've entered something unexpected/wrong
 	or do not have all the dependencies installed
 CAT_EOF
