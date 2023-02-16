@@ -305,8 +305,9 @@ Other features:
   - set settings in $conf.
 
 You might be interested to know:
-  - songs are downloaded with the 'bestaudio' option
+  - songs are streamed/downloaded with the 'bestaudio' option
   - mpv is started with these options: --x11-name='ytmp_mpv' --no-terminal --vid=no --input-ipc-server=$mpvsocket
+  	--ytdl-format='bestaudio'
   - readline commands/binds are available in all fzf instances
   - <search> with spaces don't have to be quoted
   - when allowed to multi-select in fzf, if no selections are made and enter is pressed, the entry under
