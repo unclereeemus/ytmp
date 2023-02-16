@@ -749,6 +749,7 @@ openInBrowser () {
 	elif [ "$1" = 'id' ]; then id="$( sed -n "${2}"p /tmp/ytmpids )"
 	elif [ "$1" = '-id' ]; then id="$2"
 	else id=$( sed -n "${1}s/$field_regex/\1/p" "$queue" ); fi
+	[ "$( printf "$id" | wc -m )" != '11' ] && return 1
 	setsid -f "$BROWSER" "https://www.youtube.com/watch?v=$id" >/dev/null 2>&1
 }
 
