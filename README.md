@@ -44,7 +44,7 @@ on first installing ytmp, there won't be any history to select from when you ent
 ## eww
 `chmod +x mus`
 
-`eww -c . open/close musicplayer` or `mv {eww.scss,eww.yuck,mus} ~/.config/eww; eww open/close musicplayer`
+`eww -c ./ open/close musicplayer` or `mv {eww.scss,eww.yuck,mus} ~/.config/eww; eww open/close musicplayer`
 
 it should (mostly) look like this (bottom left - music widget only): https://github.com/Gwynsav/messydots/blob/main/basicshowcase.png
 
