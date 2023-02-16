@@ -7,22 +7,22 @@ conf="$prefix/conf"
 
 [ -e "$conf" ] && . "$conf"
 
-# A value of 1 means true and 0 means false
+# A value of y means yes/true and n means no/false
 # for the following settings:
 # daemonize, notifications, download_thumbnails, download_songs
 
 # if to play one song after another by default
-[ -z "$daemonize" ] && daemonize="1"
+[ -z "$daemonize" ] && daemonize="y"
 
 # if to download songs after they are played more than $max_stream_amount
-[ -z "$download_songs" ] && download_songs="1"
+[ -z "$download_songs" ] && download_songs="y"
 # maximum amount of times to stream a song before downloading it
 [ -z "$max_stream_amount" ] && max_stream_amount=3
 # the maximum a length a file can be (in seconds) if it's to be downloaded
 [ -z "$max_len_for_dl" ] && max_len_for_dl='600'
 
-[ -z "$download_thumbnails" ] && download_thumbnails="0" # 1=true; 0/anything else=false
-[ -z "$notifications" ] && notifications="1" # 1=true; 0/anything else=false
+[ -z "$download_thumbnails" ] && download_thumbnails="n"
+[ -z "$notifications" ] && notifications="y"
 
 [ -z "$dl_dir" ] && dl_dir="$prefix/downloads"
 [ -z "$songs_dir" ] && songs_dir="$dl_dir/songs"
@@ -297,7 +297,7 @@ Other features:
   	See https://pastebin.com/23PXxpiD for examples (make sure to pass commands to the
 	$mpvsocket socket) and \`mpv --list-properties\` for properties that can be controlled.
   - by default ytmp downloads songs after you have listened to them $max_stream_amount times,
-  	if you don't want this feature set \$download_songs to '0' in $conf. the downloads can be found
+  	if you don't want this feature set \$download_songs to 'n' in $conf. the downloads can be found
 	in $songs_dir.
   - you can have multiple entries of the same song in multiple places and the program won't get confused
   	(in case you wanted to move tracks of albums around without changing their place in the album).
@@ -500,12 +500,12 @@ incrAmntPlayed () {
 	sed -i "/$id/d" "$played_urls"
 	[ "$( printf "$id" | wc -m )" = '12' ] && echo "$id $amnt_played $dt $title" >> "$played_urls" && return
 	[ -z "$id" ] && return 1
-	if [ $download_songs = "1" ] && [ "$amnt_played" -gt "$max_stream_amount" ]; then
+	if [ $download_songs = "y" ] && [ "$amnt_played" -gt "$max_stream_amount" ]; then
 		if ( ls "$songs_dir"/*"${id}"* >/dev/null 2>&1 ); then
 			echo "$id $amnt_played $dt dl $title" >> "$played_urls"
 		else
 			len=$( yt-dlp -q --no-warnings --get-duration "https://www.youtube.com/watch?v=$id" | sed -E 's/(.*):(.+):(.+)/\1*3600+\2*60+\3/;s/(.+):(.+)/\1*60+\2/' | bc )
-			[ "$len" -lt $max_len_for_dl ] && ( [ "$notifications" = '1' ] && notify-send "Downloading '${title}.' You have listened to it $amnt_played times. Playback will start once download finishes."; echo "Downloading '${title}.' You have listened to it $amnt_played times. Playback will start once download finishes." && yt-dlp -q --no-warnings -f bestaudio -o "$songs_dir/%(id)s %(title)s.%(ext)s" "https://www.youtube.com/watch?v=$id" >/dev/null 2>&1 && echo "$id $amnt_played $dt dl $title" >> "$played_urls" ) || echo "$id $amnt_played $dt $title" >> "$played_urls"
+			[ "$len" -lt $max_len_for_dl ] && ( [ "$notifications" = 'y' ] && notify-send "Downloading '${title}.' You have listened to it $amnt_played times. Playback will start once download finishes."; echo "Downloading '${title}.' You have listened to it $amnt_played times. Playback will start once download finishes." && yt-dlp -q --no-warnings -f bestaudio -o "$songs_dir/%(id)s %(title)s.%(ext)s" "https://www.youtube.com/watch?v=$id" >/dev/null 2>&1 && echo "$id $amnt_played $dt dl $title" >> "$played_urls" ) || echo "$id $amnt_played $dt $title" >> "$played_urls"
 		fi
 	else
 		ls "$songs_dir"/*"${id}"* >/dev/null 2>&1 && echo "$id $amnt_played $dt dl $title" >> "$played_urls" || echo "$id $amnt_played $dt $title" >> "$played_urls"
@@ -538,16 +538,16 @@ play () {
 	incrAmntPlayed "$id"
 	if ( ls "$songs_dir"/*"${id}"* >/dev/null 2>&1 ); then
 		find "$songs_dir"/*"${id}"* -print0 | xargs -0 -I ',,' setsid -f mpv --x11-name='ytmp_mpv' --no-terminal --vid=no --input-ipc-server="$mpvsocket" ",,"
-		[ "$download_thumbnails" = '1' ] && dlThumbnail "$id"
+		[ "$download_thumbnails" = 'y' ] && dlThumbnail "$id"
 	else
 		setsid -f mpv --x11-name='ytmp_mpv' --no-terminal --vid=no --input-ipc-server="$mpvsocket" --ytdl-format='bestaudio' "https://www.youtube.com/watch?v=$id"
-		[ "$download_thumbnails" = '1' ] && dlThumbnail "$id"
+		[ "$download_thumbnails" = 'y' ] && dlThumbnail "$id"
 	fi
 	title="$( sed -n -e "/$playing_regex/s/$playing_marker_regex//" -e 's/\*\*\*$//p' "$queue" )"
 	echo "Playing '$title'"
-	[ "$notifications" = '1' ] && notify-send 'Now Playing' "$title"
+	[ "$notifications" = 'y' ] && notify-send 'Now Playing' "$title"
 	setsid -f sh "$run_on_next" >/dev/null 2>&1
-	[ "$daemonize" = 1 ] && ! pgrep -fa 'ytmp (-d|-r)+' >/dev/null 2>&1 && setsid -f ytmp -d >/dev/null 2>&1
+	[ "$daemonize" = 'y' ] && ! pgrep -fa 'ytmp (-d|-r)+' >/dev/null 2>&1 && setsid -f ytmp -d >/dev/null 2>&1
 	return 0
 }
 
