@@ -337,6 +337,8 @@ addToQueue () {
 		title="$2"
 	fi
 
+	! grep -x "$title" "$search_history" && echo "$title" >> "$search_history"
+
 	if ( ! grep -Fq "$id" "$queue" ); then
 		echo "$id $title" >> "$queue"
 		echo "Added '$title'"
