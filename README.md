@@ -6,7 +6,7 @@ demo: https://www.reddit.com/r/bash/comments/10i7cb2/ytmp_shell_script_for_yt_an
 **FEATURES:**
   - Keyboard centered
   - Add local files/directories
-  - Select from multiple search results
+  - Select from search results
   - Search regular youtube or youtube music (kind of... in a round about way. see `ytmp h` for explanation)
   - Search and add youtube playlists to the queue (or only select songs of playlists)
   - Download songs after they have been played a chosen amount of times (and play the download in the future)
@@ -21,7 +21,7 @@ demo: https://www.reddit.com/r/bash/comments/10i7cb2/ytmp_shell_script_for_yt_an
 
 # setup
 ## DEPS: fzf, yt-dlp, mpv, socat, (n/vim, pipe-viewer(https://github.com/trizen/pipe-viewer/))
-## NOT A DEP: YT credentials of any sort
+## NOT A DEP: accounts of any sort
 `git clone --depth 1 'https://github.com/unclereeemus/ytmp/'`
 
 `cd ytmp`
@@ -52,6 +52,16 @@ the thumbnail is located at /tmp/muscover.webp
 
 # scripts
 
+**ytmp** main script; none of the other scripts need to be set up to get it working.
+
+**conf** for setting ytmp variables/directories. looked for in ~/Music/ytmp/ by default.
+
+**run_on_next** runs at the start of every song which can be used to keep some consistent settings within mpv (volume, loop, seek, etc). looked for in ~/Music/ytmp/ by default.
+
+**ytmp.vim** a vim config with useful keybinds relevant to ytmp
+
+**ytmpsuite** for oneliners or automation of things like toggling lines in run_on_next, selecting queues, creating playlists; some of the lines under 'tips' can be found there as well. there is no help option so you'll have to parse through the code and comments to figure out what does what if you want to use it.
+
 **mightfinduseful** a script to play music outside of ytmp either with local files, youtube search, or the ytmp queue file. also dynamically names the mpvsocket so you don't overwrite an old one.
 
 **mpv_socket_selector** prints a dmenu of active mpv sockets and puts the selected one in /tmp/active_mpvsocket (options: n(ext), p(rev), s(elect))
@@ -60,17 +70,7 @@ the thumbnail is located at /tmp/muscover.webp
 
 **eww.scss/eww.yuck** contain the eww music widget
 
-**mus** is used by the eww config for various information. put it in the same dir as eww.scss and eww.yuck.
-
-**ytmp** main script; none of the other scripts need to be set up to get it working.
-
-**run_on_next** runs at the start of every song which can be used to keep some consistent settings within mpv (volume, loop, seek, etc). looked for in ~/Music/ytmp/ by default.
-
-**conf** for setting ytmp variables/directories. looked for in ~/Music/ytmp/ by default.
-
-**ytmp.vim** a vim config with useful keybinds relevant to ytmp
-
-**ytmpsuite** for oneliners or automation of things like toggling lines in run_on_next, selecting queues, creating playlists; some of the lines below can be found there as well. there is no help option so you'll have to parse through the code and comments to figure out what does what if you want to use it.
+**mus** is used by the eww config for various information. eww looks for it the same dir as eww.scss and eww.yuck.
 
 # tips
 - a dmenu wrapper: `cmd="$( printf ' ' | dmenu -p 'which ytmp cmd to run? ' )" && if ( printf "$cmd" | grep -Eq '^( |x( [0-9]*)?|s( [0-9]*)?|z|l s|v|vv|E|sp .*)+$' ); then setsid -f $TERMINAL -e ytmp $cmd >/dev/null 2>&1; else ytmp $cmd; fi`
@@ -79,9 +79,9 @@ the thumbnail is located at /tmp/muscover.webp
 
 - if you want to move multiple songs to one position i.e. the end you could use something like `echo '3,6,27,18' | xargs -d ',' -I '{}' ytmp m '{}' 'l'` (replacing the numbers and 'l' with 'p|m' or the proper positions of course)
 
-- you don't need to use ytmp to make playlists for it. to create a queue file from a youtube playlist you can do `yt-dlp --print id --print title '<playlist_url>' | paste -s -d ' \n' > file` or to create a queue file from search results do `xargs -d '\n' -a <file-with-newline-sperated-searches> -I ,, yt-dlp --print id --print title ytsearch:",," | paste -s -d ' \n' > file` (to read from stdout instead of a file use `printf '%s\n' '<search1>' '<search2>' '<search3>' | xargs [without -a option]...`) or to search for playlists from the terminal (requires pipe-viewer): `search='YOUR_SEARCH'; pipe-viewer --no-interactive -sp --custom-playlist-layout='*VIDEOS*VIDS *TITLE* *URL*' "$search" | fzf --bind='ctrl-a:execute(echo {} | awk "{print $NF}" | xargs -0 -I ",," pipe-viewer --custom-layout="*AUTHOR* *TIME* *TITLE*" --no-interactive ",," | fzf)' | awk '{print $NF}' | xargs -0 -I ',,' yt-dlp --print id --print title ',,' | paste -s -d ' \n' > file` (have a look at `ytmpsuite sp <search>` for a more featureful version with previews and individual song select)
+- you don't need to use ytmp to make playlists for it. to create a queue file from a youtube playlist you can do `yt-dlp --print id --print title '<playlist_url>' | paste -s -d ' \n' > file` or to create a queue file from search results do `xargs -d '\n' -a <file-with-newline-sperated-searches> -I ,, yt-dlp --print id --print title ytsearch:",," | paste -s -d ' \n' > file` (to read from stdout instead of a file use `printf '%s\n' '<search1>' '<search2>' '<search3>' | xargs [without -a option]...`) or to search for playlists from the terminal (requires pipe-viewer): `search='YOUR_SEARCH'; pipe-viewer --no-interactive -sp --custom-playlist-layout='*VIDEOS*VIDS *TITLE* *URL*' "$search" | fzf --bind='ctrl-a:execute(echo {} | awk "{print $NF}" | xargs -0 -I ",," pipe-viewer --custom-layout="*AUTHOR* *TIME* *TITLE*" --no-interactive ",," | fzf)' | awk '{print $NF}' | xargs -0 -I ',,' yt-dlp --print id --print title ',,' | paste -s -d ' \n' > file` (have a look at `ytmpsuite sp` for a more featureful version with previews and individual song select or `ytmpsuite pvpl` to automate playlist search and add)
 
-- convert spotify playlists to something ytmp can use: export the playlist to csv with https://github.com/watsonbox/exportify then run `cut -d'"' --output-delimiter=' ' -f4,8 PLAYLIST_PATH.csv | sed -n 1d | sed -E -e 's/\(?.*[Rr]emaster(ed)? ?\)? ?[0-9]*//g' -e 's/([)?(])?( - )?(  )?(\)$)?( $)?//g' | xargs -d '\n' -I ',,' yt-dlp --print id --print title ytsearch1:",, auto-generated provided to youtube" | paste -s -d ' \n' > file`
+- convert spotify playlists to something ytmp can use: export the playlist to csv with https://github.com/watsonbox/exportify then run `cut -d'"' --output-delimiter=' ' -f4,8 PLAYLIST.CSV | sed -n 1d | sed -E -e 's/\(?.*[Rr]emaster(ed)? ?\)? ?[0-9]*//g' | tr -d '()[]' | xargs -d '\n' -I ',,' yt-dlp --print id --print title ytsearch1:",, auto-generated provided to youtube" | paste -s -d ' \n' > file`
 
 - see `$num` songs immediately before and after currently playing: `num=3; grep -C $num -F '***' /home/$USER/Music/ytmp/queue | cut -d' ' -f2-` or send a notification: `num=1; notify-send "$( grep -C $num -F '***' /home/$USER/Music/ytmp/queue | cut -d' ' -f2- )"`
 
