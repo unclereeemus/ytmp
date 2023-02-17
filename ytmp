@@ -423,7 +423,7 @@ suggestsForFzf () {
 
 searchInFzf () {
 	suggestsForFzf | fzf --prompt='search: ' --info=inline --padding=2,2,2,2 --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   ytmp search   }" --separator='' \
-	--layout=reverse --height 60% -m --bind="ctrl-/:execute-silent(ytmp suggestsForFzf {q})+reload-sync(ytmp suggestsForFzf),ctrl-g:execute(echo {+} {q})+abort,ctrl-j:jump,ctrl-k:kill-line,tab:toggle+clear-query+down,shift-tab:clear-selection,ctrl-z:execute-silent(setsid -f ytmp z {q}),alt-z:execute-silent(setsid -f ytmp z {+} {q} ),alt-s:execute-silent(setsid -f ytmp {+} {q}),tab:select+clear-query,return:accept,ctrl-r:replace-query,ctrl-x:print-query,ctrl-s:execute-silent(setsid -f ytmp {q})" | tr "\n" ' ' | sed -e 's/[ \t]*$//'
+	--layout=reverse --height 60% -m --bind="ctrl-/:execute-silent(ytmp suggestsForFzf {q})+reload-sync(ytmp suggestsForFzf),ctrl-g:execute(echo {+} {q})+abort,ctrl-j:jump,ctrl-k:kill-line,tab:toggle+clear-query+down,shift-tab:clear-selection,ctrl-z:execute-silent(setsid -f ytmp z {q}),alt-z:execute-silent(setsid -f ytmp z {+} {q}),alt-s:execute-silent(setsid -f ytmp {+} {q}),tab:select+clear-query,return:accept,ctrl-r:replace-query,ctrl-x:print-query,ctrl-s:execute-silent(setsid -f ytmp {q})" | tr "\n" ' ' | sed -e 's/[ \t]*$//'
 }
 
 searchSongs () {
@@ -757,8 +757,8 @@ openInBrowser () {
 
 case "${1}" in
 	E) nvim -u "$XDG_CONFIG_HOME/nvim/ytmp.vim" --noplugin +/'\*\*\*.*\*\*\*' "$queue" ;;
-	mfn) move a 1 p ;;
-	mln) move a l p ;;
+	mfn) move 1 p ;;
+	mln) move l p ;;
 	pf) markAsPlaying 1 ;;
 	pl) markAsPlaying l ;;
 	v) viewQueue v ;;
