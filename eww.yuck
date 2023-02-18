@@ -11,7 +11,7 @@
 				(button :tooltip "loop; T: ${ysgT}; sv" :onclick "./mus loopstate toggle" :onmiddleclick "ytmpsuite T" :onrightclick "ytmpsuite ld" loopstate)
 				(button :onrightclick "ytmp n" :onclick "./mus seek f" :onmiddleclick "ytmp -kd; setsid -f ytmp -d" ""))
 			(box :class "mus-prog" :orientation "h" :space-evenly "false"
-				(scale :class "musprog-bar" :orientation "h" :min 0 :max 101 :active false :value mus-prog)
+				(scale :class "musprog-bar" :orientation "h" :min 0 :max 101 :onchange "mpv_socket_commands cc seek {} absolute-percent" :value mus-prog)
 				(label :class "musprog-info" :text "${mus-prog-display}"))
 
 			(box :class "sys-vol" :orientation "h" :space-evenly "false"
