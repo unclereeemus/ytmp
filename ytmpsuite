@@ -4,6 +4,18 @@ conf="/home/$USER/Music/ytmp/conf"
 . $conf
 
 case "$1" in
+	k) mpv_socket_commands e quit st /tmp/mpvsocketytmp ;;
+	0) mpv_socket_commands cc seek 0 absolute st /tmp/mpvsocketytmp ;;
+
+	# if `ytmp -r` (which uses `shuf`) isn't random enough
+	-r)
+		pgrep -f 'ytmp (-d|-r)+|ytmpsuite (qs|qn|-r)+' | grep -v $$ | xargs kill >/dev/null 2>&1
+		while (ytmp -n); do
+			min=1; max="$( grep -c '' "$queue" )"; rnd_count=$(( RANDOM % ( $max - $min + 1 ) + $min )); ytmp e $rnd_count
+		done
+		;;
+
+	-kd) pkill -f 'ytmpsuite (qs|qn|-r)+' ;;
 	# comment/uncomment the line following the comment # LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT
 	t) ( grep -q '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT$' "$run_on_next" ) && index="$( grep -n '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT$' "$run_on_next" | cut -d':' -f1 | xargs -I ',' echo ',+1' | bc )"; ( sed -n "${index}p" "$run_on_next" | grep '^# ' ) && ( sed -i "${index}s/^# //" "$run_on_next"; echo "ON" ) || ( sed -i "${index}s/^/# /" "$run_on_next"; echo "OFF" ) ;;
 	# learn whether the line below # LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT is commented (off) or not (on)
@@ -42,18 +54,19 @@ case "$1" in
 	# queue up entries to play one after another; ex: ytmpsuite qn 5 p+8 l-2
 	qn) mpv_socket_commands s loop false st /tmp/mpvsocketytmp >/dev/null 2>&1; shift 1; printf '%s\n' "$@" | while read p; do ( while (ytmp -n); do ytmp e $p; break; done; ) done ;;
 	# search searches contained in (newline separated) $2 and put results in $prefix/playlists/"$3"
-	sa) [ -n "$3" ] && xargs -d '\n' -a "$2" -I ,, yt-dlp --print id --print title ",," | paste -s -d ' \n' > $prefix/playlists/"$3" ;;
+	sa) [ -n "$3" ] && xargs -d '\n' -a "$2" -I ,, yt-dlp --print id --print title ",," | paste -s -d ' \n' >> $prefix/playlists/"$3" ;;
 
 	# make a queue file from playlist url and put it in $prefix/playlists/"$3"
-	ap) [ -n "$3" ] && yt-dlp --print id --print title "$2" | paste -s -d ' \n' > $prefix/playlists/"$3" ;;
+	ap) [ -n "$3" ] && yt-dlp --print id --print title "$2" | paste -s -d ' \n' >> $prefix/playlists/"$3" ;;
 
 	# select songs from playlists to add to $prefix/playlists/"$3"; $3=filename
 	a) pipe-viewer -e="*ID*" --results=50 --no-interactive --no-use-colors --custom-playlist-layout='*ID* *TITLE*' --custom-layout='*ID* *TITLE*' "$2" | sed 1,3d | fzf -m --preview="echo {} | cut -d' ' -f1 | xargs -I ,, pipe-viewer --results=1 -e='*ID*' --no-interactive --no-use-colors --custom-layout='Length: *TIME* \nUploader: *AUTHOR* \nDate: *PUBLISHED* \nURL: *URL*\n--------------\nDescription:\n--------------\n*DESCRIPTION*\nDESCEND\n--------------' ,," >> $prefix/playlists/"$3" ;;
 
 	# search for playlists and make a queue file with the selected one at $prefix/playlists/"$3"; $3=filename
-	# add playlists with yt-dlp -- pipe-viewer doesn't return all videos in a playlist and yt-dlp is slow so choose your trade off
+	# add playlists with yt-dlp -- pipe-viewer (used by 'sp' option) doesn't return all videos in a playlist
+	# and yt-dlp is slow so choose your trade off
 	spy) [ -n "$3" ] && query="$2" && pipe-viewer --results=50 --no-interactive -sp --custom-playlist-layout='*VIDEOS*VIDS *TITLE* *URL*' "$query" | fzf -m --bind="ctrl-x:execute(echo {} | awk -F ' ' '{print \$NF}' | xargs -r -0 -I ',,' ytmpsuite a ,, $3),ctrl-o:execute-silent(echo {} | awk -F ' ' '{print \$NF}' | xargs -0 -I ',,' $BROWSER ,, )" \
-		--preview='echo {} | awk "{print $NF}" | xargs -0 -I ",," pipe-viewer -e="*ID*" --no-use-colors --results=50 --custom-layout="*AUTHOR* *TIME* *TITLE*" --no-interactive ",,"' | awk '{print $NF}' | xargs -r -0 -I ',,' yt-dlp --print id --print title ',,' | paste -s -d ' \n' > $prefix/playlists/"$3"
+		--preview='echo {} | awk "{print $NF}" | xargs -0 -I ",," pipe-viewer -e="*ID*" --no-use-colors --results=50 --custom-layout="*AUTHOR* *TIME* *TITLE*" --no-interactive ",,"' | awk '{print $NF}' | xargs -r -0 -I ',,' yt-dlp --print id --print title ',,' | paste -s -d ' \n' >> $prefix/playlists/"$3"
 		;;
 
 	sp) [ -n "$3" ] && query="$2" && pipe-viewer -e="*ID*" --results=50 --no-interactive --no-use-colors -sp --custom-playlist-layout='*VIDEOS*VIDS *TITLE* *URL*' "$query" | grep 'youtube\.com' | fzf -m \
@@ -61,11 +74,11 @@ case "$1" in
 		--preview='echo {} | awk "{print $NF}" | xargs -0 -I ",," pipe-viewer -e="*ID*" --no-use-colors --results=50 --custom-layout="*AUTHOR* *TIME* *TITLE*" --no-interactive ",," | sed 1d' | awk '{print $NF}' | \
 		xargs -r -I ',,' pipe-viewer -e='*ID*' --no-use-colors --results=50 --custom-layout='*ID* *TITLE*' --no-interactive ',,' | sed 1d >> $prefix/playlists/"$3" ;;
 
-	# search for playlists and add the very first result
-	# use case: add individual songs of albums instead of a long video containing all songs
+	# search for playlists and add the very first result.
+	# use case: add individual songs of albums instead of a long video containing all songs;
 	# pipe-viewer is used instead of yt-dlp because it's quicker and only
-	# rarely would albums track count exceed the videos pipe-viewer can return
-	# args: <file-with-what-to-search> <path-to-dump-the-results> [<optional-string-to-add-to-the-end-of-all-search>]
+	# rarely would albums track count exceed the max videos pipe-viewer can return
+	# args: <file-containing-searches-sep-by-newline> <path-to-dump-the-results> [<optional-string-to-add-to-the-end-of-all-search>]
 	# for the last optional arg - put a space before the string like: ' full album'
 	pvpl)
 		[ -z "$3" ] && exit
