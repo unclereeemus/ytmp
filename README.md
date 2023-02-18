@@ -89,6 +89,8 @@ the thumbnail is located at /tmp/muscover.webp
 
 - you can make a scratchpad (i recommend tdrop if your wm doesn't support them) of `ytmp E` which can be your one stop for music management (you can invoke ytmp with keybindings by using the vim config provided)
 
+- you can find more stuff like this in `ytmpsuite`
+
 # credit
 - this is a fork of the now deleted repo ifeelalright1970/ytmp with additional features and bug fixes
 - https://github.com/Gwynsav/messydots for eww config
