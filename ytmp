@@ -618,7 +618,7 @@ daemon () {
 			else
 				# sleep twice in case in between the sleeps some external cmd plays something so there
 				# is no clash between the two
-				sleep 1 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && sleep 1 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && markAsPlaying p+1
+				sleep 1 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && sleep .5 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && markAsPlaying p+1
 			fi
 		else sleep 1; fi
 	done
@@ -703,7 +703,6 @@ randomDaemon () {
 			if [ -n "$3" ]; then seq "$2" "$3" | shuf -n 1 | xargs ytmp e
 			else grep -c '' "$queue" | xargs seq | shuf -n 1 | xargs ytmp e; fi
 		fi
-	sleep 3
 	done
 }
 
