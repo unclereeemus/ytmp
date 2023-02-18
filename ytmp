@@ -251,7 +251,7 @@ enter fzf for search.
   nvim key bindings:
   --------------------------------------------------------
 
-	mapleader 	'<Space>'
+	leader = 	'\'
 	leader-v 	source $XDG_CONFIG_HOME/nvim/init.vim
 	leader-s 	source $XDG_CONFIG_HOME/nvim/ytmp.vim
 	leader-c 	edit $XDG_CONFIG_HOME/nvim/ytmp.vim
@@ -756,7 +756,7 @@ openInBrowser () {
 [ -z "$1" ] && searchSongs && return 0
 
 case "${1}" in
-	E) nvim -u "$XDG_CONFIG_HOME/nvim/ytmp.vim" --noplugin +/'\*\*\*.*\*\*\*' "$queue" ;;
+	E) nvim -u "$XDG_CONFIG_HOME/nvim/ytmp.vim" --noplugin +/'***' "$queue" ;;
 	mfn) move 1 p ;;
 	mln) move l p ;;
 	pf) markAsPlaying 1 ;;
