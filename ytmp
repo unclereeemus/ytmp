@@ -124,7 +124,7 @@ enter fzf for search.
   ls 		show a numbered list of the queue
 
   m [c] [p|l|m|#[+|-#]] [p|l|m|#[+|-#]] [r ...] [[c] x ...] [s #|v]
-  		move entry. l means last, p means currently playing, m means a position mark
+  		move or copy entry. l means last, p means currently playing, m means a position mark
 		set with passing s #. set mark by passing s # and see current mark with s v.
 		pass x # to move # to the position of the queue selected in the fzf window
 		that will pop up or preceed x with 'c' to copy. pass r to remove.
@@ -132,7 +132,7 @@ enter fzf for search.
 		(separated by comma). you can use p|l|m for all of 'm c|s|x|r'.
 		examples: ytmp m 10 2; ytmp m s 126; ytmp m m +5; ytmp m p+3 l-1; ytmp [c] x p-2;
 		ytmp m r p+2,l-15 l-5 10; ytmp m [c] 2,p-2 l 3 5 6 +2
-		syntax for ytmp m|m c|m r is [<target>|<from>,<to>] <destination>
+		syntax for ytmp m|m c|m r is [<target>|<from>,<to>] <destination> ...
 
   E 		edit the queue in nvim and source rc from "$XDG_CONFIG_HOME/nvim/ytmp.vim"
 
@@ -222,8 +222,7 @@ enter fzf for search.
   	ctrl-j		jump
 	ctrl-o		open entry in web browser
 
-  * sp only:
-
+	* sp only:
 	ctrl-x		see songs in the playlist; one can select
 			songs in the playlist to add with
 			<tab> and press <enter> to add them
@@ -374,21 +373,6 @@ transferQDiscards () {
 	[ ! -s "$qdiscards_file" ] && echo "'$qdiscards_file' either doesn't exist or is empty." && return 1
 	[ "$1" = 'v' ] && cat "$qdiscards_file" && return
 
-	if [ "$1" = 'c' ]; then
-		ed_opt='t'
-		action='Copied'
-	else
-		ed_opt='m'
-		action='Moved'
-	fi
-
-	rm /tmp/ytmpplaces
-	# record the entries that are in where the entries should be moved to
-	cat "$qdiscards_file" | while read -r f; do
-		sed -n "$( echo "$f" | cut -d' ' -f1 )"p "$queue" >> /tmp/ytmpplaces
-	done
-
-	x="$( grep -c '' /tmp/ytmpplaces )"
 	# read lines in from bottom to top (tac) in case multiple entries
 	# are competing for the same spot
 	# get all the lines that are at $place and then /$place/; don't directly move
@@ -396,13 +380,8 @@ transferQDiscards () {
 	cat "$qdiscards_file" | tac | while read -r f; do
 		id="$( echo "$f" | cut -d' ' -f2 )"
 		found="$( grep -n "$id" "$queue" | cut -d':' -f1 | head -1 )"
-		place="$( sed -n "${x}s/$field_regex/\1/p" /tmp/ytmpplaces )"
-		old_found="$( grep -n "$id" "$queue" | head -1 )"
-		printf "%s\n" "/$place/" "${found}${ed_opt}." "wq" | ed -s "$queue" >/dev/null
-		x=$(( x-1 ))
-		place="$( grep -n "$place" "$queue" | head -1 )"
-		found="$( grep -n "$id" "$queue" | head -1 )"
-		echo "$action [$( echo "$old_found" | cut -d':' -f1 )] '$( echo "$f" | cut -d' ' -f3- )' [[TO AFTER]] [$( echo "$place" | cut -d':' -f1 )] '$( echo "$place" | cut -d' ' -f2- )'"
+		place="$( echo "$f" | cut -d' ' -f1 )"
+		move $found $place
 	done | tac
 }
 
@@ -718,28 +697,40 @@ move () {
 	target="$( printf '%s\n' "$@" | sed -n 'p;n' )"
 	dest="$( printf '%s\n' "$@" | sed -n 'n;p' )"
 
+	# make edits in this numbered queue to anchor the positions given by the
+	# user otherwise things are going to be in places they didn't intend
+	numbered_q='/tmp/ytmpqnumbered'
+	grep -n '' "$queue" > "$numbered_q"
+
+	last="$( grep -c '.' "$numbered_q" )"
+	playing="$( grep -n "\*\*\*.*\*\*\*" "$numbered_q" | head -1 | cut -d':' -f1 )"
+	mark="$( cat /tmp/ytmpmark )"
+
 	counter=0
 	for f in $target; do
 		counter=$(( counter+1 ))
 		d="$( printf "$dest" | sed -n "${counter}p" )"
-		# echo "$counter $f $d" && continue
 		if echo "$f" | grep -q ','; then
 			start="$( echo "$f" | cut -d',' -f1 )"
 			end="$( echo "$f" | cut -d',' -f2 )"
-			start="$( echo "$start" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
-			end="$( echo "$end" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
-			pos="$( echo "$d" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
+			# echo "$start $end" && exit
+			start="$( echo "$start" | sed -e s/m/$mark/ -e s/p/$playing/ -e s/l/$last/ | bc )"
+			end="$( echo "$end" | sed -e s/m/$mark/ -e s/p/$playing/ -e s/l/$last/ | bc )"
 
-			printf "${start}${end}${pos}" | grep -xq '[0-9]*' && printf '%b' "${lsp}$action_a from $start-$end to $pos\n" && sed -n "${start},${end}s/$field_regex/$action_p '\2'/p" "$queue" && printf "$lsp" && printf "%s\n" "${start};${end}${ed_opt}${pos}" "wq" | ed -s "$queue" >/dev/null
+			echo "$d" | grep -Eqx '(\+|-|\*|/)+[0-9]*' && pos="$( echo "${end}${d}" | bc )" || pos="$( echo "$d" | sed -e s/m/$mark/ -e s/p/$playing/ -e s/l/$last/ | bc )"
+
+			printf "${start}${end}${pos}" | grep -xq '[0-9]*' && printf '%b' "${lsp}$action_a from $start-$end to $pos\n" && sed -n "/^${start}:/,/^${end}:/s/[^ ]* /$action_p /p" "$numbered_q" && printf "$lsp" && printf "%s\n" "/^${start}:/;/^${end}:/${ed_opt}/^${pos}:/" "wq" | ed -s "$numbered_q" >/dev/null
+
 		else
-			sel="$( echo "$f" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
-			echo "$d" | grep -Eqx '(\+|-|\*|/)+[0-9]*' && place="$( echo "${sel}${d}" | bc )" || place="$( echo "$d" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
+			sel="$( echo "$f" | sed -e s/m/$mark/ -e s/p/$playing/ -e s/l/$last/ | bc )"
+			echo "$d" | grep -Eqx '(\+|-|\*|/)+[0-9]*' && place="$( echo "${sel}${d}" | bc )" || place="$( echo "$d" | sed -e s/m/$mark/ -e s/p/$playing/ -e s/l/$last/ | bc )"
 
-			echo "$action_p [$sel] '$( sed -n "${sel}s/${field_regex}/\2/p" "$queue" )' [[TO AFTER]] [$place] '$( sed -n "${place}s/${field_regex}/\2/p" "$queue" )'"
+			echo "$action_p [$sel] '$( sed -n "/^${sel}:/s/[^ ]* //p" "$numbered_q" )' [[TO AFTER]] [$place] '$( sed -n "/^${place}:/s/[^ ]* //p" "$numbered_q" )'"
 
-			printf "%s\n" "${sel}${ed_opt}${place}" "wq" | ed -s "$queue" >/dev/null
+			printf "%s\n" "/^${sel}:/${ed_opt}/^${place}:/" "wq" | ed -s "$numbered_q" >/dev/null
 		fi
 	done
+	sed -n 's/[0-9]*://p' "$numbered_q" > "$queue"
 }
 
 fuzzyPlay () {
