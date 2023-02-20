@@ -57,8 +57,8 @@ qdiscards_file="/tmp/ytmpqdiscards"
 helper () {
 cat << CAT_EOF
 Usage: ytmp [z] [<search>]/s|x [# of results]/sp [<search>]/a <local path|dir|url>/e #
-       OR v/ls/m [p|l|m|#[+|-#]] [p|l|m|#[+|-#]] [s #|v]/E
-       OR -l/-p OR n/p/pl/pf/mln/mfn/l [#|s]/P OR -r/-d
+       OR v/ls/m [c] [# #] [r|x #] [s #|v]/E
+       OR -l/-p OR n/p/pl/pf/mln/mfn/l [#|s]/P <search> OR -r [# #]/-d [[#] #]
 
 On first installing ytmp, there won't be any history to select from when you enter ytmp
 so either pass arguements from the cli with ytmp [z] <search> or to search what's on the
@@ -99,7 +99,9 @@ enter fzf for search.
   pl 		play last entry
   mfn 		move first entry to after currently playing
   mln 		move last entry to after currently playing
-  P <search> 	fuzzy search string in queue and play match
+  P [-id] <search>
+  		fuzzy search string in queue and play match. if -id is passed <search> is parsed for
+		in ids too otherwise only in song titles.
 
   -p 		toggle playback
   -l 		toggle loop
@@ -121,14 +123,16 @@ enter fzf for search.
 
   ls 		show a numbered list of the queue
 
-  m [p|l|m|#[+|-#]] [p|l|m|#[+|-#]] [s #|v] [x #] [r #]
+  m [c] [p|l|m|#[+|-#]] [p|l|m|#[+|-#]] [r|x [p|l|m|#[+|-#]] [s #|v]
   		move entry. l means last, p means currently playing, m means a position mark
 		set with passing s #. set mark by passing s # and see current mark with s v.
 		pass x # to move # to the position of the queue selected in the fzf window
-		that will pop up. pass r to remove; can specify a range to delete
-		by passing start,end (separated by comma). you can use p|l|m for all of 'm s|x|r'.
+		that will pop up. pass r to remove.
+		for c|m|r - can specify a range and multiple args by passing start,end
+		(separated by comma). you can use p|l|m for all of 'm c|s|x|r'.
 		examples: ytmp m 10 2; ytmp m s 126; ytmp m m +5; ytmp m p+3 l-1; ytmp x p-2;
-		ytmp m r p+2,l-15 l-5 10
+		ytmp m r p+2,l-15 l-5 10; ytmp m [c] 2,p-2 l 3 5 6 +2
+		syntax is [ <target>|<from>,<to> ] <destination>
 
   E 		edit the queue in nvim and source rc from "$XDG_CONFIG_HOME/nvim/ytmp.vim"
 
@@ -182,6 +186,7 @@ enter fzf for search.
   	ctrl-j		jump
 	ctrl-o		open entry in web browser
 	ctrl-/		turn query into an entry one can select
+	shift-left	delete search from history
   	enter		search only the selections (query not included)
   	ctrl-c/esc	quit
 
@@ -218,7 +223,7 @@ enter fzf for search.
 	shift-up	move entry up one
 	shift-down	move entry down one
 	shift-right	play entry and don't exit fzf window
-	shift-left	delete entry
+	shift-left	remove entry
 	page-up		move entry to after currently playing
 	page-down	move entry to before currently playing
 	return		play entry and quit fzf
@@ -342,7 +347,7 @@ addToQueue () {
 		echo "$id $title" >> "$queue"
 		echo "Added '$title'"
 	else
-		found="$( grep -n "$id" "$queue" | cut -d':' -f1 )"
+		found="$( grep -n "$id" "$queue" | cut -d':' -f1 | head -1 )"
 		echo "'$title' was found at line $found in the queue. It will not be newly added."
 		queue_len="$( grep -c '' "$queue" )"
 		echo "$queue_len $id $title" >> "$qdiscards_file"
@@ -376,7 +381,7 @@ transferQDiscards () {
 	# because as the lines are moved around, the order is destroyed
 	cat "$qdiscards_file" | tac | while read -r f; do
 		id="$( echo "$f" | cut -d' ' -f2 )"
-		found="$( grep -n "$id" "$queue" | cut -d':' -f1 )"
+		found="$( grep -n "$id" "$queue" | cut -d':' -f1 | head -1 )"
 		place="$( sed -n "${x}s/$field_regex/\1/p" /tmp/ytmpplaces )"
 		old_found="$( grep -n "$id" "$queue" | head -1 )"
 		printf "%s\n" "/$place/" "${found}${ed_opt}." "wq" | ed -s "$queue" >/dev/null
@@ -423,7 +428,7 @@ suggestsForFzf () {
 
 searchInFzf () {
 	suggestsForFzf | fzf --prompt='search: ' --info=inline --padding=2,2,2,2 --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   ytmp search   }" --separator='' \
-	--layout=reverse --height 60% -m --bind="ctrl-/:execute-silent(ytmp suggestsForFzf {q})+reload-sync(ytmp suggestsForFzf),ctrl-g:execute(echo {+} {q})+abort,ctrl-j:jump,ctrl-k:kill-line,tab:toggle+clear-query+down,shift-tab:clear-selection,ctrl-z:execute-silent(setsid -f ytmp z {q}),alt-z:execute-silent(setsid -f ytmp z {+} {q}),alt-s:execute-silent(setsid -f ytmp {+} {q}),tab:select+clear-query,return:accept,ctrl-r:replace-query,ctrl-x:print-query,ctrl-s:execute-silent(setsid -f ytmp {q})" | tr "\n" ' ' | sed -e 's/[ \t]*$//'
+	--layout=reverse --height 60% -m --bind="shift-left:execute-silent(sed -i '/^{}$/d' "$search_history")+reload(ytmp suggestsForFzf),ctrl-/:execute-silent(ytmp suggestsForFzf {q})+reload(ytmp suggestsForFzf),ctrl-g:execute(echo {+} {q})+abort,ctrl-j:jump,ctrl-k:kill-line,tab:toggle+clear-query+down,shift-tab:clear-selection,ctrl-z:execute-silent(setsid -f ytmp z {q}),alt-z:execute-silent(setsid -f ytmp z {+} {q}),alt-s:execute-silent(setsid -f ytmp {+} {q}),tab:select+clear-query,return:accept,ctrl-r:replace-query,ctrl-x:print-query,ctrl-s:execute-silent(setsid -f ytmp {q})" | tr "\n" ' ' | sed -e 's/[ \t]*$//'
 }
 
 searchSongs () {
@@ -656,44 +661,84 @@ move () {
 		echo "$2" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc > /tmp/ytmpmark
 		return
 	fi
+
+	if [ "$1" = 'c' ] && shift; then
+		ed_opt='t'
+		action_v='Copy'
+		action_p='Copied'
+		action_a='Copying'
+	else
+		ed_opt='m'
+		action_v='Move'
+		action_p='Moved'
+		action_a='Moving'
+	fi
+
 	if [ "$1" = 'f' ]; then
 		sel="$2"
-		printf "\nMove entry #$sel to where? "
+		printf "\n$action_v entry #$sel to where? "
 		read place </dev/tty
 	elif [ "$1" = 'x' ]; then
 		sel="$( echo "$2" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
-		place="$( grep -n '' "$queue" | fzf --info=hidden --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   Move '$( sed -n "${sel}s/${field_regex}/\2/p" "$queue" )' after what?   }" --separator='' | cut -d':' -f1 )"
+		place="$( grep -n '' "$queue" | fzf --info=hidden --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   $action_v '$( sed -n "${sel}s/${field_regex}/\2/p" "$queue" )' after what?   }" --separator='' | cut -d':' -f1 )"
 	else
 		place="$2"
 		sel="$1"
 	fi
 
 	[ -z "$place" ] && return 1
-	sel="$( echo "$sel" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
-	echo "$place" | grep -Eqx '(\+|-|\*|/)+[0-9]*' && place="$( echo "${sel}${place}" | bc )" || place="$( echo "$place" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
+	arg_ct="$#"
+	[ ! $((arg_ct%2)) -eq 0 ] && echo 'Missing destination.' && return 1
+	target="$( printf '%s\n' "$@" | sed -n 'p;n' )"
+	dest="$( printf '%s\n' "$@" | sed -n 'n;p' )"
 
-	echo "Moved [$sel] '$( sed -n "${sel}s/${field_regex}/\2/p" "$queue" )' [[TO AFTER]] [$place] '$( sed -n "${place}s/${field_regex}/\2/p" "$queue" )'"
+	counter=0
+	for f in $target; do
+		counter=$(( counter+1 ))
+		d="$( printf "$dest" | sed -n "${counter}p" )"
+		# echo "$counter $f $d" && continue
+		if echo "$f" | grep -q ','; then
+			start="$( echo "$f" | cut -d',' -f1 )"
+			end="$( echo "$f" | cut -d',' -f2 )"
+			start="$( echo "$start" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
+			end="$( echo "$end" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
+			pos="$( echo "$d" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
 
-	printf "%s\n" "${sel}m${place}" "wq" | ed -s "$queue" >/dev/null
+			printf "${start}${end}${pos}" | grep -xq '[0-9]*' && printf '%b' "${lsp}$action_a from $start-$end to $pos\n" && sed -n "${start},${end}s/$field_regex/$action_p '\2'/p" "$queue" && printf "$lsp" && printf "%s\n" "${start};${end}${ed_opt}${pos}" "wq" | ed -s "$queue" >/dev/null
+		else
+			sel="$( echo "$f" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
+			echo "$d" | grep -Eqx '(\+|-|\*|/)+[0-9]*' && place="$( echo "${sel}${d}" | bc )" || place="$( echo "$d" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
+
+			echo "$action_p [$sel] '$( sed -n "${sel}s/${field_regex}/\2/p" "$queue" )' [[TO AFTER]] [$place] '$( sed -n "${place}s/${field_regex}/\2/p" "$queue" )'"
+
+			printf "%s\n" "${sel}${ed_opt}${place}" "wq" | ed -s "$queue" >/dev/null
+		fi
+	done
 }
 
 fuzzyPlay () {
+	if [ "$1" = '-id' ]; then
+		shift
+		entries="$( grep -n '' "$queue" | sed -E 's/[Rr]emaster(ed)*//g' )"
+	else
+		entries="$( cut -s -d' ' -f2- "$queue" | grep -n '' | sed -E 's/[Rr]emaster(ed)*//g' )"
+	fi
 	query="$@"
 	[ -z "$query" ] && echo 'Provide a string to search as argument.' && return 1
-	match=$( grep -n '' "$queue" | sed -E 's/[Rr]emaster(ed)*//g' | fzf --tiebreak=chunk,begin -f "$query" | head -1 | cut -d':' -f1 )
+	match=$( echo "$entries" | fzf --tiebreak=chunk,begin -f "$query" | head -1 | cut -d':' -f1 )
 	if [ -n "$match" ]; then markAsPlaying "$match"; else echo 'Match not found.' && return 1; fi
 	return
 }
 
 playFromHistory () {
-	[ -z "$1" ] && tail -2 "$played_urls" | head -1 | cut -d' ' -f1 | xargs -I '{}' ytmp P '{}' && return
+	[ -z "$1" ] && tail -2 "$played_urls" | head -1 | cut -d' ' -f1 | xargs -I '{}' ytmp P -id '{}' && return
 	if ( echo "$1" | grep -qxE '[0-9]*' ); then
-		tail "-$1" "$played_urls" | head -1 | cut -d' ' -f1 | xargs -I '{}' ytmp P '{}'
+		tail "-$1" "$played_urls" | head -1 | cut -d' ' -f1 | xargs -I '{}' ytmp P -id '{}'
 	elif [ "$1" = 's' ]; then
 		cat "$played_urls" | fzf --bind="ctrl-o:execute-silent(echo {} | cut -d' ' -f1 | xargs -I ,, ytmp openInBrowser -id ',,')" --prompt='search: ' --info=inline --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   ytmp history   }" --separator='' \
-		--layout=reverse --height 60% --tac | cut -d' ' -f1 | xargs -I '{}' ytmp P '{}'
+		--layout=reverse --height 60% --tac | cut -d' ' -f1 | xargs -I '{}' ytmp P -id '{}'
 	else
-		tail -2 "$played_urls" | head -1 | cut -d' ' -f1 | xargs -I '{}' ytmp P '{}'
+		tail -2 "$played_urls" | head -1 | cut -d' ' -f1 | xargs -I '{}' ytmp P -id '{}'
 	fi
 }
 
