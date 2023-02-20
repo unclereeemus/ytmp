@@ -98,3 +98,287 @@ the thumbnail is located at /tmp/muscover.webp
 # credit
 - this is a fork of the now deleted repo ifeelalright1970/ytmp with additional features and bug fixes
 - https://github.com/Gwynsav/messydots for eww config
+
+# usage
+```
+Usage: ytmp [z] [<search>]/s|x [# of results]/sp [<search>]/a <local path|dir|url>/e #
+       OR v/ls/m [c] [# #] [r|x #] [s #|v]/E
+       OR -l/-p OR n/p/pl/pf/mln/mfn/l [#|s]/P <search> OR -r [#,#]/-d [[#] #...[k|l]]]
+
+On first installing ytmp, there won't be any history to select from when you enter ytmp
+so either pass arguements from the cli with ytmp [z] <search> or to search what's on the
+fzf input field press ctrl-x or to background search press ctrl-s / ctrl-z
+(difference explained below)
+
+The difference between s and x/z: x/z searches without the added jargon 'auto-generated
+provided to youtube' which usually fetches results from youtube music. If you just pass
+the query from the command line or just run ytmp without options, it will add the jargon
+to your search. ytmp and ytmp z also accept arguements as search if you don't want to
+enter fzf for search.
+
+  [no arg] 	enter fzf to make a search with the jargon appended.
+  [<search>] 	search with the jargon.
+  z [<search>] 	search without the jargon. if no args then enter fzf.
+
+  s [<# of results>]
+  		search with the jargon. view search results and select (can select multiple).
+		can specify amount of search results to return with a following arguement;
+		defaults to 5.
+
+  x [<# of results>]
+  		search without the jargon. view search results and select (can select multiple).
+		can specify amount of search results to return with a following arguement;
+		defaults to 5.
+
+  sp [<search>] search for playlists (requires https://github.com/trizen/pipe-viewer/)
+
+  a <local path|dir|url>
+	        add urls (direct links/playlists), paths, or directory
+  		(pass them as arguement - accepts many of all the kinds mentioned).
+		does not check if file is a media file or not before adding.
+
+  e 		play entry #; can specify relative places with p|l|m like 'm'
+  n 		play next on queue
+  p 		play prev on queue
+  pf 		play first entry
+  pl 		play last entry
+  mfn 		move first entry to after currently playing
+  mln 		move last entry to after currently playing
+  P [-id] <search>
+  		fuzzy search string in queue and play match. if -id is passed <search> is parsed for
+		in ids too otherwise only in song titles.
+
+  -p 		toggle playback
+  -l 		toggle loop
+  -vl <[+|-]#>	set volume. can be an absolute number or <+|-># to current volume (as in -vl +30, -vl -30, -vl 80)
+  -ff <secs>	seek forward <seconds>
+  -bb <secs>	seek backward <seconds>
+  -dur		learn the position and duration of song
+
+  l [#|s] 	play the song that was played before this one or # before this one or
+		pass s to select from the history file with fzf.
+		single fzf binding: ctrl-o: open entry in web browser.
+
+  w 		toggle mpv window. don't press q to close the window because that will close
+  		the file as well instead run ytmp w again to close it.
+
+
+  v 		view queue
+  vv 		view queue with fzf preview of details about the song
+
+  ls 		show a numbered list of the queue
+
+  m [c] [p|l|m|#[+|-#]] [p|l|m|#[+|-#]] [r ...] [[c] x ...] [s #|v]
+  		move or copy entry. l means last, p means currently playing, m means a position mark
+		set with passing s #. set mark by passing s # and see current mark with s v.
+		pass x # to move # to the position of the queue selected in the fzf window
+		that will pop up or preceed x with 'c' to copy. pass r to remove.
+		for c|m|r - can specify a range and multiple args by passing start,end
+		(separated by comma). you can use p|l|m for all of 'm c|s|x|r'.
+		examples: ytmp m 10 2; ytmp m s 126; ytmp m m +5; ytmp m p+3 l-1; ytmp [c] x p-2;
+		ytmp m r p+2,l-15 l-5 10; ytmp m [c] 2,p-2 l 3 5 6 +2
+		syntax for ytmp m|m c|m r is [<target>|<from>,<to>] <destination> ...
+
+  E 		edit the queue in nvim and source rc from "$XDG_CONFIG_HOME/nvim/ytmp.vim"
+
+  -sd <#> 	get listen history and other details about entry (accepts p|l|m like 'm')
+  -dl 		download song # (accepts p|l|m like 'm'). does not respect \$max_len_for_dl.
+  -shuf 	runs shuf on the queue file and overwrites it.
+
+  -vd 		prints /tmp/ytmpqdiscards which contains list of songs that were selected to
+  		be added to the queue in the last search but were already found on the queue.
+		it's removed with every search.
+
+  -rd [c] 	copies or moves songs listed in /tmp/ytmpqdiscards; can be copied (when given c option)
+  		to or moved (when no options are given) from their current position to the position they
+		would have been added on if they were never found on the queue.
+
+  -d [<start on>] [[[<from>],[<to>]] [l] [k]] [<from>],[<to>] [#] ... [k]]
+  		no arg - play one song after another
+
+  		single arg - start playing from <arg> (if another song is playing, it will wait
+			for it to end to start playing from the entry provided.)
+
+		single range - loop in the range if 'l' is passed as following arg
+			otherwise exit once done
+
+		many entries/ranges - play entries/ranges in the order they are sent
+			if 'k' is the last arg then exit once all entries are played
+			otherwise continue playing from where last arg stops
+
+		* ranges must be comma separated
+
+		if you happen to play something outside of the current range,
+		the program will pick up from where you left off when you left the range.
+		but if you play something inside the range, it will continue on playing from there.
+
+		you can specfiy many ranges, entries, effectively queueing things up to play
+		without moving them in the queue file.
+
+		example: ytmp -d 4 25,29 35 110,112
+
+		(kills any other instances of -r or -d running on start.)
+
+  -r [[<from>],[<to>]]
+  		play random entries; a range can be specified with a comma-separated arguement.
+  		there's no way to remove the range; if you want it to play beyond it,
+		run it again. (kills any other instances of -r or -d running on start.)
+
+  -n 		get notified when mpv exits (i.e. song finishes)
+
+  -qa 		quit audio
+  -kd 		kill daemon (-d)
+  -kr 		kill the random daemon (-r)
+  -kdr 		kill both -d and -r
+  -ka 		do all of the above
+
+  h|help|-h|--help
+  		show this help
+
+  --------------------------------------------------------
+  fzf bindings when making search (for ytmp [z|x|s|sp]):
+  --------------------------------------------------------
+
+  	ctrl-r		replace input field with selection
+  	ctrl-g		search query and selection
+  	ctrl-x		send input field as search (none of the selections are passed)
+  	ctrl-j		jump
+	ctrl-o		open entry in web browser
+	ctrl-/		turn query into an entry one can select
+	shift-left	delete search from history
+  	enter		search only the selections (query not included)
+  	ctrl-c/esc	quit
+
+  * the following do background searches; there isn't any indication that the search
+    has passed through so you can assume the fact and just abort fzf when done.
+
+	ctrl-s		search query
+	alt-s		search query and selection
+	ctrl-z		search query with ytmp z
+	alt-z		search query and selection with ytmp z
+
+  --------------------------------------------------------
+  fzf bindings for selecting songs(x|s) and playlists(sp):
+  --------------------------------------------------------
+
+	tab		toggle selection
+	shift-tab	deselect all
+	enter		add selected entries to queue
+  	ctrl-j		jump
+	ctrl-o		open entry in web browser
+
+	* sp only:
+	ctrl-x		see songs in the playlist; one can select
+			songs in the playlist to add with
+			<tab> and press <enter> to add them
+
+  --------------------------------------------------------
+  fzf bindings for viewing queue (v|vv):
+  --------------------------------------------------------
+
+	home		first and reload
+	end		last and reload
+	shift-up	move entry up one
+	shift-down	move entry down one
+	shift-right	play entry and don't exit fzf window
+	shift-left	remove entry
+	page-up		move entry to after currently playing
+	page-down	move entry to before currently playing
+	return		play entry and quit fzf
+	alt-m		ytmp m
+	ctrl-\		ytmp E
+	ctrl-6		ytmp mln
+	ctrl-]		ytmp w
+	alt-v		up one page
+	ctrl-v		down one page
+	ctrl-alt-p	up half page
+	ctrl-alt-n	down half page
+	left-click	play entry
+	right-click	move entry to after currently playing
+	ctrl-j		jump
+	ctrl-s		search query in background
+	ctrl-z		search query in background with ytmp z
+	ctrl-r		replace input field with selection
+	ctrl-alt-d	download selection
+	ctrl-alt-j	jump to currently playing
+	alt-r		reload queue
+	ctrl-o		open entry in web browser
+	alt-up		move entry to first
+	alt-down	move entry to last
+	alt-n		play next song
+	alt-p		play prev song
+	ctrl-alt-m	set entry as mark (for 'm' option)
+	ctrl-space	move entry to the selected position in a new fzf search
+
+  --------------------------------------------------------
+  nvim key bindings:
+  --------------------------------------------------------
+
+	leader = 	'\'
+	leader-v 	source $XDG_CONFIG_HOME/nvim/init.vim
+	leader-s 	source $XDG_CONFIG_HOME/nvim/ytmp.vim
+	leader-c 	edit $XDG_CONFIG_HOME/nvim/ytmp.vim
+	leader-n 	edit $HOME/Music/ytmp/run_on_next
+
+	up 		move entry up 1
+	down 		move entry down 1
+	left 		move entry right before currently playing
+	right 		move entry right next to currently playing
+	shift-up 	move last entry right before currently playing
+	shift-down 	move last entry right after currently playing
+	shift-right 	move entry to the end
+	shift-left 	move entry to the start
+	enter 		play entry
+
+	d 		delete line
+	r 		reload file
+	R 		remove *** from line
+	W 		write file
+	J 		go to currently playing
+	> 		play next
+	< 		play previous
+	. 		-sd for entry
+	o 		open entry in web browser
+
+	ctrl-t 		:te
+	ctrl-y 		:te ytmp
+	ctrl-w 		:te ytmp z
+	ctrl-s 		:te ytmp v
+	ctrl-v 		:te ytmp vv
+	ctrl-p 		:silent !ytmpsuite qs
+	ctrl-n 		:silent !ytmpsuite qn
+
+	leader-v 	change the value of the \$vol var in the run_on_next file
+	leader-l 	set volume of what's currently playing
+	leader-w 	ytmp w
+	leader-y 	:silent !ytmp
+
+  --------------------------------------------------------
+
+Other features:
+  - one can communicate with mpv through the ipc socket the script opens at $mpvsocket.
+  	See https://pastebin.com/23PXxpiD for examples (make sure to pass commands to the
+	$mpvsocket socket) and \`mpv --list-properties\` for properties that can be controlled.
+  - by default ytmp downloads songs after you have listened to them $max_stream_amount times, if you
+  	don't want this feature set \$download_songs to 'n' in $conf. the downloads can be found in $songs_dir.
+  - you can have multiple entries of the same song in multiple places and the program won't get confused
+  	(in case you wanted to move tracks of albums around without changing their place in the album).
+  - put commands you want to run at the start of each song in the script $run_on_next.
+  - set settings in $conf.
+
+You might be interested to know:
+  - the editor config is made for nvim; not all binds are tested to be working in vim
+  - songs are streamed/downloaded with the 'bestaudio' option
+  - mpv is started with these options: --x11-name='ytmp_mpv' --no-terminal --vid=no --input-ipc-server=$mpvsocket
+  	--ytdl-format='bestaudio'
+  - <search> with spaces don't have to be quoted
+  - when allowed to multi-select in fzf, if no selections are made and enter is pressed, the entry under
+  	the cursor is sent; if selections are made and enter is pressed, only the selections are passed
+  - entries for local files are created with \`cksum --untagged --algorithm=blake2b -l 48 <file> | sed 's@\b  @ @'\`
+  - thumbnails are not automatically deleted. if \$download_thumbnails option is set to 1 then thumbnails are
+	downloaded and not removed regardless of whether the song is downloaded or not
+  - sadly there's no way to customize the fzf keybinds without modifying the source so if something doesn't
+	work for you feel free to do a global replace of the bind (the keynames are what's shown in this help)
+  - also unfortunately the program does not check and will not tell you if you've entered something unexpected/wrong
+	or do not have all the dependencies installed
+```
