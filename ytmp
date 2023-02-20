@@ -738,10 +738,10 @@ move () {
 }
 
 batchmove () {
-	sel=$( cat "$queue" | fzf -m --prompt='search: ' --info=inline --padding=2,2,2,2 --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   make selections to move   }" --separator='' --layout=reverse --height 100% --bind='enter:execute(echo {+n})+abort' )
+	sel=$( cat "$queue" | cut -d' ' -f2- | fzf -m --prompt='search: ' --info=inline --padding=2,2,2,2 --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   make selections to move   }" --separator='' --layout=reverse --height 100% --bind='enter:execute(echo {+n})+abort' )
 	[ -z "$sel" ] && return 1
 
-	place=$( cat "$queue" | fzf --prompt='search: ' --info=inline --padding=2,2,2,2 --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   move selections to after what?   }" --separator='' --layout=reverse --height 100% --bind='enter:execute(echo {n})+abort' )
+	place=$( cat "$queue" | cut -d' ' -f2- | fzf --prompt='search: ' --info=inline --padding=2,2,2,2 --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   move selections to after what?   }" --separator='' --layout=reverse --height 100% --bind='enter:execute(echo {n})+abort' )
 	[ -z "$place" ] && return 1
 
 	place=$(( place+1 ))
