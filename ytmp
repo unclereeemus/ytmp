@@ -123,16 +123,16 @@ enter fzf for search.
 
   ls 		show a numbered list of the queue
 
-  m [c] [p|l|m|#[+|-#]] [p|l|m|#[+|-#]] [r|x [p|l|m|#[+|-#]] [s #|v]
+  m [c] [p|l|m|#[+|-#]] [p|l|m|#[+|-#]] [r ...] [[c] x ...] [s #|v]
   		move entry. l means last, p means currently playing, m means a position mark
 		set with passing s #. set mark by passing s # and see current mark with s v.
 		pass x # to move # to the position of the queue selected in the fzf window
-		that will pop up. pass r to remove.
+		that will pop up or preceed x with 'c' to copy. pass r to remove.
 		for c|m|r - can specify a range and multiple args by passing start,end
 		(separated by comma). you can use p|l|m for all of 'm c|s|x|r'.
-		examples: ytmp m 10 2; ytmp m s 126; ytmp m m +5; ytmp m p+3 l-1; ytmp x p-2;
+		examples: ytmp m 10 2; ytmp m s 126; ytmp m m +5; ytmp m p+3 l-1; ytmp [c] x p-2;
 		ytmp m r p+2,l-15 l-5 10; ytmp m [c] 2,p-2 l 3 5 6 +2
-		syntax is [ <target>|<from>,<to> ] <destination>
+		syntax for ytmp m|m c|m r is [<target>|<from>,<to>] <destination>
 
   E 		edit the queue in nvim and source rc from "$XDG_CONFIG_HOME/nvim/ytmp.vim"
 
