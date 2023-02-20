@@ -11,7 +11,7 @@ case "$1" in
 	-r)
 		pgrep -f 'ytmp (-d|-r)+|ytmpsuite (qs|qn|-r)+' | grep -v $$ | xargs kill >/dev/null 2>&1
 		while (ytmp -n); do
-			min=1; max="$( grep -c '' "$queue" )"; rnd_count=$(( RANDOM % ( $max - $min + 1 ) + $min )); ytmp e $rnd_count
+			min=1; max="$( grep -c '' "$queue" )"; rand=$(( RANDOM % ( $max - $min + 1 ) + $min )); ytmp e $rand
 		done
 		;;
 
@@ -38,9 +38,10 @@ case "$1" in
 	oc) nvim "$conf" ;;
 	or) nvim "$run_on_next" ;;
 	# set vol var in $run_on_next
-	sv) printf '' | dmenu | xargs -r -I ',,' sed -i 's@^vol=.*$@vol=,,@' "$run_on_next" ;;
+	sv) [ -z "$2" ] && printf '' | dmenu | xargs -r -I ',,' sed -i 's@^vol=.*$@vol=,,@' "$run_on_next" || sed -i "s/^vol=.*$/vol=${2}/" "$run_on_next" ;;
 	# set mpv volume to $var in $run_on_next
 	ev) mpv_socket_commands s volume $( grep '^vol=.*' "$run_on_next" | sed 's/vol=//' ) st /tmp/mpvsocketytmp ;;
+	cv) [ -z "$2" ] && printf '' | dmenu | xargs -r -I ',,' mpv_socket_commands s volume ',,' st /tmp/mpvsocketytmp || mpv_socket_commands s volume "$2" st /tmp/mpvsocketytmp ;;
 	v) mpv_socket_commands s volume $2 st /tmp/mpvsocketytmp ;;
 	rv) mpv_socket_commands s volume 100 st /tmp/mpvsocketytmp ;;
 	# see $2 entries around currently playing
