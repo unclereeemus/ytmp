@@ -127,8 +127,8 @@ enter fzf for search.
   		move, copy, remove entries. l means last, p means currently playing, m means a position mark
 		set with passing s #. set mark by passing s # and see current mark with s v.
 		pass x # to move # to the position of the queue selected in the fzf window
-		that will pop up or send a following 'x' (and a position) to move the selection made 
-		in fzf to the position passed from cli; preceed (first, if there's two) x with 'c' to copy. 
+		that will pop up or send a following 'x' (and a position) to move the selection made
+		in fzf to the position passed from cli; preceed (first, if there's two) x with 'c' to copy.
 		pass r to remove. for c|m|r - can specify a range and multiple args by passing start,end
 		(separated by comma). you can use p|l|m for all of 'm c|s|x|r'.
 		examples: ytmp m 10 2; ytmp m s 126; ytmp m m +5; ytmp m p+3 l-1; ytmp [c] x p-2;
@@ -721,7 +721,7 @@ move () {
 	counter=0
 	for f in $target; do
 		counter=$(( counter+1 ))
-		d="$( printf "$dest" | sed -n "${counter}p" )"
+		d="$( echo -n "$dest" | sed -n "${counter}p" )"
 		if echo "$f" | grep -q ','; then
 			start="$( echo "$f" | cut -d',' -f1 )"
 			end="$( echo "$f" | cut -d',' -f2 )"
