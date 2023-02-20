@@ -73,6 +73,8 @@ the thumbnail is located at /tmp/muscover.webp
 # tips
 - a dmenu wrapper: `cmd="$( printf ' ' | dmenu -p 'which ytmp cmd to run? ' )" && if ( printf "$cmd" | grep -Eq '^( |x( [0-9]*)?|s( [0-9]*)?|z|l s|v|vv|E|sp .*)+$' ); then setsid -f $TERMINAL -e ytmp $cmd >/dev/null 2>&1; else ytmp $cmd; fi`
 
+- play dmenu selection: `cat "/home/$USER/Music/ytmp/queue" | dmenu -l 15 | cut -d' ' -f1 | xargs -I ,, ytmp P -id ,,`
+
 - to play one song after another without moving them to a consecutive place and running the daemon, do `printf '%s\n' 5 p+8 l-2 | while read p; do ( while (ytmp -n); do ytmp e $p; break; done; ) done` or with P option (to search strings and play match): `printf '%s\n' '<search1>' '<search2>' '<search3>' | while read p; do ( while (ytmp -n); do ytmp P $p; break; done; ) done` (replacing the printf strings with the proper positions/searches of course). play queue backwards: `while (ytmp -n); do ytmp p; done`
 
 - if you want to move multiple songs to one position i.e. the end you could use something like `echo '3,6,27,18' | xargs -d ',' -I '{}' ytmp m '{}' 'l'` (replacing the numbers and 'l' with 'p|m' or the proper positions of course)
