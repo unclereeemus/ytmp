@@ -9,19 +9,18 @@ demo: https://www.reddit.com/r/bash/comments/10i7cb2/ytmp_shell_script_for_yt_an
   - Select from search results
   - Search regular youtube or youtube music (kind of... in a round about way. see `ytmp h` for explanation)
   - Search and add youtube playlists to the queue (or only select songs of playlists)
-  - Download songs after they have been played a chosen amount of times (and play the download in the future)
-  - Specify a queue order to iterate through without having to shift entries in the queue file (see help for -d)
-  - Fzf preview of song/playlist details
   - Select from past searches in fzf to reduce typing
+  - Download songs after they have been played a chosen amount of times (and play the download in the future)
+  - Fzf preview of song/playlist details
   - Manage the queue from fzf, vim, cli
-  - Control mpv through its ipc server
-  - Run commands on song change
   - Keep track of listen history/amount
+  - Run commands on song start
+  - Specify a queue order to iterate through without having to shift entries in the queue file (see help for -d)
+  - Communicate with mpv through its ipc server
   - Everything is a plain text file
-  - Integration with eww widgets (through mpv ipc server)
 
 # setup
-## DEPS: fzf, yt-dlp, mpv, socat, (n/vim, pipe-viewer(https://github.com/trizen/pipe-viewer/))
+## DEPS: fzf, yt-dlp, mpv, socat, (n/vim, for playlist search - pipe-viewer(https://github.com/trizen/pipe-viewer/))
 ## NOT A DEP: accounts of any sort
 `git clone --depth 1 'https://github.com/unclereeemus/ytmp/'; cd ytmp; chmod +x ytmp run_on_next`
 
@@ -31,8 +30,10 @@ demo: https://www.reddit.com/r/bash/comments/10i7cb2/ytmp_shell_script_for_yt_an
 
 move run_on_next to ~/Music/ytmp/ where it's looked for by default; if you move it elsewhere,
 change the location in the conf file which is also sourced from ~/Music/ytmp/ by default
+(change conf path in source if necessary)
 
 lastly, make sure mpv has the proper yt-dlp path in mpv.conf by setting `script-opts=ytdl_hook-ytdl_path=<YTDLP_PATH>`
+or if you want to use `youtube-dl`, do a global substitute of `yt-dlp` with `youtube-dl` in the source
 
 the mpv ipc socket is opened at /tmp/mpvsocketytmp
 
