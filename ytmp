@@ -381,7 +381,7 @@ transferQDiscards () {
 		id="$( echo "$f" | cut -d' ' -f2 )"
 		found="$( grep -n "$id" "$queue" | cut -d':' -f1 | head -1 )"
 		place="$( echo "$f" | cut -d' ' -f1 )"
-		move $found $place
+		[ "$1" = 'c' ] && move "$1" $found $place || move $found $place
 	done | tac
 }
 
