@@ -10,6 +10,7 @@ demo: https://www.reddit.com/r/bash/comments/10i7cb2/ytmp_shell_script_for_yt_an
   - Search regular youtube or youtube music (kind of... in a round about way. see `ytmp h` for explanation)
   - Search and add youtube playlists to the queue (or only select songs of playlists)
   - Download songs after they have been played a chosen amount of times (and play the download in the future)
+  - Specify a queue order to iterate through without having to shift entries in the queue file (see help for -d)
   - Fzf preview of song/playlist details
   - Select from past searches in fzf to reduce typing
   - Manage the queue from fzf, vim, cli
