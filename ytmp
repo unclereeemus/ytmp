@@ -58,7 +58,7 @@ helper () {
 cat << CAT_EOF
 Usage: ytmp [z] [<search>]/s|x [# of results]/sp [<search>]/a <local path|dir|url>/e #
        OR v/ls/m [c] [# #] [r|x #] [s #|v]/E
-       OR -l/-p OR n/p/pl/pf/mln/mfn/l [#|s]/P <search> OR -r [# #]/-d [[#] #]
+       OR -l/-p OR n/p/pl/pf/mln/mfn/l [#|s]/P <search> OR -r [#,#]/-d [[#] #...[k|l]]]
 
 On first installing ytmp, there won't be any history to select from when you enter ytmp
 so either pass arguements from the cli with ytmp [z] <search> or to search what's on the
@@ -148,20 +148,34 @@ enter fzf for search.
   		to or moved (when no options are given) from their current position to the position they
 		would have been added on if they were never found on the queue.
 
-  -d [<start on>] [[[<from>] [<to>]] [k]]
-		run daemon to play one song after another or if a range is specified with two args
-		then loop in that range unless 'k' is specified in which case exit after reaching
-		the end of range. there's no way to remove the range; if you want it to continue
-		playing beyond it, run it again without the range. also optionally accepts
-		an entry # to start playing from (if another song is playing, it will wait
-		for it to end to start playing from the entry provided.)
-		if you happen to play something outside of the range while it's running,
+  -d [<start on>] [[[<from>],[<to>]] [l] [k]] [<from>],[<to>] [#] ... [k]]
+  		no arg - play one song after another
+
+  		single arg - start playing from <arg> (if another song is playing, it will wait
+			for it to end to start playing from the entry provided.)
+
+		single range - loop in the range if 'l' is passed as following arg
+			otherwise exit once done
+
+		many entries/ranges - play entries/ranges in the order they are sent
+			if 'k' is the last arg then exit once all entries are played
+			otherwise continue playing from where last arg stops
+
+		* ranges must be comma separated
+
+		if you happen to play something outside of the current range,
 		the program will pick up from where you left off when you left the range.
 		but if you play something inside the range, it will continue on playing from there.
+
+		you can specfiy many ranges, entries, effectively queueing things up to play
+		without moving them in the queue file.
+
+		example: ytmp -d 4 25,29 35 110,112
+
 		(kills any other instances of -r or -d running on start.)
 
-  -r [[<from>] [<to>]]
-  		play random entries; a range can be specified with two separate arguements.
+  -r [[<from>],[<to>]]
+  		play random entries; a range can be specified with a comma-separated arguement.
   		there's no way to remove the range; if you want it to play beyond it,
 		run it again. (kills any other instances of -r or -d running on start.)
 
@@ -582,51 +596,63 @@ markAsPlaying () {
 # checks if queue is not empty but nothing is playing, it will set stars around the first line and call play
 # it also checks if mpv is closed then it calls markAsPlaying p+1 (ytmp n) to play the next entry
 daemon () {
-	if [ -n "$1" ] && [ -z "$2" ]; then ( while true; do ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && sleep .5 && exit; done ) && markAsPlaying "$1"; fi
-	if [ -z "$2" ] && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ); then markAsPlaying 1; fi
-	while true; do
-		if [ "$( grep -c '.' "$queue" )" -gt 0 ]; then
-			if [ -n "$2" ]; then
-				# counts how many times songs outside of the range have been played
-				beyond_range=0
-				counter="$1"
-				! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 && markAsPlaying "$counter"
-				while true; do
-					while true; do ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && sleep .5 && break; done
-					# if the song didn't end and it was the user who changed the song (evidenced
-					# by another mpv being spawned immediately after) then note it
-					if pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1; then
-						beyond_range=$(( beyond_range+1 ))
-						# increment counter only once regardless of how many times songs
-						# outside the range have been played.
-						[ "$beyond_range" = '1' ] && counter=$(( counter+1 ))
-						continue
-					fi
-
-					beyond_range=0
-					playing="$( grep -n "$playing_regex" "$queue" | cut -d':' -f1 )"
-					# if things are outside the range ...
-					if [ "$playing" -lt "$1" ] || [ "$playing" -ge "$2" ]; then
-						if [ "$counter" -ge "$2" ] && [ "$3" != 'k' ]; then
-							markAsPlaying $1
-							counter=$1
-						else
-							markAsPlaying $counter
-						fi
-					else markAsPlaying p+1; counter=$playing; fi
-					counter=$(( counter+1 ))
-
-					if [ "$playing" = "$2" ]; then
-						[ "$3" = 'k' ] && return || counter="$1"
-					fi
-				done
+	if [ -z "$1" ] && ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 && ! grep -q '\*\*\*$' "$queue"; then markAsPlaying 1; fi
+	if [ -n "$1" ]; then
+		# if [ "$( grep -c '.' "$queue" )" -gt 0 ]; then
+		# 	if [ -n "$2" ]; then
+		for pos in $@; do
+			if echo "$pos" | grep -q ','; then
+				start="$( echo "$pos" | cut -d',' -f1 )"
+				end="$( echo "$pos" | cut -d',' -f2 )"
+				counter="$start"
+				entry=''
+			elif [ "$pos" = 'k' ]; then
+				exit
 			else
-				# sleep twice in case in between the sleeps some external cmd plays something so there
-				# is no clash between the two
-				sleep 1 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && sleep .5 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && markAsPlaying p+1
+				entry="$pos"
+				counter="$pos"
+				start=''
+				end=''
 			fi
-		else sleep 1; fi
-	done
+			# counts how many times songs outside of the range have been played
+			beyond_range=0
+			! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 && markAsPlaying "$counter"
+			while true; do
+				while true; do ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && sleep .5 && break; done
+				# if the song didn't end and it was the user who changed the song (evidenced
+				# by another mpv being spawned immediately after) then note it
+				if pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1; then
+					beyond_range=$(( beyond_range+1 ))
+					# increment counter only once regardless of how many times songs
+					# outside the range have been played.
+					[ "$beyond_range" = '1' ] && counter=$(( counter+1 ))
+					continue
+				fi
+				[ -n "$entry" ] && markAsPlaying $entry && break
+				beyond_range=0
+				playing="$( grep -n "$playing_regex" "$queue" | cut -d':' -f1 )"
+				# if things are outside the range ...
+				if [ "$playing" -lt "$start" ] || [ "$playing" -ge "$end" ]; then
+					if [ "$counter" -ge "$end" ] && [ "$3" != 'k' ]; then
+						markAsPlaying $start
+						counter=$start
+					else
+						markAsPlaying $counter
+					fi
+				else markAsPlaying p+1; counter=$playing; fi
+				counter=$(( counter+1 ))
+
+				if [ "$playing" = "$end" ]; then
+					[ "$2" = 'l' ] && counter="$start" || break
+				fi
+			done
+		done
+		[ -n "$2" ] && [ ! "$2" = 'k' ] && daemon
+	else
+		while true; do
+			sleep 1 && ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 && sleep .5 && ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 && markAsPlaying p+1
+		done
+	fi
 }
 
 # presents an fzf list of the current queue.
@@ -743,9 +769,11 @@ playFromHistory () {
 }
 
 randomDaemon () {
+	start="$( echo "$1" | cut -d',' -f1 )"
+	end="$( echo "$1" | cut -d',' -f2 )"
 	while ( while true; do ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && sleep .5 && break; done ); do
 		if ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ); then
-			if [ -n "$3" ]; then seq "$2" "$3" | shuf -n 1 | xargs ytmp e
+			if [ -n "$3" ]; then seq "$start" "$end" | shuf -n 1 | xargs ytmp e
 			else grep -c '' "$queue" | xargs seq | shuf -n 1 | xargs ytmp e; fi
 		fi
 	done
@@ -830,7 +858,7 @@ case "${1}" in
 	-rd) transferQDiscards "$2" ;;
 	-dl) dlSong "$*" ;;
 	-d) pgrep -f 'ytmp (-d|-r)+' | grep -v $$ | xargs kill >/dev/null 2>&1; shift; daemon "$@" ;;
-	-r) pgrep -f 'ytmp (-d|-r)+' | grep -v $$ | xargs kill >/dev/null 2>&1; randomDaemon "$*" ;;
+	-r) pgrep -f 'ytmp (-d|-r)+' | grep -v $$ | xargs kill >/dev/null 2>&1; shift; randomDaemon "$@" ;;
 	-n) while true; do ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && sleep .5 && exit; done ;;
 	-p) echo cycle pause | socat - "$mpvsocket" >/dev/null 2>&1 ;;
 	-ff) [ -n "$2" ] && echo "{ \"command\": [\"seek\", \"+${2}\", \"exact\"] }" | socat - "$mpvsocket" >/dev/null 2>&1 && echo "Seeked forward $2 seconds." || echo 'Provide how many seconds to seek forward.' ;;
