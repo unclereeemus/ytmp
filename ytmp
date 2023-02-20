@@ -691,11 +691,16 @@ move () {
 		sel="$1"
 	fi
 
-	[ -z "$place" ] && return 1
-	arg_ct="$#"
-	[ ! $((arg_ct%2)) -eq 0 ] && echo 'Missing destination.' && return 1
-	target="$( printf '%s\n' "$@" | sed -n 'p;n' )"
-	dest="$( printf '%s\n' "$@" | sed -n 'n;p' )"
+	if [ "$1" = 'x' ] || [ "$1" = 'f' ]; then
+		target="$sel"
+		dest="$place"
+		[ -z "$place" ] && return 1
+	else
+		arg_ct="$#"
+		[ ! $((arg_ct%2)) -eq 0 ] && echo 'Missing destination.' && return 1
+		target="$( printf '%s\n' "$@" | sed -n 'p;n' )"
+		dest="$( printf '%s\n' "$@" | sed -n 'n;p' )"
+	fi
 
 	# make edits in this numbered queue to anchor the positions given by the
 	# user otherwise things are going to be in places they didn't intend
