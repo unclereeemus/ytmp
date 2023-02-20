@@ -247,7 +247,7 @@ enter fzf for search.
 	alt-left	move entry to before currently playing
 	return		play entry and quit fzf
 	alt-m		ytmp m
-	alt-return	ytmp -m
+	ctrl-alt-b	ytmp -m
 	ctrl-\		ytmp E
 	ctrl-6		ytmp mln
 	ctrl-]		ytmp w
