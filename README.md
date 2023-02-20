@@ -369,7 +369,7 @@ Other features:
 You might be interested to know:
   - the editor config is made for nvim; not all binds are tested to be working in vim
   - songs are streamed/downloaded with the 'bestaudio' option
-  - mpv is started with these options: --x11-name='ytmp_mpv' --no-terminal --vid=no --input-ipc-server=$mpvsocket
+  - mpv is started with these options: --x11-name='ytmp_mpv' --no-terminal --vid=no --input-ipc-server=/tmp/mpvsocketytmp
   	--ytdl-format='bestaudio'
   - <search> with spaces don't have to be quoted
   - when allowed to multi-select in fzf, if no selections are made and enter is pressed, the entry under
