@@ -29,7 +29,7 @@ demo: https://www.reddit.com/r/bash/comments/10i7cb2/ytmp_shell_script_for_yt_an
 
 (if intending to use nvim) `mv ytmp.vim ~/.config/nvim/`
 
-and move run_on_next to ~/Music/ytmp/ where it's looked for by default; if you move it elsewhere,
+move run_on_next to ~/Music/ytmp/ where it's looked for by default; if you move it elsewhere,
 change the location in the conf file which is also sourced from ~/Music/ytmp/ by default
 
 lastly, make sure mpv has the proper yt-dlp path in mpv.conf by setting `script-opts=ytdl_hook-ytdl_path=<YTDLP_PATH>`
