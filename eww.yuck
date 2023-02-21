@@ -5,11 +5,11 @@
 			(box :class "music-info" :orientation "v" :space-evenly "false"
 				(button :class "title" :onrightclick "./mus w" :onmiddleclick "setsid -f $TERMINAL -e ytmpsuite fq && ytmp -kr; ytmp -kd" :onclick "setsid -f $TERMINAL -e ytmp vv" mus-title))
 			(box :class "music-ctrl" :orientation "h" :halign "center" :space-evenly "false" :spacing 20
-				(button :onrightclick "ytmp p" :onclick "./mus seek b" :onmiddleclick "ytmp -kr; setsid -f ytmp -r" "")
+				(button :onrightclick "ytmp p" :onclick "./mus seek b" :onmiddleclick "setsid -f ytmp -r" "")
 				(button :tooltip "exit; t: ${ysgt}; ev" :onclick "mpv_socket_commands e quit st /tmp/mpvsocketytmp" :onmiddleclick "ytmpsuite t" :onrightclick "mpv_socket_commands s volume $( grep '^vol=.*' /home/$USER/Music/ytmp/run_on_next | sed 's/vol=//' )" "󰈆")
 				(button :onclick "./mus pauseplay" :onmiddleclick "mpv_socket_commands s volume 100" :onrightclick "/home/$USER/Music/ytmp/run_on_next" mus-tog)
 				(button :tooltip "loop; T: ${ysgT}; sv" :onclick "./mus loopstate toggle" :onmiddleclick "ytmpsuite T" :onrightclick "ytmpsuite ld" loopstate)
-				(button :onrightclick "ytmp n" :onclick "./mus seek f" :onmiddleclick "ytmp -kd; setsid -f ytmp -d" ""))
+				(button :onrightclick "ytmp n" :onclick "./mus seek f" :onmiddleclick "setsid -f ytmp -d" ""))
 			(box :class "mus-prog" :orientation "h" :space-evenly "false"
 				(scale :class "musprog-bar" :orientation "h" :min 0 :max 101 :onchange "mpv_socket_commands cc seek {} absolute-percent" :value mus-prog)
 				(label :class "musprog-info" :text "${mus-prog-display}"))
