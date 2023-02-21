@@ -571,8 +571,6 @@ markAsPlaying () {
 daemon () {
 	if [ -z "$1" ] && ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 && ! grep -q '\*\*\*$' "$queue"; then markAsPlaying 1; fi
 	if [ -n "$1" ]; then
-		# if [ "$( grep -c '.' "$queue" )" -gt 0 ]; then
-		# 	if [ -n "$2" ]; then
 		for pos in $@; do
 			if echo "$pos" | grep -q ','; then
 				start="$( echo "$pos" | cut -d',' -f1 )"
@@ -620,7 +618,8 @@ daemon () {
 				fi
 			done
 		done
-		[ -n "$2" ] && [ ! "$2" = 'k' ] && daemon
+		if [ -z "$2" ] || [ "$2" != 'k' ]; then daemon; fi
+		# daemon
 	else
 		while true; do
 			sleep 1 && ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 && sleep .5 && ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 && markAsPlaying p+1
