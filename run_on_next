@@ -2,7 +2,7 @@
 # vol=35
 
 # wait for mpv to load before continuing so the commands aren't sent to a black hole
-# while true; do [ -n "$( echo '{ "command": ["get_property", "pid"] }' | socat - /tmp/mpvsocketytmp )" ] && break; sleep .5; done >/dev/null 2>&1
+# while true; do [ -n "$( echo '{ "command": ["get_property", "pid"] }' | socat - /tmp/mpvsocketytmp )" ] && break; sleep .2; done >/dev/null 2>&1
 
 # the two lines below are toggled by the ytmpsuite script; don't change the comments
 # (feel free to change the commands or move the comment and command to a different place
@@ -33,7 +33,8 @@ ifytmpactive () {
 }
 
 # if -d -r -n options are not running, loop; otherwise don't.
-# ( ! pgrep -fa 'ytmp -d' ) && ( ! pgrep -fa 'ytmp -r' ) && ( ! pgrep -fa 'ytmp -n' ) && echo '{ "command": ["set_property", "loop", true ] }' | socat - /tmp/mpvsocketytmp || echo '{ "command": ["set_property", "loop", false ] }' | socat - /tmp/mpvsocketytmp
+# ( ! pgrep -f 'ytmp (-d|-r|-n)+' ) && echo '{ "command": ["set_property", "loop", true ] }' | socat - /tmp/mpvsocketytmp || echo '{ "command": ["set_property", "loop", false ] }' | socat - /tmp/mpvsocketytmp
 # mpv_socket_commands s volume $vol st /tmp/mpvsocketytmp && exit || ifytmpactive
 # ifytmpactive
 # echo '{ "command": ["set_property", "loop", true ] }' | socat - /tmp/mpvsocketytmp
+# ytmp -l
