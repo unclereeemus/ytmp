@@ -157,7 +157,7 @@ enter fzf for search.
 
   l [#|s] 	play the song that was played before this one or # before this one or
 		pass s to select from the history file with fzf.
-		single fzf binding: ctrl-o: open entry in web browser.
+		fzf bindings: ctrl-j: jump; ctrl-o: open entry in web browser.
 
   w 		toggle mpv window. don't press q to close the window because that will close
   		the file as well instead run ytmp w again to close it.
@@ -168,16 +168,20 @@ enter fzf for search.
 
   ls 		show a numbered list of the queue
 
-  m [c] [p|l|m|#[+|-#]] [p|l|m|#[+|-#]] [r ...] [[c] x ...] [s #|v]
-  		move or copy entry. l means last, p means currently playing, m means a position mark
+  m [c] [p|l|m|#[+|-#]] [p|l|m|#[+|-#]] [r ...] [[c] x [x] ...] [s #|v]
+  		move, copy, remove entries. l means last, p means currently playing, m means a position mark
 		set with passing s #. set mark by passing s # and see current mark with s v.
 		pass x # to move # to the position of the queue selected in the fzf window
-		that will pop up or preceed x with 'c' to copy. pass r to remove.
-		for c|m|r - can specify a range and multiple args by passing start,end
+		that will pop up or send a following 'x' (and a position) to move the selection made
+		in fzf to the position passed from cli; preceed (first, if there's two) x with 'c' to copy.
+		pass r to remove. for c|m|r - can specify a range and multiple args by passing start,end
 		(separated by comma). you can use p|l|m for all of 'm c|s|x|r'.
 		examples: ytmp m 10 2; ytmp m s 126; ytmp m m +5; ytmp m p+3 l-1; ytmp [c] x p-2;
 		ytmp m r p+2,l-15 l-5 10; ytmp m [c] 2,p-2 l 3 5 6 +2
 		syntax for ytmp m|m c|m r is [<target>|<from>,<to>] <destination> ...
+
+  -m [c]	batch move/copy (with c arg); make selections in fzf then move/copy those selections to after
+  			the selection made in a new fzf window that will pop up
 
   E 		edit the queue in nvim and source rc from "$XDG_CONFIG_HOME/nvim/ytmp.vim"
 
@@ -283,9 +287,12 @@ enter fzf for search.
 	shift-right	play entry and don't exit fzf window
 	shift-left	remove entry
 	page-up		move entry to after currently playing
+	alt-right	move entry to after currently playing
 	page-down	move entry to before currently playing
+	alt-left	move entry to before currently playing
 	return		play entry and quit fzf
 	alt-m		ytmp m
+	ctrl-alt-b	ytmp -m
 	ctrl-\		ytmp E
 	ctrl-6		ytmp mln
 	ctrl-]		ytmp w
@@ -308,7 +315,10 @@ enter fzf for search.
 	alt-n		play next song
 	alt-p		play prev song
 	ctrl-alt-m	set entry as mark (for 'm' option)
-	ctrl-space	move entry to the selected position in a new fzf search
+	ctrl-space	move entry to the selected position in a new fzf window that will pop up
+	alt-space	move the entry selected position in a new fzf window that will pop up to
+				after current entry
+	alt-bspace	copy entry to the selected position in a new fzf window that will pop up
 
   --------------------------------------------------------
   nvim key bindings:
