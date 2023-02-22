@@ -285,7 +285,7 @@ enter fzf for search.
 	end		last and reload
 	shift-up	move entry up one
 	shift-down	move entry down one
-	shift-right	play entry and don't exit fzf window
+	shift-right	play entry but quit fzf
 	shift-left	remove entry
 	page-up		move entry to after currently playing
 	alt-right	move entry to after currently playing
@@ -296,6 +296,7 @@ enter fzf for search.
 	ctrl-alt-b	ytmp -m
 	ctrl-\		ytmp E
 	ctrl-6		ytmp mln
+	alt-l		move last entry to after current entry
 	ctrl-]		ytmp w
 	alt-v		up one page
 	ctrl-v		down one page
