@@ -1,4 +1,3 @@
-#!/bin/sh
 # YTMP: a shell script for searching, playing, downloading, and keeping track of music from youtube and local files with extensive queue management using fzf, vim, or cli
 # DEPS: yt-dlp, mpv, socat, fzf, xargs, find, sed, bc, ed, coreutils, (pipe-viewer for playlist search), (notify-send for notifications), (curl for thumbnails), (n/vim)
 
@@ -453,7 +452,7 @@ searchSongs () {
 		echo "$ids" > /tmp/ytmpids
 		titles=$( echo "$ids_titles" | sed -n 'p;n' )
 		sel=$( printf '%b' "$titles" | fzf --prompt='search: ' --info=inline --padding=2,2,2,2 --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   ytmp select   }" --separator='' \
-		--bind='return:execute(printf '%s\n' {+n} | xargs -I ,, echo ',,+1' | bc)+abort,ctrl-o:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp openInBrowser id ,,),ctrl-j:jump,ctrl-k:kill-line,tab:toggle+clear-query+down,shift-tab:clear-selection' --layout=reverse --height 60% -m --preview='echo {n}+1 | bc | xargs -I ,, ytmp fzfPreview s ,,' --preview-window='right,70%' )
+		--bind="return:execute(printf '%s\n' {+n} | xargs -I ,, echo ',,+1' | bc)+abort,ctrl-o:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp openInBrowser id ,,),ctrl-j:jump,ctrl-k:kill-line,tab:toggle+clear-query+down,shift-tab:clear-selection" --layout=reverse --height 60% -m --preview='echo {n}+1 | bc | xargs -I ,, ytmp fzfPreview s ,,' --preview-window='right,70%' )
 		[ -z "$sel" ] && return 1
 		for s in $sel; do
 			id=$( printf '%b' "$ids" | sed -n "${s}"p )
@@ -480,7 +479,6 @@ searchPlaylists () {
 		--layout=reverse --height 60% -m --bind="return:execute(printf '%s\n' {+n} | xargs -I ,, echo ',,+1' | bc)+abort,ctrl-o:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp openInBrowser pl ,,),ctrl-j:jump,home:first,end:last,ctrl-k:kill-line,shift-tab:clear-selection,tab:toggle+down,ctrl-x:execute(echo {n}+1 | bc | xargs -I ,, ytmp spr p ,,)" --preview='echo {n}+1 | bc | xargs -I ",," sed -n ,,p /tmp/ytmpplaylists | xargs -0 -I ",," pipe-viewer --no-use-colors --results=50 --custom-layout="*AUTHOR* *TIME* *TITLE*" --no-interactive ",," | sed 1d' | grep -v '^Added \| newly added\.$' )"
 
 	[ -z "$playlist_sel" ] && return 1
-	# printf "Adding:\n${lsp}$playlist_sel\n${lsp}"
 	printf "${lsp}Selections:\n${lsp}"
 	printf '%s\n' $playlist_sel | xargs -I ,, sed -n ,,p /tmp/ytmpplaylists | cut -d' ' -f2-
 	printf "${lsp}${lsp}"
@@ -736,7 +734,7 @@ move () {
 
 batchmove () {
 	[ "$1" = 'c' ] && action='copy' || action='move'
-	sel=$( cat "$queue" | cut -d' ' -f2- | fzf -m --prompt='search: ' --info=inline --padding=2,2,2,2 --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   make selections to $action   }" --separator='' --layout=reverse --height 100% --bind='ctrl-j:jump,tab:toggle+clear-query+down,shift-tab:clear-selection,enter:execute(printf '%s\n' {+n} | xargs -I ,, echo ',,+1' | bc)+abort' )
+	sel=$( cat "$queue" | cut -d' ' -f2- | fzf -m --prompt='search: ' --info=inline --padding=2,2,2,2 --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   make selections to $action   }" --separator='' --layout=reverse --height 100% --bind="ctrl-j:jump,tab:toggle+clear-query+down,shift-tab:clear-selection,enter:execute(printf '%s\n' {+n} | xargs -I ,, echo ',,+1' | bc)+abort" )
 	[ -z "$sel" ] && return 1
 
 	place=$( cat "$queue" | cut -d' ' -f2- | fzf --prompt='search: ' --info=inline --padding=2,2,2,2 --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   $action selections to after what?   }" --separator='' --layout=reverse --height 100% --bind='ctrl-j:jump,enter:execute(echo {n}+1 | bc)+abort' )
