@@ -182,6 +182,7 @@ enter fzf for search.
 
   -m [c]	batch move/copy (with c arg); make selections in fzf then move/copy those selections to after
   			the selection made in a new fzf window that will pop up
+		fzf bindings: tab: toggle selection; shift-tab: deselect-all; ctrl-j:jump
 
   E 		edit the queue in nvim and source rc from "$XDG_CONFIG_HOME/nvim/ytmp.vim"
 
@@ -197,7 +198,7 @@ enter fzf for search.
   		to or moved (when no options are given) from their current position to the position they
 		would have been added on if they were never found on the queue.
 
-  -d [<start on>] [[[<from>],[<to>]] [l] [k]] [<from>],[<to>] [#] ... [k]]
+  -d [<start on>] [[[<from>],[<to>]] [l|k]] [<from>],[<to>] [#] ... [k]]
   		no arg - play one song after another
 
   		single arg - start playing from <arg> (if another song is playing, it will wait
@@ -315,10 +316,9 @@ enter fzf for search.
 	alt-n		play next song
 	alt-p		play prev song
 	ctrl-alt-m	set entry as mark (for 'm' option)
-	ctrl-space	move entry to the selected position in a new fzf window that will pop up
-	alt-space	move the entry selected position in a new fzf window that will pop up to
-				after current entry
-	alt-bspace	copy entry to the selected position in a new fzf window that will pop up
+	ctrl-space	ytmp m x for entry
+	alt-space	ytmp m x x for entry
+	alt-bspace	ytmp m c x for entry
 
   --------------------------------------------------------
   nvim key bindings:
@@ -388,7 +388,8 @@ You might be interested to know:
   - thumbnails are not automatically deleted. if \$download_thumbnails option is set to 1 then thumbnails are
 	downloaded and not removed regardless of whether the song is downloaded or not
   - sadly there's no way to customize the fzf keybinds without modifying the source so if something doesn't
-	work for you feel free to do a global replace of the bind (the keynames are what's shown in this help)
+	work for you feel free to do a global replace of the bind (the keynames are not always what's
+	shown in this help so consult the fzf manpage for the fzf synonym)
   - also unfortunately the program does not check and will not tell you if you've entered something unexpected/wrong
 	or do not have all the dependencies installed
 ```
