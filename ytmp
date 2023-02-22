@@ -415,13 +415,13 @@ suggestsForFzf () {
 
 searchInFzf () {
 	suggestsForFzf | fzf --prompt='search: ' --info=inline --padding=2,2,2,2 --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   ytmp search   }" --separator='' \
-	--layout=reverse --height 60% -m --bind="shift-left:execute-silent(sed -i '/^{}$/d' "$search_history")+reload(ytmp suggestsForFzf),ctrl-/:execute-silent(ytmp suggestsForFzf {q})+reload(ytmp suggestsForFzf),ctrl-g:execute(echo {+} {q})+abort,ctrl-j:jump,ctrl-k:kill-line,tab:toggle+clear-query+down,shift-tab:clear-selection,ctrl-z:execute-silent(setsid -f ytmp z {q}),alt-z:execute-silent(setsid -f ytmp z {+} {q}),alt-s:execute-silent(setsid -f ytmp {+} {q}),tab:select+clear-query,return:accept,ctrl-r:replace-query,ctrl-x:print-query,ctrl-s:execute-silent(setsid -f ytmp {q})" | tr "\n" ' ' | sed -e 's/[ \t]*$//'
+	--layout=reverse --height 60% -m --bind="shift-left:execute-silent(sed -i '/^{}$/d' "$search_history")+reload(ytmp suggestsForFzf),ctrl-/:execute-silent(ytmp suggestsForFzf {q})+reload(ytmp suggestsForFzf),ctrl-g:execute(echo {+} {q})+abort,ctrl-j:jump,ctrl-k:kill-line,tab:toggle+clear-query+down,shift-tab:clear-selection,ctrl-z:execute-silent(setsid -f ytmp z {q}),alt-z:execute-silent(setsid -f ytmp z {+} {q}),alt-s:execute-silent(setsid -f ytmp {+} {q}),tab:select+clear-query,return:accept,ctrl-r:replace-query,ctrl-x:print-query,ctrl-s:execute-silent(setsid -f ytmp {q})" | tr '\n' ' ' | sed -e 's/[ \t]*$//'
 }
 
 searchSongs () {
 	# ss means <query> was passed from cli
 	if [ "$1" = 'ss' ]; then
-		query=$( echo "$*" | cut -d' ' -f2- | tr "\n" ' ' | sed -e 's/[ \t]*$//' )
+		query=$( echo "$*" | cut -d' ' -f2- | tr '\n' ' ' | sed -e 's/[ \t]*$//' )
 	# p = playlist url
 	elif [ "$1" = 'p' ]; then
 		query="$2"
@@ -453,12 +453,11 @@ searchSongs () {
 		echo "$ids" > /tmp/ytmpids
 		titles=$( echo "$ids_titles" | sed -n 'p;n' )
 		sel=$( printf '%b' "$titles" | fzf --prompt='search: ' --info=inline --padding=2,2,2,2 --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   ytmp select   }" --separator='' \
-		--bind='return:execute(echo {+n})+abort,ctrl-o:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp openInBrowser id ,,),ctrl-j:jump,ctrl-k:kill-line,tab:toggle+clear-query+down,shift-tab:clear-selection' --layout=reverse --height 60% -m --preview='echo {n}+1 | bc | xargs -I ,, ytmp fzfPreview s ,,' --preview-window='right,70%' )
+		--bind='return:execute(printf '%s\n' {+n} | xargs -I ,, echo ',,+1' | bc)+abort,ctrl-o:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp openInBrowser id ,,),ctrl-j:jump,ctrl-k:kill-line,tab:toggle+clear-query+down,shift-tab:clear-selection' --layout=reverse --height 60% -m --preview='echo {n}+1 | bc | xargs -I ,, ytmp fzfPreview s ,,' --preview-window='right,70%' )
 		[ -z "$sel" ] && return 1
 		for s in $sel; do
-			num=$(( s+1 ))
-			id=$( printf '%b' "$ids" | sed -n "${num}"p )
-			addToQueue "$id" "$( echo "$titles" | sed -n "${num}"p )"
+			id=$( printf '%b' "$ids" | sed -n "${s}"p )
+			addToQueue "$id" "$( echo "$titles" | sed -n "${s}"p )"
 		done
 	elif [ -n "$query" ]; then
 		id=$( yt-dlp -q --no-warnings --get-id ytsearch1:"$query" )
@@ -487,9 +486,8 @@ searchPlaylists () {
 	printf "${lsp}${lsp}"
 
 	for s in $playlist_sel; do
-		num=$s
-		url="$( sed -n "${num}"p /tmp/ytmpplaylists | cut -d' ' -f1 )"
-		echo "Now adding: '"$( sed -n ${num}p /tmp/ytmpplaylists | cut -d' ' -f2- )"'"
+		url="$( sed -n "${s}"p /tmp/ytmpplaylists | cut -d' ' -f1 )"
+		echo "Now adding: '"$( sed -n ${s}p /tmp/ytmpplaylists | cut -d' ' -f2- )"'"
 		add "$url"
 		printf "${lsp}"
 	done
@@ -610,7 +608,7 @@ daemon () {
 				if [ "$playing" -lt "$start" ] || [ "$playing" -ge "$end" ]; then markAsPlaying $counter
 				else markAsPlaying p+1; counter=$playing; fi
 
-				[ $counter = $end ] && break
+				[ $counter -ge $end ] && break
 				counter=$(( counter+1 ))
 			done
 		done
@@ -623,7 +621,7 @@ daemon () {
 	fi
 }
 
-# presents an fzf list of the current queue.
+# presents an fzf list of the current queue
 viewQueue () {
 	[ "$2" = 'p' ] && set -- --height 100% --preview='echo {n}+1 | bc | xargs -I ,, ytmp fzfPreview vv ,,' --preview-window='right,50%' --preview-label='' --bind='focus:transform-preview-label:echo {n}+1 | bc' || set -- --height 60%
 	cmd="cat $queue | cut -d' ' -f2-"
@@ -718,12 +716,15 @@ move () {
 			end="$( echo "$end" | sed -e s/m/$mark/ -e s/p/$playing/ -e s/l/$last/ | bc )"
 
 			echo "$d" | grep -Eqx '(\+|-|\*|/)+[0-9]*' && pos="$( echo "${end}${d}" | bc )" || pos="$( echo "$d" | sed -e s/m/$mark/ -e s/p/$playing/ -e s/l/$last/ | bc )"
+			if [ $start -gt $last ] || [ $end -gt $last ] || [ $pos -gt $last ]; then echo 'Invalid args $start,$last $pos'; continue; fi
 
 			printf "${start}${end}${pos}" | grep -xq '[0-9]*' && printf '%b' "${lsp}$action_a from $start-$end to $pos\n" && sed -n "/^${start}:/,/^${end}:/s/[^ ]* /$action_p /p" "$numbered_q" && printf "$lsp" && printf "%s\n" "/^${start}:/;/^${end}:/${ed_opt}/^${pos}:/" "wq" | ed -s "$numbered_q" >/dev/null
 
 		else
 			sel="$( echo "$f" | sed -e s/m/$mark/ -e s/p/$playing/ -e s/l/$last/ | bc )"
 			echo "$d" | grep -Eqx '(\+|-|\*|/)+[0-9]*' && place="$( echo "${sel}${d}" | bc )" || place="$( echo "$d" | sed -e s/m/$mark/ -e s/p/$playing/ -e s/l/$last/ | bc )"
+
+			if [ $sel -gt $last ] || [ $place -gt $last ]; then echo 'Invalid args $sel $place'; continue; fi
 
 			echo "$action_p [$sel] '$( sed -n "/^${sel}:/s/[^ ]* //p" "$numbered_q" )' [[TO AFTER]] [$place] '$( sed -n "/^${place}:/s/[^ ]* //p" "$numbered_q" )'"
 
@@ -735,16 +736,14 @@ move () {
 
 batchmove () {
 	[ "$1" = 'c' ] && action='copy' || action='move'
-	sel=$( cat "$queue" | cut -d' ' -f2- | fzf -m --prompt='search: ' --info=inline --padding=2,2,2,2 --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   make selections to $action   }" --separator='' --layout=reverse --height 100% --bind='ctrl-j:jump,tab:toggle+clear-query+down,shift-tab:clear-selection,enter:execute(echo {+n})+abort' )
+	sel=$( cat "$queue" | cut -d' ' -f2- | fzf -m --prompt='search: ' --info=inline --padding=2,2,2,2 --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   make selections to $action   }" --separator='' --layout=reverse --height 100% --bind='ctrl-j:jump,tab:toggle+clear-query+down,shift-tab:clear-selection,enter:execute(printf '%s\n' {+n} | xargs -I ,, echo ',,+1' | bc)+abort' )
 	[ -z "$sel" ] && return 1
 
-	place=$( cat "$queue" | cut -d' ' -f2- | fzf --prompt='search: ' --info=inline --padding=2,2,2,2 --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   $action selections to after what?   }" --separator='' --layout=reverse --height 100% --bind='ctrl-j:jump,enter:execute(echo {n})+abort' )
+	place=$( cat "$queue" | cut -d' ' -f2- | fzf --prompt='search: ' --info=inline --padding=2,2,2,2 --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   $action selections to after what?   }" --separator='' --layout=reverse --height 100% --bind='ctrl-j:jump,enter:execute(echo {n}+1 | bc)+abort' )
 	[ -z "$place" ] && return 1
 
-	place=$(( place+1 ))
-	for s in $sel; do
-		num=$(( s+1 ))
-		[ "$1" = 'c' ] && move c $num $place || move $num $place
+	printf '%s\n' $sel | sort -n | while read s; do
+		[ "$1" = 'c' ] && move c $s $place || move $s $place
 	done
 }
 
@@ -753,16 +752,14 @@ transferQDiscards () {
 	[ ! -s "$qdiscards_file" ] && echo "'$qdiscards_file' either doesn't exist or is empty." && return 1
 	[ "$1" = 'v' ] && cat "$qdiscards_file" && return
 
-	# read lines in from bottom to top (tac) in case multiple entries
-	# are competing for the same spot
-	# get all the lines that are at $place and then /$place/; don't directly move
-	# because as the lines are moved around, the order is destroyed
-	cat "$qdiscards_file" | tac | while read -r f; do
+	cat "$qdiscards_file" | while read -r f; do
 		id="$( echo "$f" | cut -d' ' -f2 )"
 		found="$( grep -n "$id" "$queue" | cut -d':' -f1 | head -1 )"
 		place="$( echo "$f" | cut -d' ' -f1 )"
+		q_len=$( grep -c '.' "$queue" )
+		[ $place -gt $q_len ] && place=$q_len
 		[ "$1" = 'c' ] && move c $found $place || move $found $place
-	done | tac
+	done
 }
 
 fuzzyPlay () {
