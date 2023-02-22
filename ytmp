@@ -589,9 +589,12 @@ daemon () {
 			fi
 
 			while true; do
-				while true; do ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && sleep .5 && break; done
+				while true; do sleep .5 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && sleep .5 && break; done
 				# if the song didn't end and it was the user who changed the song (evidenced
-				# by another mpv being spawned immediately after) then note it
+				# by another mpv being spawned immediately after) then continue
+				# testing has shown this isn't entirely necessary because the external song change
+				# happens so quick that the while loop above with its .5 sleep doesn't even
+				# register it and break
 				if ( pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ); then
 					sleep .8
 					continue
