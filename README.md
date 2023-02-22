@@ -175,15 +175,18 @@ enter fzf for search.
 		that will pop up or send a following 'x' (and a position) to move the selection made
 		in fzf to the position passed from cli; preceed (first, if there's two) x with 'c' to copy.
 		pass r to remove. for c|m|r - can specify a range and multiple args by passing start,end
-		(separated by comma). you can use p|l|m for all of 'm c|s|x|r'.
+		(separated by comma). you can use p|l|m for all of 'm c|s|x|r'. further, the <end> or the
+		<destination> can be +|-# which means the program will add/subtract that number from the
+		<start> or <target> to come up with the <destination>.
 		examples: ytmp m 10 2; ytmp m s 126; ytmp m m +5; ytmp m p+3 l-1; ytmp [c] x p-2;
 		ytmp m r p+2,l-15 l-5 10; ytmp m [c] 2,p-2 l 3 5 6 +2
 		syntax for ytmp m|m c|m r is [<target>|<from>,<to>] <destination> ...
 
-  -m [c] [# # ... <dest>]
+  -m [c] [# #,# ... <dest>]
   		batch move/copy (with c arg)
 
-		if entry numbers are passed as args - move all entries to the position of the last arg
+		if entry numbers are passed as args - move/copy all entries to the position of the last arg
+		accepts the same kind of args as 'm'
 
 		if no args are passed - make selections in an fzf window that will pop up then move/copy
 		those selections to after the selection made in a new fzf window that will pop up
