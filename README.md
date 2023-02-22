@@ -157,7 +157,7 @@ enter fzf for search.
 
   l [#|s] 	play the song that was played before this one or # before this one or
 		pass s to select from the history file with fzf.
-		fzf bindings: ctrl-j: jump; ctrl-o: open entry in web browser.
+		* fzf bindings: ctrl-j: jump; ctrl-o: open entry in web browser.
 
   w 		toggle mpv window. don't press q to close the window because that will close
   		the file as well instead run ytmp w again to close it.
@@ -180,9 +180,16 @@ enter fzf for search.
 		ytmp m r p+2,l-15 l-5 10; ytmp m [c] 2,p-2 l 3 5 6 +2
 		syntax for ytmp m|m c|m r is [<target>|<from>,<to>] <destination> ...
 
-  -m [c]	batch move/copy (with c arg); make selections in fzf then move/copy those selections to after
-  			the selection made in a new fzf window that will pop up
-		fzf bindings: tab: toggle selection; shift-tab: deselect-all; ctrl-j:jump
+  -m [c] [# # ... <dest>]
+  		batch move/copy (with c arg)
+
+		if entry numbers are passed as args - move all entries to the position of the last arg
+
+		if no args are passed - make selections in an fzf window that will pop up then move/copy
+		those selections to after the selection made in a new fzf window that will pop up
+		* fzf bindings: tab: toggle selection; shift-tab: deselect-all; ctrl-j:jump
+
+		* entries are moved in the order they are selected
 
   E 		edit the queue in nvim and source rc from "$XDG_CONFIG_HOME/nvim/ytmp.vim"
 
@@ -296,7 +303,7 @@ enter fzf for search.
 	ctrl-alt-b	ytmp -m
 	ctrl-\		ytmp E
 	ctrl-6		ytmp mln
-	alt-l		move last entry to after entry
+	alt-l		move last entry to after current entry
 	ctrl-t		move entry to mark
 	ctrl-]		ytmp w
 	alt-v		up one page
