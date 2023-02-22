@@ -296,7 +296,8 @@ enter fzf for search.
 	ctrl-alt-b	ytmp -m
 	ctrl-\		ytmp E
 	ctrl-6		ytmp mln
-	alt-l		move last entry to after current entry
+	alt-l		move last entry to after entry
+	ctrl-t		move entry to mark
 	ctrl-]		ytmp w
 	alt-v		up one page
 	ctrl-v		down one page
