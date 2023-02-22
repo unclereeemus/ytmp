@@ -1,6 +1,6 @@
 #!/bin/sh
 # YTMP: a shell script for searching, playing, downloading, and keeping track of music from youtube and local files with extensive queue management using fzf, vim, or cli
-# DEPS: yt-dlp, mpv, socat, fzf, xargs, find, sed, bc, ed, coreutils, (pipe-viewer for playlist search), (notify-send for notifications), (curl for thumbnails), (n/vim)
+# DEPS: yt-dlp, mpv, socat, fzf, xargs, find, sed, awk, bc, ed, coreutils, (pipe-viewer for playlist search), (notify-send for notifications), (curl for thumbnails), (n/vim)
 
 [ -z "$prefix" ] && prefix="/home/$USER/Music/ytmp"
 conf="$prefix/conf"
@@ -137,6 +137,7 @@ enter fzf for search.
 
   -m [c]	batch move/copy (with c arg); make selections in fzf then move/copy those selections to after
   			the selection made in a new fzf window that will pop up
+		entries are moved in the order they are selected
 		fzf bindings: tab: toggle selection; shift-tab: deselect-all; ctrl-j:jump
 
   E 		edit the queue in nvim and source rc from "$XDG_CONFIG_HOME/nvim/ytmp.vim"
@@ -251,7 +252,7 @@ enter fzf for search.
 	ctrl-alt-b	ytmp -m
 	ctrl-\		ytmp E
 	ctrl-6		ytmp mln
-	alt-l		move last entry to after entry
+	alt-l		move last entry to after current entry
 	ctrl-t		move entry to mark
 	ctrl-]		ytmp w
 	alt-v		up one page
@@ -742,9 +743,11 @@ batchmove () {
 	place=$( cat "$queue" | cut -d' ' -f2- | fzf --prompt='search: ' --info=inline --padding=2,2,2,2 --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   $action selections to after what?   }" --separator='' --layout=reverse --height 100% --bind='ctrl-j:jump,enter:execute(echo {n}+1 | bc)+abort' )
 	[ -z "$place" ] && return 1
 
-	printf '%s\n' $sel | sort -n | while read s; do
-		[ "$1" = 'c' ] && move c $s $place || move $s $place
-	done
+	# do it this way instead of iterating thru $sel with a loop so the proper selections are preserved
+	# (they wouldn't be with a loop because the positions will have changed with the last move)
+	sel=$( echo $sel | awk '{ for (i=NF; i>1; i--) printf("%s ",$i); print $1; }' | sed -e "s/ / $place /g" -e "s/$/ $place /" )
+	set -- $sel
+	[ "$action" = 'copy' ] && move c $@ | tac || move $@ | tac
 }
 
 # copies or moves entries found in $qdiscards_file from their place in the $queue
@@ -869,7 +872,7 @@ case "${1}" in
 	openInBrowser) openInBrowser "$2" "$3" ;;
 	fzfPreview) fzfPreview "$@" ;;
 	suggestsForFzf) shift; suggestsForFzf "$@" ;;
-	-m) batchmove ;;
+	-m) shift; batchmove "$@" ;;
 	-sd) fzfPreview a c "$2" ;;
 	-shuf) shuf "$queue" -o "$queue" ;;
 	-vd) transferQDiscards v ;;
