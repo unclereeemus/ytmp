@@ -570,8 +570,6 @@ markAsPlaying () {
 	play
 }
 
-# checks if queue is not empty but nothing is playing, it will set stars around the first line and call play
-# it also checks if mpv is closed then it calls markAsPlaying p+1 (ytmp n) to play the next entry
 daemon () {
 	if [ -z "$1" ] && ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 && ! grep -q '\*\*\*$' "$queue"; then markAsPlaying 1; fi
 	if [ -n "$1" ]; then
@@ -589,44 +587,35 @@ daemon () {
 				start=''
 				end=''
 			fi
-			# counts how many times songs outside of the range have been played
-			beyond_range=0
-			! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 && markAsPlaying "$counter"
+
 			while true; do
 				while true; do ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && sleep .5 && break; done
 				# if the song didn't end and it was the user who changed the song (evidenced
 				# by another mpv being spawned immediately after) then note it
-				if pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1; then
-					beyond_range=$(( beyond_range+1 ))
-					# increment counter only once regardless of how many times songs
-					# outside the range have been played.
-					[ "$beyond_range" = '1' ] && counter=$(( counter+1 ))
+				if ( pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ); then
+					sleep .8
 					continue
 				fi
 				[ -n "$entry" ] && markAsPlaying $entry && break
-				beyond_range=0
 				playing="$( grep -n "$playing_regex" "$queue" | cut -d':' -f1 )"
-				# if things are outside the range ...
-				if [ "$playing" -lt "$start" ] || [ "$playing" -ge "$end" ]; then
-					if [ "$counter" -ge "$end" ] && [ "$3" != 'k' ]; then
-						markAsPlaying $start
-						counter=$start
-					else
-						markAsPlaying $counter
-					fi
-				else markAsPlaying p+1; counter=$playing; fi
-				counter=$(( counter+1 ))
 
 				if [ "$playing" = "$end" ]; then
-					[ "$2" = 'l' ] && counter="$start" || break
+					[ "$2" = 'l' ] && counter="$start" && continue || break
 				fi
+
+				# if things are outside the range ...
+				if [ "$playing" -lt "$start" ] || [ "$playing" -ge "$end" ]; then markAsPlaying $counter
+				else markAsPlaying p+1; counter=$playing; fi
+
+				[ $counter = $end ] && break
+				counter=$(( counter+1 ))
 			done
 		done
-		if [ -z "$2" ] || [ "$2" != 'k' ]; then daemon; fi
-		# daemon
+		if [ $# = 1 ] && ! echo "$1" | grep -q ','; then daemon;
+		elif [ $# -gt 1 ]; then daemon; fi
 	else
 		while true; do
-			sleep 1 && ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 && sleep .5 && ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 && markAsPlaying p+1
+			sleep .5 && ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 && sleep .5 && ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 && markAsPlaying p+1
 		done
 	fi
 }
@@ -640,7 +629,7 @@ viewQueue () {
 	--layout=reverse --cycle --bind="ctrl-alt-b:execute(ytmp -m)+reload($cmd),alt-space:execute(echo {n}+1 | bc | xargs -I ,, ytmp m x x ,,)+reload($cmd),alt-bspace:execute(echo {n}+1 | bc | xargs -I ,, ytmp m c x ,,)+reload($cmd),ctrl-space:execute(echo {n}+1 | bc | xargs -I ,, ytmp m x ,,)+reload($cmd),ctrl-alt-m:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m s ,,),alt-up:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, 0)+reload($cmd),alt-down:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, l)+reload($cmd),ctrl-]:execute-silent(ytmp w),ctrl-r:replace-query,home:reload($cmd)+first,end:reload($cmd)+last,alt-r:reload($cmd),ctrl-alt-d:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp -dl ,,),ctrl-z:execute-silent(setsid -f ytmp z {q}),ctrl-s:execute-silent(setsid -f ytmp {q}),ctrl-j:down,ctrl-j:jump,shift-left:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m r ,,)+reload($cmd),shift-up:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, -2)+reload($cmd)+up,shift-down:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, +1)+reload($cmd)+down,ctrl-k:kill-line,alt-p:execute-silent(ytmp p)+reload($cmd),alt-n:execute-silent(ytmp n)+reload($cmd),return:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp e ,,)+abort,shift-right:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp e ,,)+reload($cmd),alt-right:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, p)+reload($cmd),alt-left:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, p-1)+reload($cmd),pgdn:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, p)+reload($cmd),pgup:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, p-1)+reload($cmd),ctrl-v:page-down,alt-v:page-up,ctrl-alt-p:half-page-up,ctrl-alt-n:half-page-down,left-click:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp e ,,)+abort,right-click:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, p)+reload($cmd),ctrl-^:execute-silent(ytmp mln)+reload($cmd),ctrl-\:execute(ytmp E)+reload($cmd),alt-m:execute(echo {n}+1 | bc | xargs -I ,, ytmp m f ,,)+reload($cmd),ctrl-o:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp openInBrowser ,,)"
 }
 
-# move, remove, set marks.
+# move, copy, remove, set marks
 move () {
 	if [ "$1" = 'r' ]; then
 		shift
@@ -802,7 +791,7 @@ playFromHistory () {
 randomDaemon () {
 	start="$( echo "$1" | cut -d',' -f1 )"
 	end="$( echo "$1" | cut -d',' -f2 )"
-	while ( while true; do ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && sleep .5 && break; done ); do
+	while ( while true; do sleep .5 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && sleep .5 && break; done ); do
 		if ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ); then
 			if [ -n "$3" ]; then seq "$start" "$end" | shuf -n 1 | xargs ytmp e
 			else grep -c '' "$queue" | xargs seq | shuf -n 1 | xargs ytmp e; fi
@@ -841,7 +830,6 @@ fzfPreview () {
 dlSong () {
 	[ -z "$2" ] && echo 'Provide an entry to download.' && return 1
 	sel="$( echo "$2" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
-	[ "$3" = 'f' ] && sel=$(( sel + 1 ))
 	id="$( sed -n "${sel}s/${field_regex}/\1/p" "$queue" )"
 	title="$( sed -n "${sel}s/${field_regex}/\2/p" "$queue" )"
 	[ "$( printf "$id" | wc -m )" != '11' ] && echo 'Invalid entry.' && return 1
@@ -891,7 +879,7 @@ case "${1}" in
 	-dl) dlSong "$*" ;;
 	-d) pgrep -f 'ytmp (-d|-r)+' | grep -v $$ | xargs kill >/dev/null 2>&1; shift; daemon "$@" ;;
 	-r) pgrep -f 'ytmp (-d|-r)+' | grep -v $$ | xargs kill >/dev/null 2>&1; shift; randomDaemon "$@" ;;
-	-n) while true; do ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && sleep .5 && exit; done ;;
+	-n) while true; do sleep .5 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && exit; done ;;
 	-p) echo cycle pause | socat - "$mpvsocket" >/dev/null 2>&1 ;;
 	-ff) [ -n "$2" ] && echo "{ \"command\": [\"seek\", \"+${2}\", \"exact\"] }" | socat - "$mpvsocket" >/dev/null 2>&1 && echo "Seeked forward $2 seconds." || echo 'Provide how many seconds to seek forward.' ;;
 	-bb) [ -n "$2" ] && echo "{ \"command\": [\"seek\", \"-${2}\", \"exact\"] }" | socat - "$mpvsocket" >/dev/null 2>&1 && echo "Seeked backward $2 seconds." || echo 'Provide how many seconds to seek backward.' ;;
