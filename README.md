@@ -77,9 +77,7 @@ the thumbnail is located at /tmp/muscover.webp
 
 - play dmenu selection: `cat "/home/$USER/Music/ytmp/queue" | dmenu -l 15 | cut -d' ' -f1 | xargs -I ,, ytmp P -id ,,`
 
-- to play one song after another without moving them to a consecutive place and running the daemon, do `printf '%s\n' 5 p+8 l-2 | while read p; do ( while (ytmp -n); do ytmp e $p; break; done; ) done` or with P option (to search strings and play match): `printf '%s\n' '<search1>' '<search2>' '<search3>' | while read p; do ( while (ytmp -n); do ytmp P $p; break; done; ) done` (replacing the printf strings with the proper positions/searches of course). play queue backwards: `while (ytmp -n); do ytmp p; done`
-
-- if you want to move multiple songs to one position i.e. the end you could use something like `echo '3,6,27,18' | xargs -d ',' -I '{}' ytmp m '{}' 'l'` (replacing the numbers and 'l' with 'p|m' or the proper positions of course)
+- to play one song after another without moving them to a consecutive place and running the daemon, do `printf '%s\n' '<fuzzy search with P>' '<entry for e>' ... | while read p; do ( while (ytmp -n); do if (printf $p | grep -Eq '^.((\+|-)[0-9]*)?$|^[0-9]*$'); then ytmp e $p; else ytmp P $p; fi; break; done; ) done`. play queue backwards: `while (ytmp -n); do ytmp p; done`
 
 - you don't need to use ytmp to make playlists for it. to create a queue file from a youtube playlist you can do `yt-dlp --print id --print title '<playlist_url>' | paste -s -d ' \n' > file` or to create a queue file from search results do `xargs -d '\n' -a <file-with-newline-sperated-searches> -I ,, yt-dlp --print id --print title ytsearch:",," | paste -s -d ' \n' > file` (to read from stdout instead of a file use `printf '%s\n' '<search1>' '<search2>' '<search3>' | xargs [without -a option]...`) or to search for playlists from the terminal (requires pipe-viewer): `search='YOUR_SEARCH'; pipe-viewer --no-interactive -sp --custom-playlist-layout='*VIDEOS*VIDS *TITLE* *URL*' "$search" | fzf --bind='ctrl-a:execute(echo {} | awk "{print $NF}" | xargs -0 -I ",," pipe-viewer --custom-layout="*AUTHOR* *TIME* *TITLE*" --no-interactive ",," | fzf)' | awk '{print $NF}' | xargs -0 -I ',,' yt-dlp --print id --print title ',,' | paste -s -d ' \n' > file` (have a look at `ytmpsuite sp` for a more featureful version with previews and individual song select or `ytmpsuite pvpl` to automate playlist search and add)
 
@@ -182,17 +180,17 @@ enter fzf for search.
 		ytmp m r p+2,l-15 l-5 10; ytmp m [c] 2,p-2 l 3 5 6 +2
 		syntax for ytmp m|m c|m r is [<target>|<from>,<to>] <destination> ...
 
-  -m [c] [# #,# ... <dest>]
-  		batch move/copy (with c arg)
+  -m [c] [r] [# #,# ... <dest>]
+  		batch move/copy (with c arg)/remove (with r arg)
 
-		if entry numbers are passed as args - move/copy all entries to the position of the last arg
+		if entry numbers are passed as args - move/copy/remove all entries to the position of the last arg
 		accepts the same kind of args as 'm'
 
-		if no args are passed - make selections in an fzf window that will pop up then move/copy
+		if no args are passed - make selections in an fzf window that will pop up then move/copy/remove
 		those selections to after the selection made in a new fzf window that will pop up
 		* fzf bindings: tab: toggle selection; shift-tab: deselect-all; ctrl-j:jump
 
-		* entries are moved in the order they are selected
+		* entries are moved in the order they are selected or the order of the args sent
 
   E 		edit the queue in nvim and source rc from "$XDG_CONFIG_HOME/nvim/ytmp.vim"
 
@@ -239,7 +237,11 @@ enter fzf for search.
   		there's no way to remove the range; if you want it to play beyond it,
 		run it again. (kills any other instances of -r or -d running on start.)
 
-  -n 		get notified when mpv exits (i.e. song finishes)
+  -n 		get notified when mpv exits (i.e. song finishes) except when it quits because the
+  			user changes songs
+
+  -N 		get notified when mpv exits (i.e. song finishes) even when it quits because the
+  			user changes songs
 
   -qa 		quit audio
   -kd 		kill daemon (-d)
@@ -367,8 +369,7 @@ enter fzf for search.
 	ctrl-w 		:te ytmp z
 	ctrl-s 		:te ytmp v
 	ctrl-v 		:te ytmp vv
-	ctrl-p 		:silent !ytmpsuite qs
-	ctrl-n 		:silent !ytmpsuite qn
+	ctrl-p 		:silent !ytmpsuite qsn
 
 	leader-v 	change the value of the \$vol var in the run_on_next file
 	leader-l 	set volume of what's currently playing
