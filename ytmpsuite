@@ -15,7 +15,7 @@ case "$1" in
 		done
 		;;
 
-	-kd) pkill -f 'ytmpsuite (qs|qn|-r)+' ;;
+	-kd) pkill -f 'ytmpsuite (qsn|qs|qn|-r)+' ;;
 	# comment/uncomment the line following the comment # LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT
 	t) ( grep -q '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT$' "$run_on_next" ) && index="$( grep -n '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT$' "$run_on_next" | cut -d':' -f1 | xargs -I ',' echo ',+1' | bc )"; ( sed -n "${index}p" "$run_on_next" | grep '^# ' ) && ( sed -i "${index}s/^# //" "$run_on_next"; echo "ON" ) || ( sed -i "${index}s/^/# /" "$run_on_next"; echo "OFF" ) ;;
 	# learn whether the line below # LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT is commented (off) or not (on)
@@ -24,9 +24,11 @@ case "$1" in
 	gT) ( grep -q '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT ALT$' "$run_on_next" ) && index="$( grep -n '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT ALT$' "$run_on_next" | cut -d':' -f1 | xargs -I ',' echo ',+1' | bc )" && ( sed -n "${index}p" "$run_on_next" | grep '^# ' && echo "OFF" || echo "ON" ) ;;
 	# select queue in file browser (xplr prints selection to stdout)
 	q) xplr "$prefix/playlists" | xargs -r -I ',,' sed -i "s@^queue=.*@queue=\",,\"@" $conf ;;
-	fq) fd . "$prefix/playlists" | fzf | xargs -r -I ',,' sed -i "s@^queue=.*@queue=\",,\"@" $conf ;;
+	fq) fd -t f  . "$prefix/playlists" | fzf --height 65% --preview='echo {}; cat {}' --preview-window='bottom,65%' | xargs -r -I ',,' sed -i "s@^queue=.*@queue=\",,\"@" $conf; ytmp -kr && setsid -f ytmp -r >/dev/null 2>&1; ytmp -kd && setsid -f ytmp -d >/dev/null 2>&1; ;;
+	# set queue with $2
+	sq) sed -i "s@^queue=.*@queue=\"$2\"@" $conf; ytmp -kr && setsid -f ytmp -r >/dev/null 2>&1; ytmp -kd && setsid -f ytmp -d >/dev/null 2>&1; ;;
 	# change queue to $prefix/queue
-	oq) sed -i "s@^queue=.*@queue=\"$prefix/queue\"@" $conf ;;
+	oq) sed -i "s@^queue=.*@queue=\"$prefix/queue\"@" $conf; ytmp -kr && setsid -f ytmp -r >/dev/null 2>&1; ytmp -kd && setsid -f ytmp -d >/dev/null 2>&1; ;;
 	# comment queue var
 	cq) sed -i "s@^queue=.*@#&@" $conf ;;
 	# print queue file path
@@ -54,6 +56,11 @@ case "$1" in
 	qs) mpv_socket_commands s loop false st /tmp/mpvsocketytmp >/dev/null 2>&1; shift 1; printf '%s\n' "$@" | while read p; do ( while (ytmp -n); do ytmp P $p; break; done; ) done ;;
 	# queue up entries to play one after another; ex: ytmpsuite qn 5 p+8 l-2
 	qn) mpv_socket_commands s loop false st /tmp/mpvsocketytmp >/dev/null 2>&1; shift 1; printf '%s\n' "$@" | while read p; do ( while (ytmp -n); do ytmp e $p; break; done; ) done ;;
+	# combination of both of the above
+	qsn)
+		mpv_socket_commands s loop false st /tmp/mpvsocketytmp >/dev/null 2>&1; shift 1
+		printf '%s\n' "$@" | while read p; do ( while (ytmp -n); do if (printf $p | grep -Eq '^.((\+|-)[0-9]*)?$|^[0-9]*$'); then ytmp e $p; else ytmp P $p; fi; break; done; ) done
+		;;
 	# search searches contained in (newline separated) $2 and put results in $prefix/playlists/"$3"
 	sa) [ -n "$3" ] && xargs -d '\n' -a "$2" -I ,, yt-dlp --print id --print title ",," | paste -s -d ' \n' >> $prefix/playlists/"$3" ;;
 
