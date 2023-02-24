@@ -9,7 +9,7 @@ conf="$prefix/conf"
 
 # A value of y means yes/true and n means no/false
 # for the following settings:
-# daemonize, notifications, download_thumbnails, download_songs
+# daemonize, notifications, download_thumbnails, download_songs, cycle_queue
 
 # if to play one song after another by default
 [ -z "$daemonize" ] && daemonize="y"
@@ -23,6 +23,8 @@ conf="$prefix/conf"
 
 [ -z "$download_thumbnails" ] && download_thumbnails="n"
 [ -z "$notifications" ] && notifications="y"
+# whether to start playing from the top when queue reaches the end
+[ -z "$cycle_queue" ] && cycle_queue="n"
 
 [ -z "$dl_dir" ] && dl_dir="$prefix/downloads"
 [ -z "$songs_dir" ] && songs_dir="$dl_dir/songs"
@@ -137,17 +139,17 @@ enter fzf for search.
 		ytmp m r p+2,l-15 l-5 10; ytmp m [c] 2,p-2 l 3 5 6 +2
 		syntax for ytmp m|m c|m r is [<target>|<from>,<to>] <destination> ...
 
-  -m [c] [# #,# ... <dest>]
-  		batch move/copy (with c arg)
+  -m [c] [r] [# #,# ... <dest>]
+  		batch move/copy (with c arg)/remove (with r arg)
 
-		if entry numbers are passed as args - move/copy all entries to the position of the last arg
+		if entry numbers are passed as args - move/copy/remove all entries to the position of the last arg
 		accepts the same kind of args as 'm'
 
-		if no args are passed - make selections in an fzf window that will pop up then move/copy
+		if no args are passed - make selections in an fzf window that will pop up then move/copy/remove
 		those selections to after the selection made in a new fzf window that will pop up
 		* fzf bindings: tab: toggle selection; shift-tab: deselect-all; ctrl-j:jump
 
-		* entries are moved in the order they are selected
+		* entries are moved in the order they are selected or the order of the args sent
 
   E 		edit the queue in nvim and source rc from "$XDG_CONFIG_HOME/nvim/ytmp.vim"
 
@@ -194,7 +196,11 @@ enter fzf for search.
   		there's no way to remove the range; if you want it to play beyond it,
 		run it again. (kills any other instances of -r or -d running on start.)
 
-  -n 		get notified when mpv exits (i.e. song finishes)
+  -n 		get notified when mpv exits (i.e. song finishes) except when it quits because the
+  			user changes songs
+
+  -N 		get notified when mpv exits (i.e. song finishes) even when it quits because the
+  			user changes songs
 
   -qa 		quit audio
   -kd 		kill daemon (-d)
@@ -322,8 +328,7 @@ enter fzf for search.
 	ctrl-w 		:te ytmp z
 	ctrl-s 		:te ytmp v
 	ctrl-v 		:te ytmp vv
-	ctrl-p 		:silent !ytmpsuite qs
-	ctrl-n 		:silent !ytmpsuite qn
+	ctrl-p 		:silent !ytmpsuite qsn
 
 	leader-v 	change the value of the \$vol var in the run_on_next file
 	leader-l 	set volume of what's currently playing
@@ -558,6 +563,7 @@ play () {
 		setsid -f mpv --x11-name='ytmp_mpv' --no-terminal --vid=no --input-ipc-server="$mpvsocket" --ytdl-format='bestaudio' "https://www.youtube.com/watch?v=$id"
 		[ "$download_thumbnails" = 'y' ] && dlThumbnail "$id"
 	fi
+	# title="$( echo '{ "command": ["get_property_string", "media-title" ] }' | socat - /tmp/mpvsocketytmp | cut -d'"' -f4 | sed -E -e 's/^.{11} //' -e 's/\.webm$//' )"
 	title="$( sed -n -e "s/$playing_regex/\3/p" "$queue" )"
 	echo "Playing '$title'"
 	[ "$notifications" = 'y' ] && notify-send 'Now Playing' "$title"
@@ -572,7 +578,9 @@ markAsPlaying () {
 	[ -z "$line" ] && return 1
 	line="$( echo "$line" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
 	lncount=$( grep -c '.' "$queue" )
-	if [ "$line" -le 0 ] || [ "$line" -gt "$lncount" ]; then line=1; fi
+	if [ "$line" -le 0 ] || [ "$line" -gt "$lncount" ]; then
+		[ "$cycle_queue" = 'y' ] && line=1 || exit 0
+	fi
 	sed -i -e "s/$playing_regex/\1 \3/" "$queue"
 	sed -i "${line}s/${field_regex}/\1 \*\*\*\2\*\*\*/" "$queue"
 	echo quit | socat - "$mpvsocket" >/dev/null 2>&1
@@ -598,16 +606,8 @@ daemon () {
 			fi
 
 			while true; do
-				while true; do sleep .5 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && sleep .5 && break; done
-				# if the song didn't end and it was the user who changed the song (evidenced
-				# by another mpv being spawned immediately after) then continue
-				# testing has shown this isn't entirely necessary because the external song change
-				# happens so quick that the while loop above with its .5 sleep doesn't even
-				# register it and break
-				if ( pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ); then
-					sleep .8
-					continue
-				fi
+				while true; do sleep .5 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && sleep .5 && sleep .5 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && sleep .5 && break; done
+
 				[ -n "$entry" ] && markAsPlaying $entry && break
 				playing="$( grep -n "$playing_regex" "$queue" | cut -d':' -f1 )"
 
@@ -643,50 +643,45 @@ viewQueue () {
 
 # move, copy, remove, set marks
 move () {
-	if [ "$1" = 'r' ]; then
-		shift
-		for f in "$@"; do
-			if echo "$f" | grep -q ','; then
-				start="$( echo "$f" | cut -d',' -f1 )"
-				end="$( echo "$f" | cut -d',' -f2 )"
-				start="$( echo "$start" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
-				echo "$end" | grep -Eqx '(\+|-|\*|/)+[0-9]*' && end="$( echo "${start}${end}" | bc )" || end="$( echo "$end" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
-
-				printf "${start}${end}" | grep -xq '[0-9]*' && printf '%b' "${lsp}Removing from $start to $end\n" && sed -n "${start},${end}s/$field_regex/Removed '\2'/p" "$queue" && printf "$lsp" && sed -i "${start}","${end}"d "$queue"
-			else
-				f="$( echo "$f" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
-				printf "$f" | grep -xq '[0-9]*' && echo "Removed [$f] '$( sed -n "${f}s/$field_regex/\2/p" "$queue" )'" && sed -i "${f}"d "$queue"
-			fi
-		done
-		return
-	fi
 	if [ "$1" = 's' ]; then
 		[ "$2" = 'v' ] && cat /tmp/ytmpmark && return
 		echo "$2" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc > /tmp/ytmpmark
 		return
 	fi
 
-	if [ "$1" = 'c' ] && shift; then
-		ed_opt='t'
-		action_v='Copy'
-		action_p='Copied'
-		action_a='Copying'
-	else
-		ed_opt='m'
-		action_v='Move'
-		action_p='Moved'
-		action_a='Moving'
-	fi
+	case "$1" in
+		r)
+			shift
+			ed_opt='d'
+			action_v='Remove'
+			action_p='Removed'
+			action_a='Removing'
+		;;
+		c)
+			shift
+			ed_opt='t'
+			action_v='Copy'
+			action_p='Copied'
+			action_a='Copying'
+		;;
+		*)
+			ed_opt='m'
+			action_v='Move'
+			action_p='Moved'
+			action_a='Moving'
+		;;
+	esac
 
 	if [ "$1" = 'f' ]; then
 		sel="$2"
 		printf "\n$action_v entry #$sel to where? "
 		read place </dev/tty
 	elif [ "$1" = 'x' ]; then
-		[ "$2" = 'x' ] && sel="$3" && doubleex=t || sel="$2"
+		[ "$2" = 'x' ] && shift && sel="$2" && doubleex=t || sel="$2"
+		[ -z "$2" ] && echo 'Provide entry.' && return 1
 		sel="$( echo "$sel" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
 
-		[ -n "$doubleex" ] && border_str="$action_v what after '$( sed -n "${sel}s/${field_regex}/\2/p" "$queue" )'?" || border_str="$action_v '$( sed -n "${sel}s/${field_regex}/\2/p" "$queue" )' to after what?"
+		[ -n "$doubleex" ] && border_str="$action_v what to after '$( sed -n "${sel}s/${field_regex}/\2/p" "$queue" )'?" || border_str="$action_v '$( sed -n "${sel}s/${field_regex}/\2/p" "$queue" )' to after what?"
 
 		place="$( cat "$queue" | fzf --bind='enter:execute(echo {n}+1 | bc)+abort' --info=hidden --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   $border_str   }" --separator='' )"
 		[ -z "$place" ] && return
@@ -695,14 +690,24 @@ move () {
 		place="$2"
 		sel="$1"
 	fi
+	if [ "$action_v" != 'Remove' ] && [ -z "$place" ]; then return; fi
 
-	if [ "$1" = 'x' ] || [ "$1" = 'f' ]; then
-		target="$sel"
-		dest="$place"
-		[ -z "$place" ] && return 1
+	# express service for single move
+	if [ "$action_v" != 'Remove' ] && [ -z "$3" ] && ! echo "$1" | grep -q ','; then
+		sel="$( echo "$sel" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
+		echo "$place" | grep -Eqx '(\+|-|\*|/)+[0-9]*' && place="$( echo "${sel}${place}" | bc )" || place="$( echo "$place" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
+		sel_entry="$( sed -n "${sel}p" "$queue" )"
+		place_entry="$( sed -n "${place}p" "$queue" )"
+		printf "%s\n" "${sel}${ed_opt}${place}" "wq" | ed -s "$queue" >/dev/null
+		echo "$action_p [$sel] '$sel_entry' [[TO AFTER]] [$place] '$place_entry'"
+		return 0
+	fi
+
+	arg_ct="$#"
+	if [ ! $((arg_ct%2)) -eq 0 ] && [ "$action_v" != 'Remove' ]; then echo 'Missing destination.'; return 1; fi
+	if [ "$action_v" = 'Remove' ]; then
+		target="$( printf '%s\n' "$@" )"
 	else
-		arg_ct="$#"
-		[ ! $((arg_ct%2)) -eq 0 ] && echo 'Missing destination.' && return 1
 		target="$( printf '%s\n' "$@" | sed -n 'p;n' )"
 		dest="$( printf '%s\n' "$@" | sed -n 'n;p' )"
 	fi
@@ -727,43 +732,72 @@ move () {
 			echo "$end" | grep -Eqx '(\+|-|\*|/)+[0-9]*' && end="$( echo "${start}${end}" | bc )" || end="$( echo "$end" | sed -e s/m/$mark/ -e s/p/$playing/ -e s/l/$last/ | bc )"
 
 			echo "$d" | grep -Eqx '(\+|-|\*|/)+[0-9]*' && pos="$( echo "${end}${d}" | bc )" || pos="$( echo "$d" | sed -e s/m/$mark/ -e s/p/$playing/ -e s/l/$last/ | bc )"
+			[ "$action_v" = 'Remove' ] && pos='0'
 			if [ $start -gt $last ] || [ $end -gt $last ] || [ $pos -gt $last ]; then echo 'Invalid args $start,$last $pos'; continue; fi
 
-			printf "${start}${end}${pos}" | grep -xq '[0-9]*' && printf '%b' "${lsp}$action_a from $start-$end to $pos\n" && sed -n "/^${start}:/,/^${end}:/s/[^ ]* /$action_p /p" "$numbered_q" && printf "$lsp" && printf "%s\n" "/^${start}:/;/^${end}:/${ed_opt}/^${pos}:/" "wq" | ed -s "$numbered_q" >/dev/null
+			if printf "${start}${end}${pos}" | grep -xq '[0-9]*'; then
+				[ "$action_v" = 'Remove' ] && printf '%b' "${lsp}$action_a $start-$end\n" || printf '%b' "${lsp}$action_a $start-$end to $pos\n"
+				sed -n "/^${start}:/,/^${end}:/s/[^ ]* /$action_p /p" "$numbered_q"
+				printf "$lsp"
+				if [ "$action_v" = 'Remove' ]; then
+					printf "%s\n" "/^${start}:/;/^${end}:/${ed_opt}" "wq" | ed -s "$numbered_q" >/dev/null
+				else
+					printf "%s\n" "/^${start}:/;/^${end}:/${ed_opt}/^${pos}:/" "wq" | ed -s "$numbered_q" >/dev/null
+				fi
+			fi
 
 		else
 			sel="$( echo "$f" | sed -e s/m/$mark/ -e s/p/$playing/ -e s/l/$last/ | bc )"
 			echo "$d" | grep -Eqx '(\+|-|\*|/)+[0-9]*' && place="$( echo "${sel}${d}" | bc )" || place="$( echo "$d" | sed -e s/m/$mark/ -e s/p/$playing/ -e s/l/$last/ | bc )"
 
+			[ "$action_v" = 'Remove' ] && place='0'
 			if [ $sel -gt $last ] || [ $place -gt $last ]; then echo 'Invalid args $sel $place'; continue; fi
 
-			echo "$action_p [$sel] '$( sed -n "/^${sel}:/s/[^ ]* //p" "$numbered_q" )' [[TO AFTER]] [$place] '$( sed -n "/^${place}:/s/[^ ]* //p" "$numbered_q" )'"
+			[ "$action_v" = 'Remove' ] && echo "$action_p [$sel] '$( sed -n "/^${sel}:/s/[^ ]* //p" "$numbered_q" )'" || echo "$action_p [$sel] '$( sed -n "/^${sel}:/s/[^ ]* //p" "$numbered_q" )' [[TO AFTER]] [$place] '$( sed -n "/^${place}:/s/[^ ]* //p" "$numbered_q" )'"
 
-			printf "%s\n" "/^${sel}:/${ed_opt}/^${place}:/" "wq" | ed -s "$numbered_q" >/dev/null
+			if [ "$action_v" = 'Remove' ]; then
+				printf "%s\n" "/^${sel}:/${ed_opt}" "wq" | ed -s "$numbered_q" >/dev/null
+			else
+				printf "%s\n" "/^${sel}:/${ed_opt}/^${place}:/" "wq" | ed -s "$numbered_q" >/dev/null
+			fi
 		fi
 	done
 	sed -n 's/[0-9]*://p' "$numbered_q" > "$queue"
 }
 
 batchmove () {
-	[ "$1" = 'c' ] && shift && action='copy' || action='move'
+	case "$1" in
+		c) shift; action='copy' ;;
+		r) shift; action='remove' ;;
+		*) action='move' ;;
+	esac
+	# [ "$1" = 'c' ] && shift && action='copy' || action='move'
 	if [ -n "$1" ]; then
-		[ -z "$2" ] && echo 'Missing destination.' && return 1
+		if [ -z "$2" ] && [ "$action" != 'r']; then echo 'Missing destination.'; return 1; fi
 		sel="$( echo "$@" | sed 's/ \w*$//' )"
 		place="$( echo "$@" | grep -o '\w*$' )"
 	else
-		sel=$( cat "$queue" | cut -d' ' -f2- | fzf -m --prompt='search: ' --info=inline --padding=2,2,2,2 --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   make selections to $action   }" --separator='' --layout=reverse --height 100% --bind="ctrl-j:jump,tab:toggle+clear-query+down,shift-tab:clear-selection,enter:execute(printf '%s\n' {+n} | xargs -I ,, echo ',,+1' | bc)+abort" )
+		sel=$( cat "$queue" | cut -d' ' -f2- | fzf -m --prompt='search: ' --info=inline --padding=2,2,2,2 --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   Make selections to $action   }" --separator='' --layout=reverse --height 100% --bind="ctrl-j:jump,tab:toggle+clear-query+down,shift-tab:clear-selection,enter:execute(printf '%s\n' {+n} | xargs -I ,, echo ',,+1' | bc)+abort" )
 		[ -z "$sel" ] && return 1
 
-		place=$( cat "$queue" | cut -d' ' -f2- | fzf --prompt='search: ' --info=inline --padding=2,2,2,2 --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   $action selections to after what?   }" --separator='' --layout=reverse --height 100% --bind='ctrl-j:jump,enter:execute(echo {n}+1 | bc)+abort' )
-		[ -z "$place" ] && return 1
+		if [ "$action" != 'remove' ]; then
+			place=$( cat "$queue" | cut -d' ' -f2- | fzf --prompt='search: ' --info=inline --padding=2,2,2,2 --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   $action selections to after what?   }" --separator='' --layout=reverse --height 100% --bind='ctrl-j:jump,enter:execute(echo {n}+1 | bc)+abort' )
+			[ -z "$place" ] && return 1
+		fi
 	fi
 
+	if [ "$action" = 'remove' ]; then
+		for s in $sel; do sed -n ${s}p "$queue"; done
+		printf 'Are you sure you want to remove the above entries? [y/n] '
+		read ans
+		[ $ans = 'y' ] && move r $sel || return 1
+		return 0
+	fi
 	# do it this way instead of iterating thru $sel with a loop so the proper selections are preserved
 	# (they wouldn't be with a loop because the positions will have changed with the last move)
 	sel=$( echo $sel | awk '{ for (i=NF; i>1; i--) printf("%s ",$i); print $1; }' | sed -e "s/ / $place /g" -e "s/$/ $place /" )
 	set -- $sel
-	[ "$action" = 'copy' ] && move c $@ | tac || move $@ | tac
+	[ "$action" = 'copy' ] && move c $@ || move $@
 }
 
 # copies or moves entries found in $qdiscards_file from their place in the $queue
@@ -808,11 +842,9 @@ playFromHistory () {
 randomDaemon () {
 	start="$( echo "$1" | cut -d',' -f1 )"
 	end="$( echo "$1" | cut -d',' -f2 )"
-	while ( while true; do sleep .5 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && sleep .5 && break; done ); do
-		if ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ); then
-			if [ -n "$3" ]; then seq "$start" "$end" | shuf -n 1 | xargs ytmp e
-			else grep -c '' "$queue" | xargs seq | shuf -n 1 | xargs ytmp e; fi
-		fi
+	while ( while true; do sleep .5 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && sleep .5 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && break; done ); do
+		if [ -n "$3" ]; then seq "$start" "$end" | shuf -n 1 | xargs ytmp e
+		else grep -c '' "$queue" | xargs seq | shuf -n 1 | xargs ytmp e; fi
 	done
 }
 
@@ -896,7 +928,10 @@ case "${1}" in
 	-dl) dlSong "$*" ;;
 	-d) pgrep -f 'ytmp (-d|-r)+' | grep -v $$ | xargs kill >/dev/null 2>&1; shift; daemon "$@" ;;
 	-r) pgrep -f 'ytmp (-d|-r)+' | grep -v $$ | xargs kill >/dev/null 2>&1; shift; randomDaemon "$@" ;;
-	-n) while true; do sleep .5 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && exit; done ;;
+	# sleep twice in case the song didn't actually end and the user started
+	# playing another song which caused the last one to quit
+	-n) while true; do sleep .25 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && sleep .25 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && exit; done ;;
+	-N) while true; do sleep .4 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && exit; done ;;
 	-p) echo cycle pause | socat - "$mpvsocket" >/dev/null 2>&1 ;;
 	-ff) [ -n "$2" ] && echo "{ \"command\": [\"seek\", \"+${2}\", \"exact\"] }" | socat - "$mpvsocket" >/dev/null 2>&1 && echo "Seeked forward $2 seconds." || echo 'Provide how many seconds to seek forward.' ;;
 	-bb) [ -n "$2" ] && echo "{ \"command\": [\"seek\", \"-${2}\", \"exact\"] }" | socat - "$mpvsocket" >/dev/null 2>&1 && echo "Seeked backward $2 seconds." || echo 'Provide how many seconds to seek backward.' ;;
