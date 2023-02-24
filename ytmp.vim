@@ -41,13 +41,13 @@ nnoremap <C-t> :te <Enter>i
 nnoremap <C-y> :te ytmp<Enter>i
 nnoremap <C-w> :te ytmp z<Enter>i
 nnoremap <C-v> :te ytmp vv<Enter>i
-nnoremap <C-p> :silent !ytmpsuite qs<Space>
-nnoremap <C-n> :silent !ytmpsuite qn<Space>
+nnoremap <C-p> :silent !ytmpsuite qsn<Space>
 
 nnoremap < :silent !ytmp p<Enter>
 nnoremap > :silent !ytmp n<Enter>
 nnoremap . :let l = line('.')<Enter>:execute '! ytmp -sd '.shellescape(l)<Enter>
 nnoremap o :let l = line('.')<Enter>:execute '! ytmp openInBrowser '.shellescape(l)<Enter> | execute ':redraw!'
+
 " left click to play entry
 " nnoremap <LeftMouse> <LeftMouse> :let l = line('.')<Enter>:silent execute '! ytmp e '.shellescape(l)<Enter> | execute ':redraw!'
 " right click to move cursor to line
