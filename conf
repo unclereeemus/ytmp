@@ -3,7 +3,7 @@
 
 # A value of y means yes/true and n means no/false
 # for the following settings:
-# daemonize, notifications, download_thumbnails, download_songs
+# daemonize, notifications, download_thumbnails, download_songs, cycle_queue
 
 # if to play one song after another by default
 daemonize="y"
@@ -15,6 +15,8 @@ download_thumbnails="n"
 # Only two kinds of notifications:
 # on song play, on song download
 notifications="y"
+# whether to start playing from the top when queue reaches the end
+cycle_queue="n"
 
 # if to download songs after they are played more than $max_stream_amount
 download_songs="y"
