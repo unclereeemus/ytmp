@@ -427,14 +427,18 @@ add () {
 suggestsForFzf () {
 	if [ -z "$1" ]; then
 		( ls "$songs_dir" | cut -d' ' -f2- | sed 's/\.webm$//'; cat "$played_urls" | cut -s -d' ' -f4- | sed 's/^dl //'; cat "$search_history"; cat "$queue" | cut -d' ' -f2- ) | sort -u
-	else
+	elif [ "$1" = 'a' ]; then
+		shift
 		! grep -Fxq "$@" "$search_history" && echo "$@" >> "$search_history"
+	elif [ "$1" = 'r' ]; then
+		shift
+		sed -i "/^$@$/d" "$search_history"
 	fi
 }
 
 searchInFzf () {
 	suggestsForFzf | fzf --prompt='search: ' --info=inline --padding=2,2,2,2 --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   ytmp search   }" --separator='' \
-	--layout=reverse --height 60% -m --bind="shift-left:execute-silent(sed -i '/^{}$/d' "$search_history")+reload(ytmp suggestsForFzf),ctrl-/:execute-silent(ytmp suggestsForFzf {q})+reload(ytmp suggestsForFzf),ctrl-g:execute(echo {+} {q})+abort,ctrl-j:jump,ctrl-k:kill-line,tab:toggle+clear-query+down,shift-tab:clear-selection,ctrl-z:execute-silent(setsid -f ytmp z {q}),alt-z:execute-silent(setsid -f ytmp z {+} {q}),alt-s:execute-silent(setsid -f ytmp {+} {q}),tab:select+clear-query,return:accept,ctrl-r:replace-query,ctrl-x:print-query,ctrl-s:execute-silent(setsid -f ytmp {q})" | tr '\n' ' ' | sed -e 's/[ \t]*$//'
+	--layout=reverse --height 60% -m --bind="shift-left:execute-silent(ytmp suggestsForFzf r {})+reload(ytmp suggestsForFzf),ctrl-/:execute-silent(ytmp suggestsForFzf a {q})+reload(ytmp suggestsForFzf),ctrl-g:execute(echo {+} {q})+abort,ctrl-j:jump,ctrl-k:kill-line,tab:toggle+clear-query+down,shift-tab:clear-selection,ctrl-z:execute-silent(setsid -f ytmp z {q}),alt-z:execute-silent(setsid -f ytmp z {+} {q}),alt-s:execute-silent(setsid -f ytmp {+} {q}),tab:select+clear-query,return:accept,ctrl-r:replace-query,ctrl-x:print-query,ctrl-s:execute-silent(setsid -f ytmp {q})" | tr '\n' ' ' | sed -e 's/[ \t]*$//'
 }
 
 searchSongs () {
@@ -453,7 +457,7 @@ searchSongs () {
 	if [ -n "$query" ]; then [ "$1" != 'p' ] && echo "Searching for '$query'"; else return 1; fi
 
 	( ! grep -Fxq "$query" "$search_history" ) && ( ! echo "$songs_dir_ls" | grep -Fq "$query" ) && echo "$query" >> "$search_history"
-	rm -f "$qdiscards_file"
+	[ "$1" != 'p' ] && rm -f "$qdiscards_file"
 
 	# allows user to browse search results and select
 	if [ "$1" = 'p' ] || [ "$1" = 'x' ] || [ "$1" = 's' ]; then
