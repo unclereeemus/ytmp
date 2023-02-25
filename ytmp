@@ -59,7 +59,7 @@ qdiscards_file="/tmp/ytmpqdiscards"
 helper () {
 cat << CAT_EOF
 Usage: ytmp [z] [<search>]/s|x [# of results]/sp [<search>]/a <local path|dir|url>/e #
-       OR v/ls/m [c] [# #] [r|x #] [s #|v]/E
+       OR v/ls/m [c] [# #] [r|x #] [s #|v]/-m [c] [r]/E
        OR -l/-p OR n/p/pl/pf/mln/mfn/l [#|s]/P <search> OR -r [#,#]/-d [[#] #...[k|l]]]
 
 On first installing ytmp, there won't be any history to select from when you enter ytmp
@@ -136,17 +136,19 @@ enter fzf for search.
 		<destination> can be +|-# which means the program will add/subtract that number from the
 		<start> or <target> to come up with the <destination>.
 		examples: ytmp m 10 2; ytmp m s 126; ytmp m m +5; ytmp m p+3 l-1; ytmp [c] x p-2;
-		ytmp m r p+2,l-15 l-5 10; ytmp m [c] 2,p-2 l 3 5 6 +2
+		ytmp m r p+2,l-15 l-5 10; ytmp m [c] p,+5 10,+3 l 3 5 6 +2
 		syntax for ytmp m|m c|m r is [<target>|<from>,<to>] <destination> ...
 
   -m [c] [r] [# #,# ... <dest>]
   		batch move/copy (with c arg)/remove (with r arg)
 
-		if entry numbers are passed as args - move/copy/remove all entries to the position of the last arg
+		if entry numbers are passed as args - move/copy all entries to the position of the last arg
+		except when 'r' is passed in which case just remove the args
 		accepts the same kind of args as 'm'
 
-		if no args are passed - make selections in an fzf window that will pop up then move/copy/remove
+		if no args are passed - make selections in an fzf window that will pop up then move/copy
 		those selections to after the selection made in a new fzf window that will pop up
+		except when 'r' is passed in which case just remove the selections
 		* fzf bindings: tab: toggle selection; shift-tab: deselect-all; ctrl-j:jump
 
 		* entries are moved in the order they are selected or the order of the args sent
@@ -165,7 +167,7 @@ enter fzf for search.
   		to or moved (when no options are given) from their current position to the position they
 		would have been added on if they were never found on the queue.
 
-  -d [<start on>] [[[<from>],[<to>]] [l|k]] [<from>],[<to>] [#] ... [k]]
+  -d [<start on>] [[[<from>],[<to>]] [l]] [<from>],[<to>] [#] ... [k]]
   		no arg - play one song after another
 
   		single arg - start playing from <arg> (if another song is playing, it will wait
@@ -225,8 +227,8 @@ enter fzf for search.
   	enter		search only the selections (query not included)
   	ctrl-c/esc	quit
 
-  * the following do background searches; there isn't any indication that the search
-    has passed through so you can assume the fact and just abort fzf when done.
+	* the following do background searches; there isn't any indication that the search
+	  has passed through so you can assume the fact and just abort fzf when done.
 
 	ctrl-s		search query
 	alt-s		search query and selection
@@ -361,7 +363,7 @@ You might be interested to know:
 	downloaded and not removed regardless of whether the song is downloaded or not
   - sadly there's no way to customize the fzf keybinds without modifying the source so if something doesn't
 	work for you feel free to do a global replace of the bind (the keynames are not always what's
-	shown in this help so consult the fzf manpage for the fzf synonym)
+	shown in this help so consult the fzf manpage to see what fzf calls them)
   - also unfortunately the program does not check and will not tell you if you've entered something unexpected/wrong
 	or do not have all the dependencies installed
 CAT_EOF
@@ -564,7 +566,7 @@ play () {
 		setsid -f mpv --x11-name='ytmp_mpv' --no-terminal --vid=no --input-ipc-server="$mpvsocket" --ytdl-format='bestaudio' "https://www.youtube.com/watch?v=$id"
 		[ "$download_thumbnails" = 'y' ] && dlThumbnail "$id"
 	fi
-	# title="$( echo '{ "command": ["get_property_string", "media-title" ] }' | socat - /tmp/mpvsocketytmp | cut -d'"' -f4 | sed -E -e 's/^.{11} //' -e 's/\.webm$//' )"
+	# title="$( echo '{ "command": ["get_property_string", "media-title" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 | sed -E -e 's/^.{11} //' -e 's/\.webm$//' )"
 	title="$( sed -n -e "s/$playing_regex/\3/p" "$queue" )"
 	echo "Playing '$title'"
 	[ "$notifications" = 'y' ] && notify-send 'Now Playing' "$title"
@@ -694,13 +696,18 @@ move () {
 	if [ "$action_v" != 'Remove' ] && [ -z "$place" ]; then echo 'Missing destination.'; return 1; fi
 
 	# express service for single move
-	if [ "$action_v" != 'Remove' ] && [ -z "$3" ] && ! echo "$1" | grep -q ','; then
+	if ( [ "$action_v" = 'Remove' ] && [ -z "$2" ] && ! echo "$1" | grep -q ',' ) || ( [ -z "$3" ] && ! echo "$1" | grep -q ',' ); then
 		sel="$( echo "$sel" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
 		echo "$place" | grep -Eqx '(\+|-|\*|/)+[0-9]*' && place="$( echo "${sel}${place}" | bc )" || place="$( echo "$place" | sed -e s/m/"$( cat /tmp/ytmpmark )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
 		sel_entry="$( sed -n "${sel}p" "$queue" )"
 		place_entry="$( sed -n "${place}p" "$queue" )"
-		printf "%s\n" "${sel}${ed_opt}${place}" "wq" | ed -s "$queue" >/dev/null
-		echo "$action_p [$sel] '$sel_entry' [[TO AFTER]] [$place] '$place_entry'"
+		if [ "$action_v" = 'Remove' ]; then
+			printf "%s\n" "${sel}${ed_opt}" "wq" | ed -s "$queue" >/dev/null
+			echo "$action_p [$sel] '$sel_entry'"
+		else
+			printf "%s\n" "${sel}${ed_opt}${place}" "wq" | ed -s "$queue" >/dev/null
+			echo "$action_p [$sel] '$sel_entry' [[TO AFTER]] [$place] '$place_entry'"
+		fi
 		return 0
 	fi
 
@@ -951,8 +958,8 @@ case "${1}" in
 		[ -n "$2" ] && ( echo "$2" | grep -Exq '(\+|-)+[0-9]*' && echo "{ \"command\": [\"add\", \"volume\", \"${2}\"] }" | socat - "$mpvsocket" >/dev/null 2>&1 && echo "Added $2 to volume. The volume is now "$( echo "{ \"command\": [\"get_property_string\", \"volume\"] }" | socat - "$mpvsocket" | cut -d '"' -f4 | cut -d '.' -f1 )"." || ( echo "{ \"command\": [\"set_property\", \"volume\", ${2}] }" | socat - "$mpvsocket" >/dev/null 2>&1 && echo "Set volume to $2." ) ) || ( echo 'Provide what to set volume to.' && return 1 )
 		;;
 	-dur)
-		duration="$( echo '{ "command": ["get_property_string", "duration" ] }' | socat - /tmp/mpvsocketytmp | cut -d'"' -f4 | cut -d'.' -f1 )"
-		position="$( echo '{ "command": ["get_property_string", "time-pos" ] }' | socat - /tmp/mpvsocketytmp | cut -d'"' -f4 | cut -d'.' -f1 )"
+		duration="$( echo '{ "command": ["get_property_string", "duration" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 | cut -d'.' -f1 )"
+		position="$( echo '{ "command": ["get_property_string", "time-pos" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 | cut -d'.' -f1 )"
 		[ "$duration" -lt 3600 ] && printf "%02d:%02d / %02d:%02d\n" $((position%3600/60)) $((position%60)) $((duration%3600/60)) $((duration%60)) || printf "%d:%02d:%02d / %d:%02d:%02d\n" $((position/3600)) $((position%3600/60)) $((position%60)) $((duration/3600)) $((duration%3600/60)) $((duration%60))
 		;;
 	h|help|-h|--help) helper ;;
