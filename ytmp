@@ -400,7 +400,7 @@ addToQueue () {
 add () {
 	[ -z "$1" ] && echo 'Provide a url, path, or directory to add as arguement' && return 1
 
-	rm -f "$qdiscards_file"
+	[ "$1" = '-pl' ] && shift || rm -f "$qdiscards_file"
 	for f in "$@"; do
 		if echo "$f" | grep -q 'http.*\.com'; then
 			ids="$( yt-dlp -q --no-warnings --get-id "$f" )"
@@ -501,10 +501,11 @@ searchPlaylists () {
 	printf '%s\n' $playlist_sel | xargs -I ,, sed -n ,,p /tmp/ytmpplaylists | cut -d' ' -f2-
 	printf "${lsp}${lsp}"
 
+	rm -f "$qdiscards_file"
 	for s in $playlist_sel; do
 		url="$( sed -n "${s}"p /tmp/ytmpplaylists | cut -d' ' -f1 )"
 		echo "Now adding: '"$( sed -n ${s}p /tmp/ytmpplaylists | cut -d' ' -f2- )"'"
-		add "$url"
+		add -pl "$url"
 		printf "${lsp}"
 	done
 }
@@ -690,7 +691,7 @@ move () {
 		place="$2"
 		sel="$1"
 	fi
-	if [ "$action_v" != 'Remove' ] && [ -z "$place" ]; then return; fi
+	if [ "$action_v" != 'Remove' ] && [ -z "$place" ]; then echo 'Missing destination.'; return 1; fi
 
 	# express service for single move
 	if [ "$action_v" != 'Remove' ] && [ -z "$3" ] && ! echo "$1" | grep -q ','; then
