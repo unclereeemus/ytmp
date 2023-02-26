@@ -1,5 +1,6 @@
 #!/bin/sh
 # ARGS: -s: a wrapper for ytmpsuite and ytmp daemon; multiple things can be chosen at once
+#	-a: display art with status line
 # No arg - show a non-interactive mpv/ytmp status line and entries around queue
 # gray val means its inactive
 # status line: [-d] [-vl] [-p] [name] [-dur] [ytmpsuite t1] [ytmpsuite t2] [-r]
@@ -40,7 +41,7 @@ if [ "$1" = '-s' ]; then
 			'^[[2mLoop^[[0m') printf '\r'; ytmp -l >/dev/null 2>&1 ;;
 			Loop) printf '\r'; ytmp -l >/dev/null 2>&1 ;;
 			PVOL*) printf '\r'; gum input --placeholder='Set playback volume to what?' | xargs -r -I ,, ytmp -vl ,, >/dev/null 2>&1 ;;
-			QUEUE*) printf '\r'; gum file $prefix | xargs -r -I ,, ytmpsuite sq ',,' ;;
+			QUEUE*) printf '\r'; fd -t f -E 'search-files' -E 'temp' -E 'chunks' . "$prefix/playlists" | gum filter | xargs -r -I ,, ytmpsuite sq ',,' ;;
 			VOL*) printf '\r'; gum input --placeholder='Set starting volume to what?' | xargs -r -I ,, ytmpsuite sv ,, >/dev/null 2>&1 ;;
 		esac
 	done
@@ -66,15 +67,16 @@ else
 
 		all=$( gum join --horizontal --align=center "$daemon $loop $vol $play $name $dur $gt2 $gt1 $rand" )
 		acp="$( grep -C 1 -F '***' $queue | cut -d' ' -f2- )"
-		# use this if not using art
-		gum style --padding '5 5' "$( gum join --align center --vertical "$( gum style --border double "$queue" )" "$acp" "$( gum style --border rounded "$all" )" )"
-		# uncomment the following and one of the join lines below and comment the above if using art
-		# joined="$( gum style --padding '5 5' "$( gum join --align center --vertical "$( gum style --border double "$queue" )" "$acp" "$( gum style --border rounded "$all" )" )" )"
-		# delete the first line which contains a placeholder sentence if
-		# using art from 'https://github.com/poetaman/arttime/tree/main/share/arttime/textart'
-		# gum join --horizontal "$( sed 1d $artfile )" "$joined"
-		# or don't
-		# gum join --horizontal "$( cat $artfile )" "$joined"
+		if [ "$1" = '-a' ]; then
+			joined="$( gum style --padding '5 5' "$( gum join --align center --vertical "$( gum style --border double "$queue" )" "$acp" "$( gum style --border rounded "$all" )" )" )"
+			# delete the first line which contains a placeholder sentence if
+			# using art from 'https://github.com/poetaman/arttime/tree/main/share/arttime/textart'
+			gum join --horizontal "$( sed 1d $artfile )" "$joined"
+			# or don't
+			# gum join --horizontal "$( cat $artfile )" "$joined"
+		else
+			gum style --padding '5 5' "$( gum join --align center --vertical "$( gum style --border double "$queue" )" "$acp" "$( gum style --border rounded "$all" )" )"
+		fi
 		sleep 1
 	done
 fi
