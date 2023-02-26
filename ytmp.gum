@@ -21,7 +21,7 @@ if [ "$1" = '-s' ]; then
 	[ "$( ytmpsuite gt2 | tail -1 )" = 'ON' ] && gt2='Loop on start' || gt2=$( gum style --faint "Loop on start" )
 	[ "$( ytmpsuite gt1 | tail -1 )" = 'ON' ] && gt1="$start_vol on start" || gt1=$( gum style --faint "$start_vol on start" )
 	queue="QUEUE $( sed -E -n 's/^queue="(.*)"/\1/p' "$conf" )"
-	printf '%s\n' "$daemon" "$rand" "$loop" "$PVOL" "$gt1" "$gt2" "$queue" "$start_vol" | gum choose --no-limit | cat -v | while read s; do
+	printf '%s\n' "$daemon" "$rand" "$loop" "$vol" "$gt1" "$gt2" "$queue" "$start_vol" | gum choose --no-limit | cat -v | while read s; do
 		echo "$s" | grep -q 'VOL.*on start' && ytmpsuite t1
 		case "$s" in
 			'^[[2mDaemon^[[0m') setsid -f ytmp -d >/dev/null 2>&1 ;;
