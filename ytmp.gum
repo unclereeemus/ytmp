@@ -1,0 +1,72 @@
+#!/bin/sh
+# ARGS: -s: a wrapper for ytmpsuite and ytmp daemon; multiple things can be chosen at once
+# No arg - show a non-interactive mpv/ytmp status line and entries around queue
+# gray val means its inactive
+# status line: [-d] [-vl] [name] [-dur] [ytmpsuite t1] [ytmpsuite t2] [-r]
+mpvsocket='/tmp/mpvsocketytmp'
+conf="/home/$USER/Music/ytmp/conf"
+. $conf
+
+# one can display ascii/ansi art to the left of the interface
+# a good collection can be found in 'https://github.com/poetaman/arttime'
+# note: sometimes wrapping is messed up if using art or song names are lengthy
+# artfile="$( fd . <ASCII/ANSI-ART-PATH> | shuf -n1 )"
+
+if [ "$1" = '-s' ]; then
+	pgrep -f 'ytmp -d' >/dev/null 2>&1 && daemon="Daemon" || daemon=$( gum style --faint "Daemon" )
+	pgrep -f 'ytmp -r' >/dev/null 2>&1 && rand="Random" || rand=$( gum style --faint "Random" )
+	[ "$( echo '{ "command": ["get_property_string", "loop" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 )" = 'inf' ] && loop='Loop' || loop=$( gum style --faint "Loop" )
+	vol="PVOL $( echo '{ "command": ["get_property_string", "volume" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 | cut -d '.' -f1 )"
+	start_vol="VOL $( sed -E -n 's/^vol=(.*)/\1/p' "$run_on_next" )"
+	[ "$( ytmpsuite gt2 | tail -1 )" = 'ON' ] && gt2='Loop on start' || gt2=$( gum style --faint "Loop on start" )
+	[ "$( ytmpsuite gt1 | tail -1 )" = 'ON' ] && gt1="$start_vol on start" || gt1=$( gum style --faint "$start_vol on start" )
+	queue="QUEUE $( sed -E -n 's/^queue="(.*)"/\1/p' "$conf" )"
+	printf '%s\n' "$daemon" "$rand" "$loop" "$PVOL" "$gt1" "$gt2" "$queue" "$start_vol" | gum choose --no-limit | cat -v | while read s; do
+		echo "$s" | grep -q 'VOL.*on start' && ytmpsuite t1
+		case "$s" in
+			'^[[2mDaemon^[[0m') setsid -f ytmp -d >/dev/null 2>&1 ;;
+			'^[[2mRandom^[[0m') setsid -f ytmp -r >/dev/null 2>&1 ;;
+			Daemon) setsid -f ytmp -kd >/dev/null 2>&1 ;;
+			Random) setsid -f ytmp -kr >/dev/null 2>&1 ;;
+			'Loop on start') ytmpsuite t2 >/dev/null 2>&1 ;;
+			'^[[2mLoop on start^[[0m') ytmpsuite t2 >/dev/null 2>&1 ;;
+			'^[[2mLoop^[[0m') ytmp -l >/dev/null 2>&1 ;;
+			Loop) ytmp -l >/dev/null 2>&1 ;;
+			PVOL*) gum input --placeholder='Set playback volume to what?' | xargs -r -I ,, ytmp -vl ,, >/dev/null 2>&1 ;;
+			QUEUE*) gum file $prefix >/dev/null 2>&1 ;;
+			VOL*) gum input --placeholder='Set starting volume to what?' | xargs -r -I ,, ytmpsuite sv ,, >/dev/null 2>&1 ;;
+		esac
+	done
+else
+	while true; do
+		! echo '{ "command": ["get_property_string", "pid" ] }' | socat - "$mpvsocket" >/dev/null 2>&1 && sleep 1 && continue
+		clear
+		pgrep -f 'ytmp -d' >/dev/null 2>&1 && daemon="D" || daemon=$( gum style --faint "D" )
+		pgrep -f 'ytmp -r' >/dev/null 2>&1 && rand="R" || rand=$( gum style --faint "R" )
+		[ "$( echo '{ "command": ["get_property_string", "loop" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 )" = 'inf' ] && loop='L' || loop=$( gum style --faint "L" )
+		vol="V$( echo '{ "command": ["get_property_string", "volume" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 | cut -d '.' -f1 )"
+		name="$( echo '{ "command": ["get_property_string", "media-title" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 | sed -E 's/(^.{11} )(.*)(\.webm)/\2/' | head -c20 )"
+		[ "$( ytmpsuite gt1 | tail -1 )" = 'ON' ] && gt1='L' || gt1=$( gum style --faint "L" )
+		queue=$( sed -E -n 's/^queue="(.*)"/\1/p' "$conf" )
+		start_vol=$( sed -E -n 's/^vol=(.*)/\1/p' "$run_on_next" )
+		[ "$( ytmpsuite gt2 | tail -1 )" = 'ON' ] && gt2="V$start_vol" || gt2=$( gum style --faint "V$start_vol" )
+		duration="$( echo '{ "command": ["get_property_string", "duration" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 | cut -d'.' -f1 )"
+		position="$( echo '{ "command": ["get_property_string", "time-pos" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 | cut -d'.' -f1 )"
+		[ "$duration" -lt 3600 ] && dur=$( printf "%02d:%02d / %02d:%02d\n" $((position%3600/60)) $((position%60)) $((duration%3600/60)) $((duration%60)) ) || dur=$( printf "%d:%02d:%02d / %d:%02d:%02d\n" $((position/3600)) $((position%3600/60)) $((position%60)) $((duration/3600)) $((duration%3600/60)) $((duration%60)) )
+		dur=$( gum style --foreground 249 "$dur" )
+		vol=$( gum style --foreground 249 "$vol" )
+
+		all=$( gum join --horizontal --align=center "$daemon $loop $vol $name $dur $gt2 $gt1 $rand" )
+		acp="$( grep -C 1 -F '***' $queue | cut -d' ' -f2- | head -c100 )"
+		# use this if not using art
+		gum style --padding '5 5' "$( gum join --align center --vertical "$( gum style --border double "$queue" )" "$acp" "$( gum style --border rounded "$all" )" )"
+		# uncomment the following and one of the join lines below and comment the above if using art
+		# joined="$( gum style --padding '5 5' "$( gum join --align center --vertical "$( gum style --border double "$queue" )" "$acp" "$( gum style --border rounded "$all" )" )" )"
+		# delete the first line which contains a placeholder sentence if
+		# using art from 'https://github.com/poetaman/arttime'
+		# gum join --horizontal "$( sed 1d $artfile )" "$joined"
+		# or don't...
+		# gum join --horizontal "$( cat $artfile )" "$joined"
+		sleep 1
+	done
+fi
