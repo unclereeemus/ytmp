@@ -1,6 +1,7 @@
 #!/bin/sh
 # ARGS: -s: a wrapper for ytmpsuite and ytmp daemon; multiple things can be chosen at once
 #	-a: display art with status line
+#	-o: show status and quit
 # No arg - show a non-interactive mpv/ytmp status line and entries around queue
 # gray val means its inactive
 # status line: [-d] [-vl] [-p] [name] [-dur] [ytmpsuite t1] [ytmpsuite t2] [-r]
@@ -76,6 +77,7 @@ else
 			# gum join --horizontal "$( cat $artfile )" "$joined"
 		else
 			gum style --padding '5 5' "$( gum join --align center --vertical "$( gum style --border double "$queue" )" "$acp" "$( gum style --border rounded "$all" )" )"
+			[ "$1" = '-o' ] && break
 		fi
 		sleep 1
 	done
