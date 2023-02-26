@@ -33,7 +33,6 @@ change the location in the conf file which is also sourced from ~/Music/ytmp/ by
 (change conf path in source if necessary)
 
 lastly, make sure mpv has the proper yt-dlp path in mpv.conf by setting `script-opts=ytdl_hook-ytdl_path=<YTDLP_PATH>`
-or if you want to use `youtube-dl`, do a global substitute of `yt-dlp` with `youtube-dl` in the source
 
 the mpv ipc socket is opened at /tmp/mpvsocketytmp
 
@@ -61,6 +60,8 @@ the thumbnail is located at /tmp/muscover.webp
 **ytmp.vim** a vim config with useful keybinds relevant to ytmp
 
 **ytmpsuite** for oneliners or automation of things like toggling lines in run_on_next, selecting queues, creating playlists; some of the lines under 'tips' can be found there as well. there is no help option so you'll have to parse through the code and comments to figure out what does what if you want to use it.
+
+**ytmp.gum** a gum (https://github.com/charmbracelet/gum) wrapper for mpv/ytmp/ytmpsuite to control playback/toggle things in run_on_next and ytmp (options: -s)
 
 **mightfinduseful** a script to play music outside of ytmp either with local files, youtube search, or the ytmp queue file. also dynamically names the mpvsocket so you don't overwrite an old one.
 
@@ -100,7 +101,7 @@ the thumbnail is located at /tmp/muscover.webp
 # usage
 ```
 Usage: ytmp [z] [<search>]/s|x [# of results]/sp [<search>]/a <local path|dir|url>/e #
-       OR v/ls/m [c] [# #] [r|x #] [s #|v]/E
+       OR v/ls/m [c] [# #] [r|x #] [s #|v]/-m [c] [r]/E
        OR -l/-p OR n/p/pl/pf/mln/mfn/l [#|s]/P <search> OR -r [#,#]/-d [[#] #...[k|l]]]
 
 On first installing ytmp, there won't be any history to select from when you enter ytmp
@@ -177,17 +178,19 @@ enter fzf for search.
 		<destination> can be +|-# which means the program will add/subtract that number from the
 		<start> or <target> to come up with the <destination>.
 		examples: ytmp m 10 2; ytmp m s 126; ytmp m m +5; ytmp m p+3 l-1; ytmp [c] x p-2;
-		ytmp m r p+2,l-15 l-5 10; ytmp m [c] 2,p-2 l 3 5 6 +2
+		ytmp m r p+2,l-15 l-5 10; ytmp m [c] p,+5 10,+3 l 3 5 6 +2
 		syntax for ytmp m|m c|m r is [<target>|<from>,<to>] <destination> ...
 
   -m [c] [r] [# #,# ... <dest>]
   		batch move/copy (with c arg)/remove (with r arg)
 
-		if entry numbers are passed as args - move/copy/remove all entries to the position of the last arg
+		if entry numbers are passed as args - move/copy all entries to the position of the last arg
+		except when 'r' is passed in which case just remove the args
 		accepts the same kind of args as 'm'
 
-		if no args are passed - make selections in an fzf window that will pop up then move/copy/remove
+		if no args are passed - make selections in an fzf window that will pop up then move/copy
 		those selections to after the selection made in a new fzf window that will pop up
+		except when 'r' is passed in which case just remove the selections
 		* fzf bindings: tab: toggle selection; shift-tab: deselect-all; ctrl-j:jump
 
 		* entries are moved in the order they are selected or the order of the args sent
@@ -206,7 +209,7 @@ enter fzf for search.
   		to or moved (when no options are given) from their current position to the position they
 		would have been added on if they were never found on the queue.
 
-  -d [<start on>] [[[<from>],[<to>]] [l|k]] [<from>],[<to>] [#] ... [k]]
+  -d [<start on>] [[[<from>],[<to>]] [l]] [<from>],[<to>] [#] ... [k]]
   		no arg - play one song after another
 
   		single arg - start playing from <arg> (if another song is playing, it will wait
@@ -266,8 +269,8 @@ enter fzf for search.
   	enter		search only the selections (query not included)
   	ctrl-c/esc	quit
 
-  * the following do background searches; there isn't any indication that the search
-    has passed through so you can assume the fact and just abort fzf when done.
+	* the following do background searches; there isn't any indication that the search
+	  has passed through so you can assume the fact and just abort fzf when done.
 
 	ctrl-s		search query
 	alt-s		search query and selection
@@ -402,7 +405,7 @@ You might be interested to know:
 	downloaded and not removed regardless of whether the song is downloaded or not
   - sadly there's no way to customize the fzf keybinds without modifying the source so if something doesn't
 	work for you feel free to do a global replace of the bind (the keynames are not always what's
-	shown in this help so consult the fzf manpage for the fzf synonym)
+	shown in this help so consult the fzf manpage to see what fzf calls them)
   - also unfortunately the program does not check and will not tell you if you've entered something unexpected/wrong
 	or do not have all the dependencies installed
 ```
