@@ -19,6 +19,15 @@
 
 # ytmp -vl $vol && ytmp -l && exit
 
+# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT 1
+# mpv_socket_commands s volume $vol st /tmp/mpvsocketytmp
+
+# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT 2
+# mpv_socket_commands s loop true st /tmp/mpvsocketytmp
+
+# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT MASTER
+# if [ "$( ytmpsuite gt1 | tail -1 )" = 'ON' ] || [ "$( ytmpsuite gt2 | tail -1 )" = 'ON' ]; then exit; fi
+
 # if /tmp/mpvsocketytmp is not the socket in /tmp/active_mpvsocket (i.e. the active socket for the mpv_socket_commands script) check if it's the only socket open; if it is, make it the active socket.
 # [ "`cat /tmp/active_mpvsocket`" = '/tmp/mpvsocketytmp' ] || ( mpv_socket_commands k; [ "`grep -c . /tmp/current_mpvsockets`" = '1' ] && echo '/tmp/mpvsocketytmp' > /tmp/active_mpvsocket )
 
