@@ -61,7 +61,7 @@ the thumbnail is located at /tmp/muscover.webp
 
 **ytmpsuite** for oneliners or automation of things like toggling lines in run_on_next, selecting queues, creating playlists; some of the lines under 'tips' can be found there as well. there is no help option so you'll have to parse through the code and comments to figure out what does what if you want to use it.
 
-**ytmp.gum** a gum (https://github.com/charmbracelet/gum) wrapper for mpv/ytmp/ytmpsuite to control playback/toggle things in run_on_next and ytmp (options: -s)
+**ytmp.gum** a wrapper for mpv/ytmp/ytmpsuite to control playback/toggle things in run_on_next and ytmp. there are two modes for this; one is a status line showing currently playing, what's before and after currently playing, and whether certain things are toggled for mpv/ytmp/ytmpsuite and optionally showing ascii/ansi art; another where said certain things are toggled in fzf.
 
 **mightfinduseful** a script to play music outside of ytmp either with local files, youtube search, or the ytmp queue file. also dynamically names the mpvsocket so you don't overwrite an old one.
 
@@ -181,6 +181,9 @@ enter fzf for search.
 		ytmp m r p+2,l-15 l-5 10; ytmp m [c] p,+5 10,+3 l 3 5 6 +2
 		syntax for ytmp m|m c|m r is [<target>|<from>,<to>] <destination> ...
 
+  c ...		alternative to m c
+  r ...		alternative to m r
+
   -m [c] [r] [# #,# ... <dest>]
   		batch move/copy (with c arg)/remove (with r arg)
 
@@ -194,6 +197,9 @@ enter fzf for search.
 		* fzf bindings: tab: toggle selection; shift-tab: deselect-all; ctrl-j:jump
 
 		* entries are moved in the order they are selected or the order of the args sent
+
+  -c ...	alternative to -m c
+  -R ...	alternative to -m r
 
   E 		edit the queue in nvim and source rc from "$XDG_CONFIG_HOME/nvim/ytmp.vim"
 
