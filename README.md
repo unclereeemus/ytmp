@@ -61,7 +61,7 @@ the thumbnail is located at /tmp/muscover.webp
 
 **ytmpsuite** for oneliners or automation of things like toggling lines in run_on_next, selecting queues, creating playlists; some of the lines under 'tips' can be found there as well. there is no help option so you'll have to parse through the code and comments to figure out what does what if you want to use it.
 
-**ytmp.gum** a wrapper for mpv/ytmp/ytmpsuite to control playback/toggle things in run_on_next and ytmp. there are two modes for this; one is a status line showing currently playing, what's before and after currently playing, and whether certain things are toggled for mpv/ytmp/ytmpsuite and optionally showing ascii/ansi art; another where said certain things are toggled in fzf.
+**ytmp.gum** a wrapper for mpv/ytmp/ytmpsuite to control playback/toggle things in run_on_next and ytmp. there are two modes for this; one is a status line showing currently playing, what's before and after currently playing, and whether certain things are toggled for mpv/ytmp/ytmpsuite and optionally showing ascii/ansi art - utilizes gum (https://github.com/charmbracelet/gum); another where said certain things are toggled in fzf.
 
 **mightfinduseful** a script to play music outside of ytmp either with local files, youtube search, or the ytmp queue file. also dynamically names the mpvsocket so you don't overwrite an old one.
 
