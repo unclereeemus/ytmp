@@ -1,5 +1,7 @@
 #!/bin/sh
 # ARGS: -s: a wrapper for ytmpsuite and ytmp daemon; multiple things can be chosen at once
+#		(have a look at the fzf binds below)
+#	-c: don't exit wrapper after selections
 #	-a: display art with status line
 #	-o: show status and quit
 # No arg - show a non-interactive mpv/ytmp status line and entries around queue
@@ -16,35 +18,43 @@ conf="/home/$USER/Music/ytmp/conf"
 # artfile="$( fd . <ASCII/ANSI-ART-PATH> | shuf -n1 )"
 
 if [ "$1" = '-s' ]; then
-	pgrep -f 'ytmp -d' >/dev/null 2>&1 && daemon="Daemon" || daemon=$( gum style --faint "Daemon" )
-	pgrep -f 'ytmp -r' >/dev/null 2>&1 && rand="Random" || rand=$( gum style --faint "Random" )
-	[ "$( echo '{ "command": ["get_property_string", "loop" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 )" = 'inf' ] && loop='Loop' || loop=$( gum style --faint "Loop" )
-	echo '{ "command": ["get_property_string", "pid" ] }' | socat - "$mpvsocket" >/dev/null 2>&1 && vol="PVOL $( echo '{ "command": ["get_property_string", "volume" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 | cut -d '.' -f1 )" || vol="$( gum style --faint PVOL )"
-	[ $( echo '{ "command": ["get_property_string", "pause" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 ) = 'no' ] && toggle_play='Toggle Playback' || toggle_play=$( gum style --faint "Toggle Playback" )
-	echo '{ "command": ["get_property_string", "pid" ] }' | socat - "$mpvsocket" >/dev/null 2>&1 && quit='Quit' || quit=$( gum style --faint "Quit" )
-	start_vol="VOL $( sed -E -n 's/^vol=(.*)/\1/p' "$run_on_next" )"
-	[ "$( ytmpsuite gt2 | tail -1 )" = 'ON' ] && gt2='Loop On Start' || gt2=$( gum style --faint "Loop On Start" )
-	[ "$( ytmpsuite gt1 | tail -1 )" = 'ON' ] && gt1="$start_vol On Start" || gt1=$( gum style --faint "$start_vol On Start" )
-	queue="QUEUE $( sed -E -n 's/^queue="(.*)"/\1/p' "$conf" )"
-	printf '%s\n' "$toggle_play" "$vol" "$loop" "$quit" "$daemon" "$rand" "$gt1" "$gt2" "$start_vol" "$queue" | gum filter --no-limit --prompt='' --placeholder='' | cat -v | while read s; do
-		echo "$s" | grep -q 'VOL.*On Start' && ytmpsuite t1 >/dev/null 2>&1 && continue
-		case "$s" in
-			'^[[2mDaemon^[[0m') printf '\r'; setsid -f ytmp -d >/dev/null 2>&1 ;;
-			'^[[2mRandom^[[0m') printf '\r'; setsid -f ytmp -r >/dev/null 2>&1 ;;
-			'^[[2mToggle Playback^[[0m') printf '\r'; ytmp -p >/dev/null 2>&1 ;;
-			'^[[2mQuit^[[0m') printf '\r'; ytmp -qa >/dev/null 2>&1 ;;
-			'Quit') printf '\r'; ytmp -qa >/dev/null 2>&1 ;;
-			'Toggle Playback') printf '\r'; ytmp -p >/dev/null 2>&1 ;;
-			Daemon) printf '\r'; setsid -f ytmp -kd >/dev/null 2>&1 ;;
-			Random) printf '\r'; setsid -f ytmp -kr >/dev/null 2>&1 ;;
-			'Loop On Start') printf '\r'; ytmpsuite t2 >/dev/null 2>&1 ;;
-			'^[[2mLoop On Start^[[0m') printf '\r'; ytmpsuite t2 >/dev/null 2>&1 ;;
-			'^[[2mLoop^[[0m') printf '\r'; ytmp -l >/dev/null 2>&1 ;;
-			Loop) printf '\r'; ytmp -l >/dev/null 2>&1 ;;
-			PVOL*) printf '\r'; gum input --placeholder='Set playback volume to what?' | xargs -r -I ,, ytmp -vl ,, >/dev/null 2>&1 ;;
-			QUEUE*) printf '\r'; fd -t f -E 'search-files' -E 'temp' -E 'chunks' . "$prefix/playlists" | gum filter | xargs -r -I ,, ytmpsuite sq ',,' ;;
-			VOL*) printf '\r'; gum input --placeholder='Set starting volume to what?' | xargs -r -I ,, ytmpsuite sv ,, >/dev/null 2>&1 ;;
-		esac
+	while true; do
+		pgrep -f 'ytmp -d' >/dev/null 2>&1 && daemon="Daemon" || daemon=$( gum style --faint "Daemon" )
+		pgrep -f 'ytmp -r' >/dev/null 2>&1 && rand="Random" || rand=$( gum style --faint "Random" )
+		[ "$( echo '{ "command": ["get_property_string", "loop" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 )" = 'inf' ] && loop='Loop' || loop=$( gum style --faint "Loop" )
+		echo '{ "command": ["get_property_string", "pid" ] }' | socat - "$mpvsocket" >/dev/null 2>&1 && vol="PVOL $( echo '{ "command": ["get_property_string", "volume" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 | cut -d '.' -f1 )" || vol="$( gum style --faint PVOL )"
+		[ $( echo '{ "command": ["get_property_string", "pause" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 ) = 'no' ] && toggle_play='Playing' || toggle_play=$( gum style --faint "Playing" )
+		echo '{ "command": ["get_property_string", "pid" ] }' | socat - "$mpvsocket" >/dev/null 2>&1 && quit='Quit' || quit=$( gum style --faint "Quit" )
+		start_vol="VOL $( sed -E -n 's/^vol=(.*)/\1/p' "$run_on_next" )"
+		[ "$( ytmpsuite gt2 | tail -1 )" = 'ON' ] && gt2='Loop On Start' || gt2=$( gum style --faint "Loop On Start" )
+		[ "$( ytmpsuite gt1 | tail -1 )" = 'ON' ] && gt1="$start_vol On Start" || gt1=$( gum style --faint "$start_vol On Start" )
+		queue="QUEUE $( sed -E -n 's/^queue="(.*)"/\1/p' "$conf" )"
+		# printf '%s\n' 'Reload' "$toggle_play" "$vol" "$loop" "$quit" "$daemon" "$rand" "$gt1" "$gt2" "$start_vol" "$queue" | gum filter --no-limit --prompt='' --placeholder='' | cat -v | while read s; do
+		printf '%s\n' "$toggle_play" "$vol" "$loop" "$quit" "$daemon" "$rand" "$gt1" "$gt2" "$start_vol" "$queue" 'Reload' | \
+			fzf -m --no-bold --ansi --prompt='' --info=hidden --pointer='•' --marker='◉ ' --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --separator='' --layout=reverse --height 60% \
+			--bind='1:pos(1)+toggle,2:pos(2)+toggle,3:pos(3)+toggle,4:pos(4)+toggle,5:pos(5)+toggle,6:pos(6)+toggle,7:pos(7)+toggle,8:pos(8)+toggle,9:pos(9)+toggle,0:pos(10)+toggle,!:pos(1)+accept,@:pos(2)+accept,#:pos(3)+accept,$:pos(4)+accept,%:pos(5)+accept,^:pos(6)+accept,&:pos(7)+accept,*:pos(8)+accept,(:pos(9)+accept,):pos(10)+accept,home:first,end:last,ctrl-j:jump,tab:toggle+down,btab:deselect-all' \
+			| cat -v | while read s; do
+			echo "$s" | grep -q 'VOL.*On Start' && ytmpsuite t1 >/dev/null 2>&1 && continue
+			case "$s" in
+				Reload) break ;;
+				'^[[2mDaemon^[[0m') printf '\r'; setsid -f ytmp -d >/dev/null 2>&1 ;;
+				'^[[2mRandom^[[0m') printf '\r'; setsid -f ytmp -r >/dev/null 2>&1 ;;
+				'^[[2mPlaying^[[0m') printf '\r'; ytmp -p >/dev/null 2>&1 ;;
+				'^[[2mQuit^[[0m') printf '\r'; ytmp -qa >/dev/null 2>&1 ;;
+				'Quit') printf '\r'; ytmp -qa >/dev/null 2>&1 ;;
+				'Playing') printf '\r'; ytmp -p >/dev/null 2>&1 ;;
+				Daemon) printf '\r'; setsid -f ytmp -kd >/dev/null 2>&1 ;;
+				Random) printf '\r'; setsid -f ytmp -kr >/dev/null 2>&1 ;;
+				'Loop On Start') printf '\r'; ytmpsuite t2 >/dev/null 2>&1 ;;
+				'^[[2mLoop On Start^[[0m') printf '\r'; ytmpsuite t2 >/dev/null 2>&1 ;;
+				'^[[2mLoop^[[0m') printf '\r'; ytmp -l >/dev/null 2>&1 ;;
+				Loop) printf '\r'; ytmp -l >/dev/null 2>&1 ;;
+				PVOL*) printf '\r'; gum input --placeholder='Set playback volume to what?' | xargs -r -I ,, ytmp -vl ,, >/dev/null 2>&1 ;;
+				QUEUE*) printf '\r'; fd -t f -E 'search-files' -E 'temp' -E 'chunks' . "$prefix/playlists" | gum filter | xargs -r -I ,, ytmpsuite sq ',,' ;;
+				VOL*) printf '\r'; gum input --placeholder='Set starting volume to what?' | xargs -r -I ,, ytmpsuite sv ,, >/dev/null 2>&1 ;;
+			esac
+		done
+		[ "$2" != '-c' ] && break
 	done
 else
 	while true; do
@@ -64,7 +74,7 @@ else
 		[ "$duration" -lt 3600 ] && dur=$( printf "%02d:%02d / %02d:%02d\n" $((position%3600/60)) $((position%60)) $((duration%3600/60)) $((duration%60)) ) || dur=$( printf "%d:%02d:%02d / %d:%02d:%02d\n" $((position/3600)) $((position%3600/60)) $((position%60)) $((duration/3600)) $((duration%3600/60)) $((duration%60)) )
 		dur=$( gum style --foreground 249 "$dur" )
 		vol=$( gum style --foreground 249 "$vol" )
-		[ $( echo '{ "command": ["get_property_string", "pause" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 ) = 'no' ] && play='P' || play=$( gum style --faint "P" )
+		[ $( echo '{ "command": ["get_property_string", "pause" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 ) = 'no' ] && play=$( gum style --foreground 249 ">" ) || play=$( gum style --faint "P" )
 
 		all=$( gum join --horizontal --align=center "$daemon $loop $vol $play $name $dur $gt2 $gt1 $rand" )
 		acp="$( grep -C 1 -F '***' $queue | cut -d' ' -f2- )"
