@@ -32,29 +32,30 @@ if [ "$1" = '-s' ]; then
 		# printf '%s\n' 'Reload' "$toggle_play" "$vol" "$loop" "$quit" "$daemon" "$rand" "$gt1" "$gt2" "$start_vol" "$queue" | gum filter --no-limit --prompt='' --placeholder='' | cat -v | while read s; do
 		printf '%s\n' "$toggle_play" "$vol" "$loop" "$quit" "$daemon" "$rand" "$gt1" "$gt2" "$start_vol" "$queue" 'Reload' | \
 			fzf -m --no-bold --ansi --prompt='' --info=hidden --pointer='•' --marker='◉ ' --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --separator='' --layout=reverse --height 60% --cycle \
-			--bind='1:pos(1)+toggle,2:pos(2)+toggle,3:pos(3)+toggle,4:pos(4)+toggle,5:pos(5)+toggle,6:pos(6)+toggle,7:pos(7)+toggle,8:pos(8)+toggle,9:pos(9)+toggle,0:pos(10)+toggle,!:pos(1)+accept,@:pos(2)+accept,#:pos(3)+accept,$:pos(4)+accept,%:pos(5)+accept,^:pos(6)+accept,&:pos(7)+accept,*:pos(8)+accept,(:pos(9)+accept,):pos(10)+accept,home:first,end:last,ctrl-j:jump,tab:toggle+down,btab:deselect-all,n:down,p:up,j:down,k:up,r:pos(-1)+accept' \
+			--bind='1:pos(1)+toggle,2:pos(2)+toggle,3:pos(3)+toggle,4:pos(4)+toggle,5:pos(5)+toggle,6:pos(6)+toggle,7:pos(7)+toggle,8:pos(8)+toggle,9:pos(9)+toggle,0:pos(10)+toggle,!:pos(1)+accept,@:pos(2)+accept,#:pos(3)+accept,$:pos(4)+accept,%:pos(5)+accept,^:pos(6)+accept,&:pos(7)+accept,*:pos(8)+accept,(:pos(9)+accept,):pos(10)+accept,home:first,end:last,ctrl-j:jump,tab:toggle+down,btab:deselect-all,j:down,k:up,alt-r:pos(-1)+accept,ctrl-x:print-query' \
 			| cat -v | while read s; do
 			echo "$s" | grep -q 'VOL.*On Start' && ytmpsuite t1 >/dev/null 2>&1 && continue
 			case "$s" in
 				Reload) break ;;
-				'^[[2mDaemon^[[0m') printf '\r'; setsid -f ytmp -d >/dev/null 2>&1 ;;
-				'^[[2mRandom^[[0m') printf '\r'; setsid -f ytmp -r >/dev/null 2>&1 ;;
-				'^[[2mPlaying^[[0m') printf '\r'; ytmp -p >/dev/null 2>&1 ;;
-				'^[[2mQuit^[[0m') printf '\r'; ytmp -qa >/dev/null 2>&1 ;;
-				'Quit') printf '\r'; ytmp -qa >/dev/null 2>&1 ;;
-				'Playing') printf '\r'; ytmp -p >/dev/null 2>&1 ;;
-				Daemon) printf '\r'; pgrep -f 'ytmp -d' >/dev/null 2>&1 && setsid -f ytmp -kd >/dev/null 2>&1 || setsid -f ytmp -d >/dev/null 2>&1 ;;
-				Random) printf '\r'; pgrep -f 'ytmp -r' >/dev/null 2>&1 && setsid -f ytmp -kr >/dev/null 2>&1 || setsid -f ytmp -r >/dev/null 2>&1 ;;
-				'Loop On Start') printf '\r'; ytmpsuite t2 >/dev/null 2>&1 ;;
-				'^[[2mLoop On Start^[[0m') printf '\r'; ytmpsuite t2 >/dev/null 2>&1 ;;
-				'^[[2mLoop^[[0m') printf '\r'; ytmp -l >/dev/null 2>&1 ;;
-				Loop) printf '\r'; ytmp -l >/dev/null 2>&1 ;;
+				'^[[2mDaemon^[[0m') setsid -f ytmp -d >/dev/null 2>&1 ;;
+				'^[[2mRandom^[[0m') setsid -f ytmp -r >/dev/null 2>&1 ;;
+				'^[[2mPlaying^[[0m') ytmp -p >/dev/null 2>&1 ;;
+				'^[[2mQuit^[[0m') ytmp -qa >/dev/null 2>&1 ;;
+				'Quit') ytmp -qa >/dev/null 2>&1 ;;
+				'Playing') ytmp -p >/dev/null 2>&1 ;;
+				Daemon) pgrep -f 'ytmp -d' >/dev/null 2>&1 && setsid -f ytmp -kd >/dev/null 2>&1 || setsid -f ytmp -d >/dev/null 2>&1 ;;
+				Random) pgrep -f 'ytmp -r' >/dev/null 2>&1 && setsid -f ytmp -kr >/dev/null 2>&1 || setsid -f ytmp -r >/dev/null 2>&1 ;;
+				'Loop On Start') ytmpsuite t2 >/dev/null 2>&1 ;;
+				'^[[2mLoop On Start^[[0m') ytmpsuite t2 >/dev/null 2>&1 ;;
+				'^[[2mLoop^[[0m') ytmp -l >/dev/null 2>&1 ;;
+				Loop) ytmp -l >/dev/null 2>&1 ;;
 				# PVOL*) printf '\r'; gum input --placeholder='Set playback volume to what?' | xargs -r -I ,, ytmp -vl ,, >/dev/null 2>&1 ;;
 				PVOL*) printf '\r'; fzf --bind='enter:print-query' --prompt='Set playback volume to what? ' --info=hidden | xargs -r -I ,, ytmp -vl ,, >/dev/null 2>&1 ;;
 				# QUEUE*) printf '\r'; fd -t f . "$prefix" | gum filter | xargs -r -I ,, ytmpsuite sq ',,' ;;
 				QUEUE*) printf '\r'; fd -t f . "$prefix" | fzf | xargs -r -I ,, ytmpsuite sq ',,' ;;
 				# VOL*) printf '\r'; gum input --placeholder='Set starting volume to what?' | xargs -r -I ,, ytmpsuite sv ,, >/dev/null 2>&1 ;;
 				VOL*) printf '\r'; fzf --bind='enter:print-query' --prompt='Set playback volume to what? ' --info=hidden | xargs -r -I ,, ytmpsuite sv ,, >/dev/null 2>&1 ;;
+				*) printf '\r'; cmd="$s"; if ( printf "$cmd" | grep -Eq '^( |x( [0-9]*)?|s( [0-9]*)?|z|l s|v|vv|E|sp .*)+$' ); then setsid -f $TERMINAL -e ytmp $cmd >/dev/null 2>&1; else ytmp $cmd; fi ;;
 			esac
 		done
 		[ "$2" != '-c' ] && break
