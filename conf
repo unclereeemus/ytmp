@@ -12,6 +12,8 @@ daemonize="y"
 # what's currently playing is linked to /tmp/muscover.webp
 # (they are never deleted)
 download_thumbnails="n"
+# where to link the thumbnail of currently playing
+thumbnail_ln='/tmp/muscover.webp'
 # Only two kinds of notifications:
 # on song play, on song download
 notifications="y"
