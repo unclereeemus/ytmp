@@ -9,22 +9,27 @@ conf="$prefix/conf"
 
 # A value of y means yes/true and n means no/false
 # for the following settings:
-# daemonize, notifications, download_thumbnails, download_songs, cycle_queue
+# daemonize, notifications, download_thumbnails, download_songs,
+# cycle_queue, confirm_removal
 
 # if to play one song after another by default
-[ -z "$daemonize" ] && daemonize="y"
+[ -z "$daemonize" ] && daemonize='y'
 
 # if to download songs after they are played more than $max_stream_amount
-[ -z "$download_songs" ] && download_songs="y"
+[ -z "$download_songs" ] && download_songs='y'
 # maximum amount of times to stream a song before downloading it
 [ -z "$max_stream_amount" ] && max_stream_amount=3
 # the maximum a length a file can be (in seconds) if it's to be downloaded
-[ -z "$max_len_for_dl" ] && max_len_for_dl='600'
+[ -z "$max_len_for_dl" ] && max_len_for_dl=600
 
-[ -z "$download_thumbnails" ] && download_thumbnails="n"
-[ -z "$notifications" ] && notifications="y"
+[ -z "$download_thumbnails" ] && download_thumbnails='n'
+# where to link the thumbnail of currently playing
+[ -z "$thumbnail_ln" ] && thumbnail_ln='/tmp/muscover.webp'
+[ -z "$notifications" ] && notifications='y'
 # whether to start playing from the top when queue reaches the end
-[ -z "$cycle_queue" ] && cycle_queue="n"
+[ -z "$cycle_queue" ] && cycle_queue='n'
+# whether to confirm removal of '-m r' selections
+[ -z "$confirm_removal" ] && confirm_removal='y'
 
 [ -z "$dl_dir" ] && dl_dir="$prefix/downloads"
 [ -z "$songs_dir" ] && songs_dir="$dl_dir/songs"
@@ -139,6 +144,9 @@ enter fzf for search.
 		ytmp m r p+2,l-15 l-5 10; ytmp m [c] p,+5 10,+3 l 3 5 6 +2
 		syntax for ytmp m|m c|m r is [<target>|<from>,<to>] <destination> ...
 
+  c ...		alternative to m c
+  r ...		alternative to m r
+
   -m [c] [r] [# #,# ... <dest>]
   		batch move/copy (with c arg)/remove (with r arg)
 
@@ -152,6 +160,9 @@ enter fzf for search.
 		* fzf bindings: tab: toggle selection; shift-tab: deselect-all; ctrl-j:jump
 
 		* entries are moved in the order they are selected or the order of the args sent
+
+  -c ...	alternative to -m c
+  -R ...	alternative to -m r
 
   E 		edit the queue in nvim and source rc from "$XDG_CONFIG_HOME/nvim/ytmp.vim"
 
@@ -546,9 +557,9 @@ dlThumbnail () {
 	if ( ! ls "$thumb_dir"/*"${id}"* >/dev/null 2>&1 ); then
 		title=$( sed -n -e "s/$playing_regex/\3/p" "$queue" )
 		yt-dlp -q --no-warnings --get-thumbnail "https://www.youtube.com/watch?v=$id" | xargs curl --output "$thumb_dir/$id $title.webp"
-		ln -fs "$thumb_dir"/*"${id}"* /tmp/muscover.webp
+		ln -fs "$thumb_dir"/*"${id}"* "$thumbnail_ln"
 	else
-		ln -fs "$thumb_dir"/*"${id}"* /tmp/muscover.webp
+		ln -fs "$thumb_dir"/*"${id}"* "$thumbnail_ln"
 	fi
 }
 
@@ -744,12 +755,13 @@ move () {
 			echo "$end" | grep -Eqx '(\+|-|\*|/)+[0-9]*' && end="$( echo "${start}${end}" | bc )" || end="$( echo "$end" | sed -e s/m/$mark/ -e s/p/$playing/ -e s/l/$last/ | bc )"
 
 			echo "$d" | grep -Eqx '(\+|-|\*|/)+[0-9]*' && pos="$( echo "${end}${d}" | bc )" || pos="$( echo "$d" | sed -e s/m/$mark/ -e s/p/$playing/ -e s/l/$last/ | bc )"
-			[ "$action_v" = 'Remove' ] && pos='0'
+			[ "$action_v" = 'Remove' ] && pos='1'
 			if [ $start -gt $last ] || [ $end -gt $last ] || [ $pos -gt $last ]; then echo 'Invalid args $start,$last $pos'; continue; fi
 
 			if printf "${start}${end}${pos}" | grep -xq '[0-9]*'; then
-				[ "$action_v" = 'Remove' ] && printf '%b' "${lsp}$action_a $start-$end\n" || printf '%b' "${lsp}$action_a $start-$end to $pos\n"
-				sed -n "/^${start}:/,/^${end}:/s/[^ ]* /$action_p /p" "$numbered_q"
+				pos_entry="$( sed -E -n "/^${pos}:/s/[^ ]* (.*)/'\1'/p" "$numbered_q" )"
+				[ "$action_v" = 'Remove' ] && printf '%b' "${lsp}$action_a $start-$end\n" || printf '%b' "${lsp}$action_a $start-$end to [$pos] $pos_entry\n"
+				sed -E -n "/^${start}:/,/^${end}:/s/[^ ]* (.*)/$action_p '\1'/p" "$numbered_q"
 				printf "$lsp"
 				if [ "$action_v" = 'Remove' ]; then
 					printf "%s\n" "/^${start}:/;/^${end}:/${ed_opt}" "wq" | ed -s "$numbered_q" >/dev/null
@@ -799,10 +811,14 @@ batchmove () {
 	fi
 
 	if [ "$action" = 'remove' ]; then
-		for s in $sel; do sed -n ${s}p "$queue"; done
-		printf 'Are you sure you want to remove the above entries? [y/n] '
-		read ans
-		[ $ans = 'y' ] && move r $sel || return 1
+		if [ "$confirm_removal" = 'y' ]; then
+			for s in $sel; do sed -n "${s}s/$field_regex/\2/p" "$queue"; done
+			printf 'Are you sure you want to remove the above entries? [y/n] '
+			read ans
+			[ $ans = 'y' ] && move r $sel || return 1
+		else
+			move r $sel
+		fi
 		return 0
 	fi
 	# do it this way instead of iterating thru $sel with a loop so the proper selections are preserved
@@ -928,11 +944,15 @@ case "${1}" in
 	P) shift; fuzzyPlay "$@" ;;
 	l) playFromHistory "$2" ;;
 	m) shift; move "$@" ;;
+	c) shift; move c "$@" ;;
+	r) shift; move r "$@" ;;
 	ls) grep --color=auto -n '' "$queue" ;;
 	openInBrowser) openInBrowser "$2" "$3" ;;
 	fzfPreview) fzfPreview "$@" ;;
 	suggestsForFzf) shift; suggestsForFzf "$@" ;;
 	-m) shift; batchmove "$@" ;;
+	-c) shift; batchmove c "$@" ;;
+	-R) shift; batchmove r "$@" ;;
 	-sd) fzfPreview a c "$2" ;;
 	-shuf) shuf "$queue" -o "$queue" ;;
 	-vd) transferQDiscards v ;;
