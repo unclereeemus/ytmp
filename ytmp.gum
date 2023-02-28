@@ -32,7 +32,7 @@ if [ "$1" = '-s' ]; then
 		# printf '%s\n' 'Reload' "$toggle_play" "$vol" "$loop" "$quit" "$daemon" "$rand" "$gt1" "$gt2" "$start_vol" "$queue" | gum filter --no-limit --prompt='' --placeholder='' | cat -v | while read s; do
 		printf '%s\n' "$toggle_play" "$vol" "$loop" "$quit" "$daemon" "$rand" "$gt1" "$gt2" "$start_vol" "$queue" 'Reload' | \
 			fzf -m --no-bold --ansi --prompt='' --info=hidden --pointer='•' --marker='◉ ' --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --separator='' --layout=reverse --height 60% --cycle \
-			--bind='1:pos(1)+toggle,2:pos(2)+toggle,3:pos(3)+toggle,4:pos(4)+toggle,5:pos(5)+toggle,6:pos(6)+toggle,7:pos(7)+toggle,8:pos(8)+toggle,9:pos(9)+toggle,0:pos(10)+toggle,!:pos(1)+accept,@:pos(2)+accept,#:pos(3)+accept,$:pos(4)+accept,%:pos(5)+accept,^:pos(6)+accept,&:pos(7)+accept,*:pos(8)+accept,(:pos(9)+accept,):pos(10)+accept,home:first,end:last,ctrl-j:jump,tab:toggle+down,btab:deselect-all,j:down,k:up,alt-r:pos(-1)+accept,ctrl-x:print-query' \
+			--bind='1:pos(1)+toggle,2:pos(2)+toggle,3:pos(3)+toggle,4:pos(4)+toggle,5:pos(5)+toggle,6:pos(6)+toggle,7:pos(7)+toggle,8:pos(8)+toggle,9:pos(9)+toggle,0:pos(10)+toggle,!:pos(1)+accept,@:pos(2)+accept,#:pos(3)+accept,$:pos(4)+accept,%:pos(5)+accept,^:pos(6)+accept,&:pos(7)+accept,*:pos(8)+accept,(:pos(9)+accept,):pos(10)+accept,home:first,end:last,ctrl-j:jump,tab:toggle+down,btab:deselect-all,alt-r:pos(-1)+accept,ctrl-x:print-query' \
 			| cat -v | while read s; do
 			echo "$s" | grep -q 'VOL.*On Start' && ytmpsuite t1 >/dev/null 2>&1 && continue
 			case "$s" in
