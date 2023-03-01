@@ -100,7 +100,7 @@ the thumbnail is located at /tmp/muscover.webp
 
 # usage
 ```
-Usage: ytmp [z] [<search>]/s|x [# of results]/sp [<search>]/a <local path|dir|url>/e #
+Usage: ytmp [z] [<search>]/s|x [# of results] [<search>]/sp [<search>]/a <local path|dir|url>/e #
        OR v/ls/m [c] [# #] [r|x #] [s #|v]/-m [c] [r]/E
        OR -l/-p OR n/p/pl/pf/mln/mfn/l [#|s]/P <search> OR -r [#,#]/-d [[#] #...[k|l]]]
 
@@ -119,15 +119,15 @@ enter fzf for search.
   [<search>] 	search with the jargon.
   z [<search>] 	search without the jargon. if no args then enter fzf.
 
-  s [<# of results>]
+  s [<# of results>] [<search>]
   		search with the jargon. view search results and select (can select multiple).
-		can specify amount of search results to return with a following arguement;
-		defaults to 5.
+		can specify amount of search results to return with a following arguement
+		(must be the second one) - defaults to 5.
 
-  x [<# of results>]
+  x [<# of results>] [<search>]
   		search without the jargon. view search results and select (can select multiple).
-		can specify amount of search results to return with a following arguement;
-		defaults to 5.
+		can specify amount of search results to return with a following arguement
+		(must be the second one) - defaults to 5.
 
   sp [<search>] search for playlists (requires https://github.com/trizen/pipe-viewer/)
 
@@ -265,7 +265,7 @@ enter fzf for search.
   fzf bindings when making search (for ytmp [z|x|s|sp]):
   --------------------------------------------------------
 
-  	ctrl-r		replace input field with selection
+  	ctrl-r		replace input field with entry
   	ctrl-g		search query and selection
   	ctrl-x		send input field as search (none of the selections are passed)
   	ctrl-j		jump
@@ -306,18 +306,16 @@ enter fzf for search.
 	end		last and reload
 	shift-up	move entry up one
 	shift-down	move entry down one
-	shift-right	play entry but quit fzf
+	shift-right	play entry and don't quit fzf
 	shift-left	remove entry
-	page-up		move entry to after currently playing
-	alt-right	move entry to after currently playing
-	page-down	move entry to before currently playing
-	alt-left	move entry to before currently playing
+	right		move entry to after currently playing
+	left		move entry to before currently playing
 	return		play entry and quit fzf
 	alt-m		ytmp m
 	ctrl-alt-b	ytmp -m
 	ctrl-\		ytmp E
 	ctrl-6		ytmp mln
-	alt-l		move last entry to after current entry
+	ctrl-l		move last entry to after current entry
 	ctrl-t		move entry to mark
 	ctrl-]		ytmp w
 	alt-v		up one page
@@ -329,15 +327,15 @@ enter fzf for search.
 	ctrl-j		jump
 	ctrl-s		search query in background
 	ctrl-z		search query in background with ytmp z
-	ctrl-r		replace input field with selection
+	ctrl-r		replace input field with entry
 	ctrl-alt-d	download selection
 	ctrl-alt-j	jump to currently playing
 	alt-r		reload queue
 	ctrl-o		open entry in web browser
 	alt-up		move entry to first
 	alt-down	move entry to last
-	alt-n		play next song
-	alt-p		play prev song
+	>		play next song
+	<		play prev song
 	ctrl-alt-m	set entry as mark (for 'm' option)
 	ctrl-space	ytmp m x for entry
 	alt-space	ytmp m x x for entry
