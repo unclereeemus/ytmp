@@ -20,7 +20,7 @@ demo: https://www.reddit.com/r/bash/comments/10i7cb2/ytmp_shell_script_for_yt_an
   - Everything is a plain text file
 
 # setup
-## DEPS: fzf, yt-dlp, mpv, socat, (n/vim, for playlist search - pipe-viewer(https://github.com/trizen/pipe-viewer/))
+## DEPS: fzf, yt-dlp, mpv, socat, bc, GNU sed, (n/vim, for playlist search - pipe-viewer(https://github.com/trizen/pipe-viewer/)) (only tested on a GNU/Linux system)
 ## NOT A DEP: accounts of any sort
 `git clone --depth 1 'https://github.com/unclereeemus/ytmp/'; cd ytmp; chmod +x ytmp run_on_next`
 
