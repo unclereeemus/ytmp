@@ -69,7 +69,7 @@ the thumbnail is located at /tmp/muscover.webp
 
 **mpv_socket_commands** sends commands to the mpv socket in /tmp/active_mpvsocket or another specfied with st option (see -h)
 
-**eww.scss/eww.yuck** contain the eww music widget
+**eww.scss/eww.yuck** contain the eww (https://github.com/elkowar/eww) music widget which center around playing music with mpv and controlling it with various buttons/binds (not just for ytmp); allows for easy manipulation of volume levels or changing the socket one wishes to control (which could all be done from the cli of course but it's there in case you want it.)
 
 **mus** is used by the eww config for various information. eww looks for it the same dir as eww.scss and eww.yuck.
 
