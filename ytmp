@@ -63,7 +63,7 @@ qdiscards_file="/tmp/ytmpqdiscards"
 
 helper () {
 cat << CAT_EOF
-Usage: ytmp [z] [<search>]/s|x [# of results]/sp [<search>]/a <local path|dir|url>/e #
+Usage: ytmp [z] [<search>]/s|x [# of results] [<search>]/sp [<search>]/a <local path|dir|url>/e #
        OR v/ls/m [c] [# #] [r|x #] [s #|v]/-m [c] [r]/E
        OR -l/-p OR n/p/pl/pf/mln/mfn/l [#|s]/P <search> OR -r [#,#]/-d [[#] #...[k|l]]]
 
@@ -82,15 +82,15 @@ enter fzf for search.
   [<search>] 	search with the jargon.
   z [<search>] 	search without the jargon. if no args then enter fzf.
 
-  s [<# of results>]
+  s [<# of results>] [<search>]
   		search with the jargon. view search results and select (can select multiple).
-		can specify amount of search results to return with a following arguement;
-		defaults to 5.
+		can specify amount of search results to return with a following arguement
+		(must be the second one) - defaults to 5.
 
-  x [<# of results>]
+  x [<# of results>] [<search>]
   		search without the jargon. view search results and select (can select multiple).
-		can specify amount of search results to return with a following arguement;
-		defaults to 5.
+		can specify amount of search results to return with a following arguement
+		(must be the second one) - defaults to 5.
 
   sp [<search>] search for playlists (requires https://github.com/trizen/pipe-viewer/)
 
@@ -459,8 +459,21 @@ searchSongs () {
 	# p = playlist url
 	elif [ "$1" = 'p' ]; then
 		query="$2"
-	elif [ "$1" = 'z' ] && [ -n "$3" ]; then
-		query="$( echo "$@" | cut -d' ' -f3- )"
+	elif [ "$1" = 's' ] || [ "$1" = 'x' ]; then
+		if [ -n "$2" ]; then
+			if printf "$2" | grep -xq '[0-9]*'; then
+				results_n="$2"
+				[ -n "$3" ] && query="$( echo "$@" | cut -d' ' -f3- )" || query=$( searchInFzf )
+			else
+				results_n="5"
+				query="$( echo "$@" | cut -d' ' -f2- )"
+			fi
+		else
+			results_n="5"
+			query=$( searchInFzf )
+		fi
+	elif [ "$1" = 'z' ] && [ -n "$2" ]; then
+		query="$( echo "$@" | cut -d' ' -f2- )"
 	else
 		query=$( searchInFzf )
 	fi
@@ -473,12 +486,12 @@ searchSongs () {
 	# allows user to browse search results and select
 	if [ "$1" = 'p' ] || [ "$1" = 'x' ] || [ "$1" = 's' ]; then
 		if [ "$1" = 'x' ]; then
-			printf "$2" | grep -xq '[0-9]*' && ids_titles=$( yt-dlp -q --no-warnings -e --get-id ytsearch"${2}":"$query" ) || ids_titles=$( yt-dlp -q --no-warnings --get-id -e ytsearch5:"$query" )
+			ids_titles=$( yt-dlp -q --no-warnings -e --get-id ytsearch"${results_n}":"$query" )
 		elif [ "$1" = 'p' ]; then
 			url="$( sed -n "${query}s/ .*//p" /tmp/ytmpplaylists )"
 			ids_titles=$( pipe-viewer --no-interactive --no-use-colors --results=50 --custom-layout="*TITLE*\n*ID*" -e="*ID* *TITLE*" "$url" | sed 1d )
 		else
-			printf "$2" | grep -xq '[0-9]*' && ids_titles=$( yt-dlp -q --no-warnings --get-id -e ytsearch"${2}":"$query auto-generated provided to youtube" ) || ids_titles=$( yt-dlp -q --no-warnings --get-id -e ytsearch5:"$query auto-generated provided to youtube" )
+			ids_titles=$( yt-dlp -q --no-warnings -e --get-id ytsearch"${results_n}":"$query auto-generated provided to youtube" )
 		fi
 
 		# separates ids and titles. shows only $titles to user and then uses the number of the line $title is found on
@@ -534,8 +547,8 @@ incrAmntPlayed () {
 	[ -n "$2" ] && title=$( echo "$*" | cut -d' ' -f2- ) || title=$( sed -n -e "s/$playing_regex/\3/p" "$queue" )
 	dt="$( date +'%m/%d/%y+%T' )"
 	amnt_played="$( grep -F "$id" "$played_urls" | head -1 | cut -d' ' -f2 )"
-	amnt_played=$((amnt_played + 1))
-	sed -i "/$id/d" "$played_urls"
+	[ -n "$amnt_played" ] && amnt_played=$((amnt_played + 1)) || amnt_played=1
+	sed -i "/^$id/d" "$played_urls"
 	[ "$( printf "$id" | wc -m )" = '12' ] && echo "$id $amnt_played $dt $title" >> "$played_urls" && return
 	[ -z "$id" ] && return 1
 	if [ $download_songs = "y" ] && [ "$amnt_played" -gt "$max_stream_amount" ]; then
@@ -932,9 +945,9 @@ case "${1}" in
 	pl) markAsPlaying l ;;
 	v) viewQueue v ;;
 	vv) viewQueue v p ;;
-	s) searchSongs s "$2" ;;
-	z) searchSongs z "$@" ;;
-	x) searchSongs x "$2" ;;
+	s) shift; searchSongs s "$@" ;;
+	z) shift; searchSongs z "$@" ;;
+	x) shift; searchSongs x "$@" ;;
 	sp) shift; searchPlaylists "$@" ;;
 	spr) searchSongs p "$3" ;;
 	a) shift; add "$@" ;;
@@ -962,6 +975,7 @@ case "${1}" in
 	-r) pgrep -f 'ytmp (-d|-r)+' | grep -v $$ | xargs kill >/dev/null 2>&1; shift; randomDaemon "$@" ;;
 	# sleep twice in case the song didn't actually end and the user started
 	# playing another song which caused the last one to quit
+	# (suggested by finding another mpv instance immediately after)
 	-n) while true; do sleep .25 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && sleep .25 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && exit; done ;;
 	-N) while true; do sleep .4 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && exit; done ;;
 	-p) echo cycle pause | socat - "$mpvsocket" >/dev/null 2>&1 ;;
