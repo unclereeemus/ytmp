@@ -1,12 +1,18 @@
-mpv_socket_commands k &>/dev/null
-# mpv_socket_commands s 'pause' 'true' &>/dev/null
+#!/bin/sh
+sockname () {
+	name="$1"
+	( ls /tmp/mpvsocket_$name* >/dev/null 2>&1 && ls /tmp/mpvsocket_$name* || echo "/tmp/mpvsocket_${name}0" ) | tail -1 | grep -o '[0-9].*' | xargs -I '{}' echo '{} + 1' | bc | xargs -I '{}' echo "/tmp/mpvsocket_$name{}" | tee /tmp/active_mpvsocket
+}
+# mpv_socket_commands k &>/dev/null 2>&1
+# mpv_socket_commands a 'pause' 'true' &>/dev/null 2>&1
+echo "$@" | grep -Eq '^(s|f|y|ye|d)+$' && set -- help
 case "$1" in
-	k) pgrep -fa mpv | fzf | cut -d' ' -f1 | xargs -t kill ;;
-	s) [ -n "$2" ] && shift && printf '%s\n' "$@" | xargs -d '\n' -I ,, mpv --input-ipc-server="$( ( ls /tmp/mpvsocket_mus* && ls /tmp/mpvsocket_mus* || echo '/tmp/mpvsocket_mus0' ) | tail -1 | grep -o '[0-9].*' | xargs -I '{}' echo '{} + 1' | bc | xargs -I '{}' echo '/tmp/mpvsocket_mus{}' | tee /tmp/active_mpvsocket )" --loop=inf --no-vid --ytdl-format='bestaudio' ytdl://ytsearch:",," ;;
-	q) cat "/home/$USER/Music/ytmp/queue" | fzf | cut -d' ' -f1 | xargs -I '{}' mpv --x11-name='ytmp_mpv_pcw' --vid=no --loop=inf --input-ipc-server="$( ( ls /tmp/mpvsocket_mus* && ls /tmp/mpvsocket_mus* || echo '/tmp/mpvsocket_mus0' ) | tail -1 | grep -o '[0-9].*' | xargs -I '{}' echo '{} + 1' | bc | xargs -I '{}' echo '/tmp/mpvsocket_mus{}' | tee /tmp/active_mpvsocket )" --ytdl-format='bestaudio' "https://www.youtube.com/watch?v={}" ;;
-	f) cat "$2" | fzf | cut -d' ' -f1 | xargs -I '{}' mpv --x11-name='ytmp_mpv_pcw' --vid=no --loop=inf --input-ipc-server="$( ( ls /tmp/mpvsocket_mus* && ls /tmp/mpvsocket_mus* || echo '/tmp/mpvsocket_mus0' ) | tail -1 | grep -o '[0-9].*' | xargs -I '{}' echo '{} + 1' | bc | xargs -I '{}' echo '/tmp/mpvsocket_mus{}' | tee /tmp/active_mpvsocket )" --ytdl-format='bestaudio' "https://www.youtube.com/watch?v={}" ;;
-	y) query=$( echo "$*" | cut -d' ' -f2- ) && mpv --input-ipc-server="$( ( ls /tmp/mpvsocket_yt* && ls /tmp/mpvsocket_yt* || echo '/tmp/mpvsocket_yt0' ) | tail -1 | grep -o '[0-9].*' | xargs -I '{}' echo '{} + 1' | bc | xargs -I '{}' echo '/tmp/mpvsocket_yt{}' | tee /tmp/active_mpvsocket )" --loop=inf --no-vid --ytdl-format='bestaudio' ytdl://ytsearch4:"$query auto-generated provided to youtube" ;;
-	ye) query=$( echo "$*" | cut -d' ' -f2- ) && mpv --input-ipc-server="$( ( ls /tmp/mpvsocket_yt* && ls /tmp/mpvsocket_yt* || echo '/tmp/mpvsocket_yt0' ) | tail -1 | grep -o '[0-9].*' | xargs -I '{}' echo '{} + 1' | bc | xargs -I '{}' echo '/tmp/mpvsocket_yt{}' | tee /tmp/active_mpvsocket )" --loop=inf --no-vid --ytdl-format='bestaudio' ytdl://ytsearch4:"$query" ;;
-	d) fd . "$2" | fzf | xargs -r -d '\n' -t -I '{}' mpv --input-ipc-server="$( ( ls /tmp/mpvsocket_mus* && ls /tmp/mpvsocket_mus* || echo '/tmp/mpvsocket_mus0' ) | tail -1 | grep -o '[0-9].*' | xargs -I '{}' echo '{} + 1' | bc | xargs -I '{}' echo '/tmp/mpvsocket_mus{}' | tee /tmp/active_mpvsocket )" --loop=inf --no-vid '{}' ;;
+	k) pgrep -fa mpv | fzf -m | cut -d' ' -f1 | xargs -t kill ;;
+	s) shift && printf '%s\n' "$@" | xargs -d '\n' -I ,, mpv --input-ipc-server="$( sockname mus )" --loop=inf --no-vid --ytdl-format='bestaudio' ytdl://ytsearch:",," ;;
+	q) cat "/home/$USER/Music/ytmp/queue" | fzf | cut -d' ' -f1 | xargs -I '{}' mpv --x11-name='ytmp_mpv_pcw' --vid=no --loop=inf --input-ipc-server="$( sockname mus )" --ytdl-format='bestaudio' "https://www.youtube.com/watch?v={}" ;;
+	f) cat "$2" | fzf | cut -d' ' -f1 | xargs -I '{}' mpv --x11-name='ytmp_mpv_pcw' --vid=no --loop=inf --input-ipc-server="$( sockname mus )" --ytdl-format='bestaudio' "https://www.youtube.com/watch?v={}" ;;
+	y) shift; query="$@" && mpv --input-ipc-server="$( sockname yt )" --loop=inf --no-vid --ytdl-format='bestaudio' ytdl://ytsearch4:"$query auto-generated provided to youtube" ;;
+	ye) shift; query="$@" && mpv --input-ipc-server="$( sockname yt )" --loop=inf --no-vid --ytdl-format='bestaudio' ytdl://ytsearch4:"$query" ;;
+	d) fd . "$2" | fzf | xargs -r -d '\n' -t -I '{}' mpv --input-ipc-server="$( sockname mus )" --loop=inf --no-vid '{}' ;;
 	*) echo 'q - search ytmp queue; k - select mpv instance to kill; s <search1> <search2> ... - play searches one after another (1 search result per search); y - search youtube music (4 search results); ye - search youtube exact (4 search results); d - select from dir; f - select from a file which has <id> <title> format' ;;
 esac
