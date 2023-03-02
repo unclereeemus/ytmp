@@ -74,7 +74,7 @@ the thumbnail is located at /tmp/muscover.webp
 **mus** is used by the eww config for various information. eww looks for it the same dir as eww.scss and eww.yuck.
 
 # tips
-- a dmenu wrapper: `cmd="$( printf ' ' | dmenu -p 'which ytmp cmd to run? ' )" && if ( printf "$cmd" | grep -Eq '^( |x( [0-9]*)?|s( [0-9]*)?|z|l s|v|vv|E|sp .*)+$' ); then setsid -f $TERMINAL -e ytmp $cmd >/dev/null 2>&1; else ytmp $cmd; fi`
+- a dmenu wrapper: `cmd="$( printf ' ' | dmenu -p 'which ytmp cmd to run? ' )" && if ( printf "$cmd" | grep -Eq '^( |x.*|s.*|z|l s|v|vv|E|sp.*)+$' ); then setsid -f $TERMINAL -e ytmp $cmd >/dev/null 2>&1; else ytmp $cmd; fi`
 
 - play dmenu selection: `cat "/home/$USER/Music/ytmp/queue" | dmenu -l 15 | cut -d' ' -f1 | xargs -I ,, ytmp P -id ,,`
 
