@@ -65,7 +65,7 @@ case "$1" in
 	# see $2 entries around currently playing
 	acpn) notify-send "$( num=$2; grep -C $num -F '***' $queue | cut -d' ' -f2- )" ;;
 	# a dmenu wrapper
-	dm) cmd="$( printf ' ' | dmenu -p 'which ytmp cmd to run? ' )" && if ( printf "$cmd" | grep -Eq '^( |x( [0-9]*)?|s( [0-9]*)?|z|l s|v|vv|E|sp .*)+$' ); then setsid -f $TERMINAL -e ytmp $cmd >/dev/null 2>&1; else ytmp $cmd; fi ;;
+	dm) cmd="$( printf ' ' | dmenu -p 'which ytmp cmd to run? ' )" && if ( printf "$cmd" | grep -Eq '^( |x.*|s.*|z|l s|v|vv|E|sp.*)+$' ); then setsid -f $TERMINAL -e ytmp $cmd >/dev/null 2>&1; else ytmp $cmd; fi ;;
 	# queue up songs that fuzzy match args to play one after another; ex ytmpsuite qs '<search1>' '<search2>' '<search3>'
 	qs) mpv_socket_commands s loop false st /tmp/mpvsocketytmp >/dev/null 2>&1; shift 1; printf '%s\n' "$@" | while read p; do ( while (ytmp -n); do ytmp P $p; break; done; ) done ;;
 	# queue up entries to play one after another; ex: ytmpsuite qn 5 p+8 l-2
