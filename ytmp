@@ -777,12 +777,12 @@ move () {
 			if printf "${start}${end}${pos}" | grep -xq '[0-9]*'; then
 				pos_entry="$( sed -E -n "/^${pos}:/s/[^ ]* (.*)/'\1'/p" "$numbered_q" )"
 				[ "$action_v" = 'Remove' ] && printf '%b' "${lsp}$action_a $start-$end\n" || printf '%b' "${lsp}$action_a $start-$end to [$pos] $pos_entry\n"
-				[ $start -lt $end ] && sed -E -n "/^${start}:/,/^${end}:/s/[^ ]* (.*)/$action_p '\1'/p" "$numbered_q" && printf "$lsp" || ( sed -E -n "/^${end}:/,/^${start}:/s/[^ ]* (.*)/$action_p '\1'/p" "$numbered_q" && printf "$lsp" )
+				[ $start -lt $end ] && sed -E -n "/^${start}:/,/^${end}:/s/[^ ]* (.*)/$action_p '\1'/p" "$numbered_q" && printf "$lsp" || ( sed -E -n "/^${end}:/,/^${start}:/s/[^ ]* (.*)/$action_p '\1'/p" "$numbered_q" | tac && printf "$lsp" )
 				if [ "$action_v" = 'Remove' ]; then
 					printf "%s\n" "/^${start}:/;/^${end}:/${ed_opt}" "wq" | ed -s "$numbered_q" >/dev/null
 				else
 					if [ $start -gt $end ]; then
-						seq $end $start | tac | while read e; do printf "%s\n" "/^${e}:/${ed_opt}/^${pos}:/" "wq" | ed -s "$numbered_q" >/dev/null; done
+						seq $end $start | while read e; do printf "%s\n" "/^${e}:/${ed_opt}/^${pos}:/" "wq" | ed -s "$numbered_q" >/dev/null; done
 					else
 						printf "%s\n" "/^${start}:/;/^${end}:/${ed_opt}/^${pos}:/" "wq" | ed -s "$numbered_q" >/dev/null
 					fi
@@ -875,14 +875,14 @@ fuzzyPlay () {
 }
 
 playFromHistory () {
-	[ -z "$1" ] && tail -2 "$played_urls" | head -1 | cut -d' ' -f1 | xargs -I '{}' ytmp P -id '{}' && return
+	[ -z "$1" ] && fuzzyPlay -id "$( tail -2 "$played_urls" | head -1 | cut -d' ' -f1 )" && return
 	if ( echo "$1" | grep -qxE '[0-9]*' ); then
-		tail "-$1" "$played_urls" | head -1 | cut -d' ' -f1 | xargs -I '{}' ytmp P -id '{}'
+		fuzzyPlay -id "$( tail "-$1" "$played_urls" | head -1 | cut -d' ' -f1 )"
 	elif [ "$1" = 's' ]; then
 		cat "$played_urls" | fzf --bind="ctrl-j:jump,ctrl-o:execute-silent(echo {} | cut -d' ' -f1 | xargs -I ,, ytmp openInBrowser -id ',,')" --prompt='search: ' --info=inline --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   ytmp history   }" --separator='' \
 		--layout=reverse --height 60% --tac | cut -d' ' -f1 | xargs -I '{}' ytmp P -id '{}'
 	else
-		tail -2 "$played_urls" | head -1 | cut -d' ' -f1 | xargs -I '{}' ytmp P -id '{}'
+		fuzzyPlay -id "$( tail -2 "$played_urls" | head -1 | cut -d' ' -f1 )"
 	fi
 }
 
