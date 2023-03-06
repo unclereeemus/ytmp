@@ -43,8 +43,8 @@ if [ "$1" = '-s' ]; then
 				'^[[2mQuit^[[0m') ytmp -qa >/dev/null 2>&1 ;;
 				'Quit') ytmp -qa >/dev/null 2>&1 ;;
 				'Playing') ytmp -p >/dev/null 2>&1 ;;
-				Daemon) pgrep -f 'ytmp -d' >/dev/null 2>&1 && setsid -f ytmp -kd >/dev/null 2>&1 || setsid -f ytmp -d >/dev/null 2>&1 ;;
-				Random) pgrep -f 'ytmp -r' >/dev/null 2>&1 && setsid -f ytmp -kr >/dev/null 2>&1 || setsid -f ytmp -r >/dev/null 2>&1 ;;
+				Daemon) pgrep -f 'ytmp -d' >/dev/null 2>&1 && ytmp -kd >/dev/null 2>&1 || setsid -f ytmp -d >/dev/null 2>&1; sleep .2 ;;
+				Random) pgrep -f 'ytmp -r' >/dev/null 2>&1 && ytmp -kr >/dev/null 2>&1 || setsid -f ytmp -r >/dev/null 2>&1; sleep .2 ;;
 				'Loop On Start') ytmpsuite t2 >/dev/null 2>&1 ;;
 				'^[[2mLoop On Start^[[0m') ytmpsuite t2 >/dev/null 2>&1 ;;
 				'^[[2mLoop^[[0m') ytmp -l >/dev/null 2>&1 ;;
