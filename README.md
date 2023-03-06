@@ -61,7 +61,7 @@ the thumbnail is located at /tmp/muscover.webp
 
 **ytmpsuite** for oneliners or automation of things like toggling lines in run_on_next, selecting queues, creating playlists; some of the lines under 'tips' can be found there as well. there is no help option so you'll have to parse through the code and comments to figure out what does what if you want to use it.
 
-**ytmp.gum** a wrapper for mpv/ytmp/ytmpsuite to control playback/toggle things in run_on_next and ytmp. there are two modes for this; one is a status line showing currently playing, what's before and after currently playing, and whether certain things are toggled for mpv/ytmp/ytmpsuite and optionally showing ascii/ansi art - utilizes gum (https://github.com/charmbracelet/gum); another where said certain things are toggled in fzf.
+**ytmp.gum** a wrapper for mpv/ytmp/ytmpsuite to control playback/toggle things in run_on_next and ytmp. there are two modes for this; one is a status line showing currently playing, what's before and after currently playing, and whether certain things are toggled for mpv/ytmp/ytmpsuite and optionally showing ascii/ansi art - utilizes gum (https://github.com/charmbracelet/gum); another where said certain things are toggled in an fzf menu (would recommend looking through the source for binds).
 
 **mightfinduseful** a script to play music outside of ytmp either with local files, youtube search, or the ytmp queue file. also dynamically names the mpvsocket so you don't overwrite an old one.
 
@@ -69,7 +69,7 @@ the thumbnail is located at /tmp/muscover.webp
 
 **mpv_socket_commands** sends commands to the mpv socket in /tmp/active_mpvsocket or another specfied with st option (see -h)
 
-**eww.scss/eww.yuck** contain the eww (https://github.com/elkowar/eww) music widget which center around playing music with mpv and controlling it with various buttons/binds (not just for ytmp); allows for easy manipulation of volume levels or changing the socket one wishes to control (which could all be done from the cli of course but it's there in case you want it.)
+**eww.scss/eww.yuck** contain the eww (https://github.com/elkowar/eww) music widget which center around playing music with mpv and controlling it with various buttons/binds (not just for ytmp); allows for easy manipulation of volume levels or changing the socket one wishes to control or learning various properties (which could all be done from the cli of course but it's provided as a gui for this project.) other than relying on `mus`, it also relies on `mpv_socket_selector` and `mpv_socket_commands`.
 
 **mus** is used by the eww config for various information. eww looks for it the same dir as eww.scss and eww.yuck.
 
@@ -131,7 +131,7 @@ enter fzf for search.
 
   sp [<search>] search for playlists (requires https://github.com/trizen/pipe-viewer/)
 
-  a <local path|dir|url>
+  a <local path|dir|url> ...
 	        add urls (direct links/playlists), paths, or directory
   		(pass them as arguement - accepts many of all the kinds mentioned).
 		does not check if file is a media file or not before adding.
@@ -162,7 +162,7 @@ enter fzf for search.
   		the file as well instead run ytmp w again to close it.
 
 
-  v 		view queue
+  v 		view queue in fzf
   vv 		view queue with fzf preview of details about the song
 
   ls 		show a numbered list of the queue
@@ -181,6 +181,8 @@ enter fzf for search.
 		ytmp m r p+2,l-15 l-5 10; ytmp m [c] p,+5 10,+3 l 3 5 6 +2
 		syntax for ytmp m|m c|m r is [<target>|<from>,<to>] <destination> ...
 
+		* if for 'a,b', a is greater than b then move starting from b to a - move range bottom up
+
   c ...		alternative to m c
   r ...		alternative to m r
 
@@ -197,6 +199,8 @@ enter fzf for search.
 		* fzf bindings: tab: toggle selection; shift-tab: deselect-all; ctrl-j:jump
 
 		* entries are moved in the order they are selected or the order of the args sent
+
+		* if for 'a,b', a is greater than b then move starting from b to a - move range bottom up
 
   -c ...	alternative to -m c
   -R ...	alternative to -m r
