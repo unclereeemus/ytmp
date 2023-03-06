@@ -20,7 +20,7 @@ notifications="y"
 # whether to start playing from the top when queue reaches the end
 cycle_queue="n"
 # whether to confirm removal of '-m r' selections
-confirm_removal='y'
+confirm_removal='n'
 
 # if to download songs after they are played more than $max_stream_amount
 download_songs="y"
