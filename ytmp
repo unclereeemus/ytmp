@@ -95,7 +95,7 @@ enter fzf for search.
 
   sp [<search>] search for playlists (requires https://github.com/trizen/pipe-viewer/)
 
-  a <local path|dir|url>
+  a <local path|dir|url> ...
 	        add urls (direct links/playlists), paths, or directory
   		(pass them as arguement - accepts many of all the kinds mentioned).
 		does not check if file is a media file or not before adding.
@@ -126,7 +126,7 @@ enter fzf for search.
   		the file as well instead run ytmp w again to close it.
 
 
-  v 		view queue
+  v 		view queue in fzf
   vv 		view queue with fzf preview of details about the song
 
   ls 		show a numbered list of the queue
@@ -145,6 +145,8 @@ enter fzf for search.
 		ytmp m r p+2,l-15 l-5 10; ytmp m [c] p,+5 10,+3 l 3 5 6 +2
 		syntax for ytmp m|m c|m r is [<target>|<from>,<to>] <destination> ...
 
+		* if for 'a,b', a is greater than b then move starting from b to a - move range bottom up
+
   c ...		alternative to m c
   r ...		alternative to m r
 
@@ -161,6 +163,8 @@ enter fzf for search.
 		* fzf bindings: tab: toggle selection; shift-tab: deselect-all; ctrl-j:jump
 
 		* entries are moved in the order they are selected or the order of the args sent
+
+		* if for 'a,b', a is greater than b then move starting from b to a - move range bottom up
 
   -c ...	alternative to -m c
   -R ...	alternative to -m r
@@ -773,12 +777,15 @@ move () {
 			if printf "${start}${end}${pos}" | grep -xq '[0-9]*'; then
 				pos_entry="$( sed -E -n "/^${pos}:/s/[^ ]* (.*)/'\1'/p" "$numbered_q" )"
 				[ "$action_v" = 'Remove' ] && printf '%b' "${lsp}$action_a $start-$end\n" || printf '%b' "${lsp}$action_a $start-$end to [$pos] $pos_entry\n"
-				sed -E -n "/^${start}:/,/^${end}:/s/[^ ]* (.*)/$action_p '\1'/p" "$numbered_q"
-				printf "$lsp"
+				[ $start -lt $end ] && sed -E -n "/^${start}:/,/^${end}:/s/[^ ]* (.*)/$action_p '\1'/p" "$numbered_q" && printf "$lsp" || ( sed -E -n "/^${end}:/,/^${start}:/s/[^ ]* (.*)/$action_p '\1'/p" "$numbered_q" && printf "$lsp" )
 				if [ "$action_v" = 'Remove' ]; then
 					printf "%s\n" "/^${start}:/;/^${end}:/${ed_opt}" "wq" | ed -s "$numbered_q" >/dev/null
 				else
-					printf "%s\n" "/^${start}:/;/^${end}:/${ed_opt}/^${pos}:/" "wq" | ed -s "$numbered_q" >/dev/null
+					if [ $start -gt $end ]; then
+						seq $end $start | tac | while read e; do printf "%s\n" "/^${e}:/${ed_opt}/^${pos}:/" "wq" | ed -s "$numbered_q" >/dev/null; done
+					else
+						printf "%s\n" "/^${start}:/;/^${end}:/${ed_opt}/^${pos}:/" "wq" | ed -s "$numbered_q" >/dev/null
+					fi
 				fi
 			fi
 
@@ -798,7 +805,7 @@ move () {
 			fi
 		fi
 	done
-	sed -n 's/[0-9]*://p' "$numbered_q" > "$queue"
+	sed -n 's/^[0-9]*://p' "$numbered_q" > "$queue"
 }
 
 batchmove () {
