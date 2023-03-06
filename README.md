@@ -47,7 +47,7 @@ on first installing ytmp, there won't be any history to select from when you ent
 
 it should (mostly) look like this (bottom left - music widget only): https://github.com/Gwynsav/messydots/blob/main/basicshowcase.png
 
-the thumbnail is located at /tmp/muscover.webp
+the thumbnail is sourced from /tmp/muscover.webp (don't forget to set 'download_thumbnails=y' in the conf)
 
 # scripts
 
