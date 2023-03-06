@@ -22,7 +22,7 @@ if [ "$1" = '-s' ]; then
 		pgrep -f 'ytmp -d' >/dev/null 2>&1 && daemon="Daemon" || daemon=$( gum style --faint "Daemon" )
 		pgrep -f 'ytmp -r' >/dev/null 2>&1 && rand="Random" || rand=$( gum style --faint "Random" )
 		[ "$( echo '{ "command": ["get_property_string", "loop" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 )" = 'inf' ] && loop='Loop' || loop=$( gum style --faint "Loop" )
-		echo '{ "command": ["get_property_string", "pid" ] }' | socat - "$mpvsocket" >/dev/null 2>&1 && vol="PVOL $( echo '{ "command": ["get_property_string", "volume" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 | cut -d '.' -f1 )" || vol="$( gum style --faint PVOL )"
+		echo '{ "command": ["get_property_string", "pid" ] }' | socat - "$mpvsocket" >/dev/null 2>&1 && vol="PVOL $( echo '{ "command": ["get_property_string", "volume" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 | cut -d '.' -f1 )" || vol="$( gum style --fa int PVOL )"
 		[ $( echo '{ "command": ["get_property_string", "pause" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 ) = 'no' ] && toggle_play='Playing' || toggle_play=$( gum style --faint "Playing" )
 		echo '{ "command": ["get_property_string", "pid" ] }' | socat - "$mpvsocket" >/dev/null 2>&1 && quit='Quit' || quit=$( gum style --faint "Quit" )
 		start_vol="VOL $( sed -E -n 's/^vol=(.*)/\1/p' "$run_on_next" )"
@@ -31,8 +31,8 @@ if [ "$1" = '-s' ]; then
 		queue="QUEUE $( sed -E -n 's/^queue="(.*)"/\1/p' "$conf" )"
 		# printf '%s\n' 'Reload' "$toggle_play" "$vol" "$loop" "$quit" "$daemon" "$rand" "$gt1" "$gt2" "$start_vol" "$queue" | gum filter --no-limit --prompt='' --placeholder='' | cat -v | while read s; do
 		printf '%s\n' "$toggle_play" "$vol" "$loop" "$quit" "$daemon" "$rand" "$gt1" "$gt2" "$start_vol" "$queue" 'Reload' | \
-			fzf -m --no-bold --ansi --prompt='' --info=hidden --pointer='•' --marker='◉ ' --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --separator='' --layout=reverse --height 60% --cycle \
-			--bind='1:pos(1)+toggle,2:pos(2)+toggle,3:pos(3)+toggle,4:pos(4)+toggle,5:pos(5)+toggle,6:pos(6)+toggle,7:pos(7)+toggle,8:pos(8)+toggle,9:pos(9)+toggle,0:pos(10)+toggle,!:pos(1)+accept,@:pos(2)+accept,#:pos(3)+accept,$:pos(4)+accept,%:pos(5)+accept,^:pos(6)+accept,&:pos(7)+accept,*:pos(8)+accept,(:pos(9)+accept,):pos(10)+accept,home:first,end:last,ctrl-j:jump,tab:toggle+down,btab:deselect-all,alt-r:pos(-1)+accept,ctrl-x:print-query' \
+			fzf --disabled -m --no-bold --ansi --prompt='' --info=hidden --pointer='•' --marker='◉ ' --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --separator='' --layout=reverse --height 60% --cycle \
+			--bind='1:pos(1)+toggle,2:pos(2)+toggle,3:pos(3)+toggle,4:pos(4)+toggle,5:pos(5)+toggle,6:pos(6)+toggle,7:pos(7)+toggle,8:pos(8)+toggle,9:pos(9)+toggle,0:pos(10)+toggle,!:pos(1)+accept,@:pos(2)+accept,#:pos(3)+accept,$:pos(4)+accept,%:pos(5)+accept,^:pos(6)+accept,&:pos(7)+accept,*:pos(8)+accept,(:pos(9)+accept,):pos(10)+accept,home:first,end:last,ctrl-j:jump,tab:toggle+down,btab:deselect-all,alt-r:pos(-1)+accept,enter:print-query' \
 			| cat -v | while read s; do
 			echo "$s" | grep -q 'VOL.*On Start' && ytmpsuite t1 >/dev/null 2>&1 && continue
 			case "$s" in
@@ -49,13 +49,13 @@ if [ "$1" = '-s' ]; then
 				'^[[2mLoop On Start^[[0m') ytmpsuite t2 >/dev/null 2>&1 ;;
 				'^[[2mLoop^[[0m') ytmp -l >/dev/null 2>&1 ;;
 				Loop) ytmp -l >/dev/null 2>&1 ;;
-				# PVOL*) printf '\r'; gum input --placeholder='Set playback volume to what?' | xargs -r -I ,, ytmp -vl ,, >/dev/null 2>&1 ;;
-				PVOL*) printf '\r'; fzf --bind='enter:print-query' --prompt='Set playback volume to what? ' --info=hidden | xargs -r -I ,, ytmp -vl ,, >/dev/null 2>&1 ;;
-				# QUEUE*) printf '\r'; fd -t f . "$prefix" | gum filter | xargs -r -I ,, ytmpsuite sq ',,' ;;
-				QUEUE*) printf '\r'; fd -t f . "$prefix" | fzf | xargs -r -I ,, ytmpsuite sq ',,' ;;
-				# VOL*) printf '\r'; gum input --placeholder='Set starting volume to what?' | xargs -r -I ,, ytmpsuite sv ,, >/dev/null 2>&1 ;;
-				VOL*) printf '\r'; fzf --bind='enter:print-query' --prompt='Set playback volume to what? ' --info=hidden | xargs -r -I ,, ytmpsuite sv ,, >/dev/null 2>&1 ;;
-				*) printf '\r'; cmd="$s"; if ( printf "$cmd" | grep -Eq '^( |x( [0-9]*)?|s( [0-9]*)?|z|l s|v|vv|E|sp .*)+$' ); then setsid -f $TERMINAL -e ytmp $cmd >/dev/null 2>&1; else ytmp $cmd; fi ;;
+				# PVOL*) printf '\r'; ytmp -vl "$( gum input --placeholder='Set playback volume to what?' )" >/dev/null 2>&1 ;;
+				PVOL*) printf '\r'; ytmp -vl "$(  fzf --bind='enter:print-query' --prompt='Set playback volume to what? ' --info=hidden )" >/dev/null 2>&1 ;;
+				# QUEUE*) printf '\r'; ytmpsuite sq "$( gum input --placeholder='Set starting volume to what?' )" ;;
+				QUEUE*) printf '\r'; ytmpsuite sq "$(  fd -t f . "$prefix" | fzf )" ;;
+				# VOL*) printf '\r'; ytmpsuite sv "$(  fd -t f . "$prefix" | gum filter )" >/dev/null 2>&1 ;;
+				VOL*) printf '\r'; ytmpsuite sv "$(  fzf --bind='enter:print-query' --prompt='Set playback volume to what? ' --info=hidden )" >/dev/null 2>&1 ;;
+				*) printf '\r'; cmd="$s"; if ( printf "$cmd" | grep -Eq '^( |x.*|s.*|z|l s|v|vv|E|sp.*)+$' ); then setsid -f $TERMINAL -e ytmp $cmd >/dev/null 2>&1; else ytmp $cmd; fi ;;
 			esac
 		done
 		[ "$2" != '-c' ] && break
