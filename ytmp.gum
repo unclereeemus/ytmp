@@ -22,7 +22,7 @@ if [ "$1" = '-s' ]; then
 		pgrep -f 'ytmp -d' >/dev/null 2>&1 && daemon="Daemon" || daemon=$( gum style --faint "Daemon" )
 		pgrep -f 'ytmp -r' >/dev/null 2>&1 && rand="Random" || rand=$( gum style --faint "Random" )
 		[ "$( echo '{ "command": ["get_property_string", "loop" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 )" = 'inf' ] && loop='Loop' || loop=$( gum style --faint "Loop" )
-		echo '{ "command": ["get_property_string", "pid" ] }' | socat - "$mpvsocket" >/dev/null 2>&1 && vol="PVOL $( echo '{ "command": ["get_property_string", "volume" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 | cut -d '.' -f1 )" || vol="$( gum style --fa int PVOL )"
+		echo '{ "command": ["get_property_string", "pid" ] }' | socat - "$mpvsocket" >/dev/null 2>&1 && vol="PVOL $( echo '{ "command": ["get_property_string", "volume" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 | cut -d '.' -f1 )" || vol="$( gum style --faint PVOL )"
 		[ $( echo '{ "command": ["get_property_string", "pause" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 ) = 'no' ] && toggle_play='Playing' || toggle_play=$( gum style --faint "Playing" )
 		echo '{ "command": ["get_property_string", "pid" ] }' | socat - "$mpvsocket" >/dev/null 2>&1 && quit='Quit' || quit=$( gum style --faint "Quit" )
 		start_vol="VOL $( sed -E -n 's/^vol=(.*)/\1/p' "$run_on_next" )"
