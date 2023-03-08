@@ -1,5 +1,7 @@
 #!/bin/sh
 ( echo "$*" | grep -q ' st ' ) && socket=`echo $* | awk '{ print $2 }' FS=' st '` && oldsocket=`cat /tmp/active_mpvsocket` || socket=`cat /tmp/active_mpvsocket`
+# script used by notifyinfo() to retrieve loop/play icons
+notify_script="/home/$USER/.config/eww/mus"
 
 kill () {
 	rm /tmp/current_mpvsockets
@@ -36,13 +38,14 @@ notifyinfo () {
 	kill
 	for i in `cat /tmp/current_mpvsockets`; do
 		echo "$i" > /tmp/active_mpvsocket
-		notify-send Playing "$( mpv_socket_commands g media-title | jq .data )\n$( /home/$USER/.config/eww/old_scripts/mus statusicon ) $( mpv_socket_commands g percent-pos | jq -r .data | cut -d. -f1 )% | 墳 $( mpv_socket_commands g volume | jq -r .data ) | $( /home/$USER/.config/eww/old_scripts/mus loopstate )\n$( cat /tmp/active_mpvsocket )"
+		notify-send Playing "$( mpv_socket_commands g media-title | jq .data )\n$( "$notify_script" statusicon ) $( mpv_socket_commands g percent-pos | jq -r .data | cut -d. -f1 )% | 墳 $( mpv_socket_commands g volume | jq -r .data ) | $( "$notify_script" loopstate )\n$( cat /tmp/active_mpvsocket )"
 	done
 	echo $socket > /tmp/active_mpvsocket
 }
 
 case "$1" in
 	"g") echo "{ \"command\": [\"get_property\", \"${2}\"] }" | socat - "$socket" ;;
+	"gs") echo "{ \"command\": [\"get_property_string\", \"${2}\"] }" | socat - "$socket" ;;
 	"s") echo "{ \"command\": [\"set_property\", \"${2}\", ${3}] }" | socat - "$socket" ;;
 	"c") echo "{ \"command\": [\"${2}\", \"${3}\"] }" | socat - "$socket" ;;
 	"cc") echo "{ \"command\": [\"${2}\", \"${3}\", \"${4}\"] }" | socat - "$socket" ;;
@@ -51,7 +54,7 @@ case "$1" in
 	"ac") sendtoall $* ;;
 	"n") notifyinfo ;;
 	"k") kill ;;
-	*) echo "g - get_property; s - set_property; c - command; cc - same as 'c' except accepts one more arguement; e - echo;
+	*) echo "g - get_property; gs - get_property_string; s - set_property; c - command (accepts 2-3 args); e - echo;
 		a - do something on all sockets. example: mpv_socket_commands a [g/s/c/cc/e] <property> <value>
 		ac - do something on all but current socket.
 		n - send a notification of containing info of all socket's loop state, position, and name.
