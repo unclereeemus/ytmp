@@ -20,11 +20,11 @@ demo: https://www.reddit.com/r/bash/comments/10i7cb2/ytmp_shell_script_for_yt_an
   - Everything is a plain text file
 
 # setup
-## DEPS: fzf, yt-dlp, mpv, socat, bc, GNU sed, (n/vim, for playlist search - pipe-viewer(https://github.com/trizen/pipe-viewer/)) (only tested on a GNU/Linux system)
+## DEPS: fzf, yt-dlp, mpv, socat, gnu coreutils, dash/bash, (n/vim, for playlist search - pipe-viewer(https://github.com/trizen/pipe-viewer/)) -- only tested on a GNU/Linux system
 ## NOT A DEP: accounts of any sort
 `git clone --depth 1 'https://github.com/unclereeemus/ytmp/'; cd ytmp; chmod +x ytmp run_on_next`
 
-(link/move ytmp to one of your paths like) `[ln -s/mv] $(pwd)/ytmp /home/$USER/.local/bin/`
+(link/move ytmp to your $PATH like) `[ln -s|mv] $(pwd)/ytmp /home/$USER/.local/bin/`
 
 (if intending to use nvim) `mv ytmp.vim ~/.config/nvim/`
 
@@ -32,7 +32,7 @@ move run_on_next to ~/Music/ytmp/ where it's looked for by default; if you move 
 change the location in the conf file which is also sourced from ~/Music/ytmp/ by default
 (change conf path in source if necessary)
 
-lastly, make sure mpv has the proper yt-dlp path in mpv.conf by setting `script-opts=ytdl_hook-ytdl_path=<YTDLP_PATH>`
+lastly, make sure mpv has the proper yt-dlp path in your mpv rc by setting `script-opts=ytdl_hook-ytdl_path=<YTDLP_PATH>`
 
 the mpv ipc socket is opened at /tmp/mpvsocketytmp
 
@@ -80,11 +80,9 @@ the thumbnail is sourced from /tmp/muscover.webp (don't forget to set 'download_
 
 - to play one song after another without moving them to a consecutive place and running the daemon, do `printf '%s\n' '<fuzzy search with P>' '<entry for e>' ... | while read p; do ( while (ytmp -n); do if (printf $p | grep -Eq '^.((\+|-)[0-9]*)?$|^[0-9]*$'); then ytmp e $p; else ytmp P $p; fi; break; done; ) done`. play queue backwards: `while (ytmp -n); do ytmp p; done`
 
-- you don't need to use ytmp to make playlists for it. to create a queue file from a youtube playlist you can do `yt-dlp --print id --print title '<playlist_url>' | paste -s -d ' \n' > file` or to create a queue file from search results do `xargs -d '\n' -a <file-with-newline-sperated-searches> -I ,, yt-dlp --print id --print title ytsearch:",," | paste -s -d ' \n' > file` (to read from stdout instead of a file use `printf '%s\n' '<search1>' '<search2>' '<search3>' | xargs [without -a option]...`) or to search for playlists from the terminal (requires pipe-viewer): `search='YOUR_SEARCH'; pipe-viewer --no-interactive -sp --custom-playlist-layout='*VIDEOS*VIDS *TITLE* *URL*' "$search" | fzf --bind='ctrl-a:execute(echo {} | awk "{print $NF}" | xargs -0 -I ",," pipe-viewer --custom-layout="*AUTHOR* *TIME* *TITLE*" --no-interactive ",," | fzf)' | awk '{print $NF}' | xargs -0 -I ',,' yt-dlp --print id --print title ',,' | paste -s -d ' \n' > file` (have a look at `ytmpsuite sp` for a more featureful version with previews and individual song select or `ytmpsuite pvpl` to automate playlist search and add)
+- you don't need to use ytmp to make playlists for it. to create a queue file from a youtube playlist you can do `yt-dlp --print id --print title '<playlist_url>' | paste -s -d ' \n' > file` or to create a queue file from search results do `xargs -d '\n' -a <file-with-newline-sperated-searches> -I ,, yt-dlp --print id --print title ytsearch:",," | paste -s -d ' \n' > file` (to read from stdin instead of a file use `printf '%s\n' '<search1>' '<search2>' '<search3>' | xargs [without -a option]...`) or to search for playlists from the terminal (requires pipe-viewer): `search='YOUR_SEARCH'; pipe-viewer --no-interactive -sp --custom-playlist-layout='*VIDEOS*VIDS *TITLE* *URL*' "$search" | fzf --bind='ctrl-a:execute(echo {} | awk "{print $NF}" | xargs -0 -I ",," pipe-viewer --custom-layout="*AUTHOR* *TIME* *TITLE*" --no-interactive ",," | fzf)' | awk '{print $NF}' | xargs -0 -I ',,' yt-dlp --print id --print title ',,' | paste -s -d ' \n' > file` (have a look at `ytmpsuite sp` for a more featureful version with previews and individual song select or `ytmpsuite pvpl` to automate playlist search and add)
 
 - convert spotify playlists to something ytmp can use: export the playlist to csv with https://github.com/watsonbox/exportify then run `cut -d'"' --output-delimiter=' ' -f4,8 PLAYLIST.CSV | sed -n 1d | sed -E -e 's/\(?.*[Rr]emaster(ed)?.*//g' | tr -d '()[]' | xargs -d '\n' -I ',,' yt-dlp --print id --print title ytsearch1:",," | paste -s -d ' \n' > file`
-
-- see `$num` songs immediately before and after currently playing: `num=3; grep -C $num -F '***' /home/$USER/Music/ytmp/queue | cut -d' ' -f2-` or send a notification: `num=1; notify-send "$( grep -C $num -F '***' /home/$USER/Music/ytmp/queue | cut -d' ' -f2- )"`
 
 - to play a random song once, run `grep -c '' "/home/$USER/Music/ytmp/queue" | xargs seq | shuf -n 1 | xargs ytmp e`
 
@@ -136,6 +134,8 @@ enter fzf for search.
   		(pass them as arguement - accepts many of all the kinds mentioned).
 		does not check if file is a media file or not before adding.
 
+  -af #		add entry # to $favorites_file. accepts p|l|m like 'm'.
+
   e 		play entry #; can specify relative places with p|l|m like 'm'
   n 		play next on queue
   p 		play prev on queue
@@ -152,7 +152,7 @@ enter fzf for search.
   -vl <[+|-]#>	set volume. can be an absolute number or <+|-># to current volume (as in -vl +30, -vl -30, -vl 80)
   -ff <secs>	seek forward <seconds>
   -bb <secs>	seek backward <seconds>
-  -dur		learn the position and duration of song
+  -dur		get the position and duration of song
 
   l [#|s] 	play the song that was played before this one or # before this one or
 		pass s to select from the history file with fzf.
@@ -165,7 +165,10 @@ enter fzf for search.
   v 		view queue in fzf
   vv 		view queue with fzf preview of details about the song
 
-  ls 		show a numbered list of the queue
+  ls [# [#]]	show a numbered list of the queue. optionally accepts two args - one for focusing on a certain
+  		# on the queue and another for how much of the surrounding queue to print. if no second arg,
+		default is 2. accepts p|l|m like 'm'.
+		ex: ytmp ls p 5 (to print the 5 entries around currently playing)
 
   m [c] [p|l|m|#[+|-#]] [p|l|m|#[+|-#]] [r ...] [[c] x [x] ...] [s #|v]
   		move, copy, remove entries. l means last, p means currently playing, m means a position mark
@@ -185,6 +188,7 @@ enter fzf for search.
 
   c ...		alternative to m c
   r ...		alternative to m r
+  M ...		alternative to m s
 
   -m [c] [r] [# #,# ... <dest>]
   		batch move/copy (with c arg)/remove (with r arg)
@@ -211,11 +215,11 @@ enter fzf for search.
   -dl 		download song # (accepts p|l|m like 'm'). does not respect \$max_len_for_dl.
   -shuf 	runs shuf on the queue file and overwrites it.
 
-  -vd 		prints /tmp/ytmpqdiscards which contains list of songs that were selected to
+  -vd 		prints $cache_dir/ytmpqdiscards which contains list of songs that were selected to
   		be added to the queue in the last search but were already found on the queue.
 		it's removed with every search.
 
-  -rd [c] 	copies or moves songs listed in /tmp/ytmpqdiscards; can be copied (when given c option)
+  -rd [c] 	copies or moves songs listed in $cache_dir/ytmpqdiscards; can be copied (when given c option)
   		to or moved (when no options are given) from their current position to the position they
 		would have been added on if they were never found on the queue.
 
@@ -246,7 +250,7 @@ enter fzf for search.
 		(kills any other instances of -r or -d running on start.)
 
   -r [[<from>],[<to>]]
-  		play random entries; a range can be specified with a comma-separated arguement.
+  		play random entries; a range to play from can be specified with a comma-separated arguement.
   		there's no way to remove the range; if you want it to play beyond it,
 		run it again. (kills any other instances of -r or -d running on start.)
 
@@ -332,6 +336,7 @@ enter fzf for search.
 	ctrl-s		search query in background
 	ctrl-z		search query in background with ytmp z
 	ctrl-r		replace input field with entry
+	ctrl-alt-f	'favorite' entry (copy entry to a seperate file)
 	ctrl-alt-d	download selection
 	ctrl-alt-j	jump to currently playing
 	alt-r		reload queue
@@ -394,7 +399,8 @@ Other features:
   	See https://pastebin.com/23PXxpiD for examples (make sure to pass commands to the
 	$mpvsocket socket) and \`mpv --list-properties\` for properties that can be controlled.
   - by default ytmp downloads songs after you have listened to them $max_stream_amount times, if you
-  	don't want this feature set \$download_songs to 'n' in $conf. the downloads can be found in $songs_dir.
+  	don't want this feature set \$download_songs to 'n' in $conf.
+	the downloads can be found in $songs_dir.
   - you can have multiple entries of the same song in multiple places and the program won't get confused
   	(in case you wanted to move tracks of albums around without changing their place in the album).
   - put commands you want to run at the start of each song in the script $run_on_next.
