@@ -24,12 +24,20 @@ case "$1" in
 	gT) ( grep -q '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT ALT$' "$run_on_next" ) && index="$( grep -n '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT ALT$' "$run_on_next" | cut -d':' -f1 | xargs -I ',' echo ',+1' | bc )" && ( sed -n "${index}p" "$run_on_next" | grep '^# ' && echo "OFF" || echo "ON" ) ;;
 	tm) ( grep -q '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT MASTER$' "$run_on_next" ) && index="$( grep -n '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT MASTER$' "$run_on_next" | cut -d':' -f1 | xargs -I ',' echo ',+1' | bc )"; ( sed -n "${index}p" "$run_on_next" | grep '^# ' ) && ( sed -i "${index}s/^# //" "$run_on_next"; echo "ON" ) || ( sed -i "${index}s/^/# /" "$run_on_next"; echo "OFF" ) ;;
 	gtm) ( grep -q '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT MASTER$' "$run_on_next" ) && index="$( grep -n '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT MASTER$' "$run_on_next" | cut -d':' -f1 | xargs -I ',' echo ',+1' | bc )" && ( sed -n "${index}p" "$run_on_next" | grep '^# ' && echo "OFF" || echo "ON" ) ;;
+	# turn off all toggle-able lines
+	to)
+		if [ $( ytmpsuite gt | tail -1 ) = 'ON' ]; then ytmpsuite t >/dev/null 2>&1; fi
+		if [ $( ytmpsuite gT | tail -1 ) = 'ON' ]; then ytmpsuite T >/dev/null 2>&1; fi
+		if [ $( ytmpsuite gt1 | tail -1 ) = 'ON' ]; then ytmpsuite t1 >/dev/null 2>&1; fi
+		if [ $( ytmpsuite gt2 | tail -1 ) = 'ON' ]; then ytmpsuite t2 >/dev/null 2>&1; fi
+		if [ $( ytmpsuite gtm | tail -1 ) = 'ON' ]; then ytmpsuite tm >/dev/null 2>&1; fi
+		;;
 	# toggle master (smartly) only if one of t1/t2 are on; otherwise off
 	tms)
 		if [ $( ytmpsuite gt1 | tail -1 ) = 'ON' ] || [ $( ytmpsuite gt2 | tail -1 ) = 'ON' ]; then
-			if [ $( ytmpsuite gtm | tail -1 ) != 'ON' ]; then ytmpsuite tm; fi
+			if [ $( ytmpsuite gtm | tail -1 ) != 'ON' ]; then ytmpsuite tm >/dev/null 2>&1; fi
 		else
-			if [ $( ytmpsuite gtm | tail -1 ) != 'OFF' ]; then ytmpsuite tm; fi
+			if [ $( ytmpsuite gtm | tail -1 ) != 'OFF' ]; then ytmpsuite tm >/dev/null 2>&1; fi
 		fi
 		;;
 	t1) ( grep -q '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT 1$' "$run_on_next" ) && index="$( grep -n '^# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT 1$' "$run_on_next" | cut -d':' -f1 | xargs -I ',' echo ',+1' | bc )"; ( sed -n "${index}p" "$run_on_next" | grep '^# ' ) && ( sed -i "${index}s/^# //" "$run_on_next"; echo "ON" ) || ( sed -i "${index}s/^/# /" "$run_on_next"; echo "OFF" ); ytmpsuite tms ;;
@@ -60,10 +68,6 @@ case "$1" in
 	cv) [ -z "$2" ] && printf '' | dmenu | xargs -r -I ',,' mpv_socket_commands s volume ',,' st /tmp/mpvsocketytmp || mpv_socket_commands s volume "$2" st /tmp/mpvsocketytmp ;;
 	v) mpv_socket_commands s volume $2 st /tmp/mpvsocketytmp ;;
 	rv) mpv_socket_commands s volume 100 st /tmp/mpvsocketytmp ;;
-	# see $2 entries around currently playing
-	acp) num=$2; grep -C $num -F '***' $queue | cut -d' ' -f2- ;;
-	# see $2 entries around currently playing
-	acpn) notify-send "$( num=$2; grep -C $num -F '***' $queue | cut -d' ' -f2- )" ;;
 	# a dmenu wrapper
 	dm) cmd="$( printf ' ' | dmenu -p 'which ytmp cmd to run? ' )" && if ( printf "$cmd" | grep -Eq '^( |x.*|s.*|z|l s|v|vv|E|sp.*)+$' ); then setsid -f $TERMINAL -e ytmp $cmd >/dev/null 2>&1; else ytmp $cmd; fi ;;
 	# queue up songs that fuzzy match args to play one after another; ex ytmpsuite qs '<search1>' '<search2>' '<search3>'
