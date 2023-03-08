@@ -1010,10 +1010,10 @@ case "${1}" in
 		;;
 	-af)
 		[ -z "$2" ] && return 1
-		entry="$( echo "$2" | sed -e s/m/"$( cat "$cache_dir/ytmpmark" )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc > "$cache_dir/ytmpmark" )"
-		sed -n "$2p" "$queue" | grep -q "$playing_regex" && entry="$( sed -n "$2s/$playing_regex/\1 \3/p" "$queue" )" || entry="$( sed -n "$2p" "$queue" )"
-		! grep -Fxq "$entry" "$favorites_file" && echo "$entry" >> "$favorites_file"
-	;;
+		entry="$( echo "$2" | sed -e s/m/"$( cat "$cache_dir/ytmpmark" )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
+		sed -n "${entry}p" "$queue" | grep -q "$playing_regex" && entry="$( sed -n "${entry}s/$playing_regex/\1 \3/p" "$queue" )" || entry="$( sed -n "${entry}p" "$queue" )"
+		! grep -Fxq "$entry" "$favorites_file" >/dev/null 2>&1 && echo "$entry" >> "$favorites_file"
+		;;
 	w)
 		[ "$( echo '{ "command": ["get_property_string", "force-window" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 )" = 'no' ] && ( echo '{ "command": ["set_property", "force-window", true] }' | socat - "$mpvsocket" >/dev/null 2>&1; echo 'Opened mpv window.'; echo '{ "command": ["keypress", "I"] }' | socat - "$mpvsocket" >/dev/null 2>&1 && sleep .5; echo '{ "command": ["keypress", "O"] }' | socat - "$mpvsocket" >/dev/null 2>&1 ) || ( echo '{ "command": ["set_property", "force-window", false] }' | socat - "$mpvsocket" >/dev/null 2>&1; echo 'Closed mpv window.' )
 		;;
