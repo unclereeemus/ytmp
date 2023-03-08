@@ -67,7 +67,7 @@ qdiscards_file="$cache_dir/ytmpqdiscards"
 helper () {
 cat << CAT_EOF
 Usage: ytmp [z] [<search>]/s|x [# of results] [<search>]/sp [<search>]/a <local path|dir|url>/e #
-       OR v/ls/m [c] [# #] [r|x #] [s #|v]/-m [c] [r]/E
+       OR v/ls/m [c] [# #] [r|x #] [s [#]]/-m [c] [r] .../E
        OR -l/-p OR n/p/pl/pf/mln/mfn/l [#|s]/P <search> OR -r [#,#]/-d [[#] #...[k|l]]]
 
 On first installing ytmp, there won't be any history to select from when you enter ytmp
