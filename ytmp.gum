@@ -69,10 +69,10 @@ else
 		[ "$( echo '{ "command": ["get_property_string", "loop" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 )" = 'inf' ] && loop='L' || loop=$( gum style --faint "L" )
 		vol="V$( echo '{ "command": ["get_property_string", "volume" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 | cut -d '.' -f1 )"
 		name="$( echo '{ "command": ["get_property_string", "media-title" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 | sed -E 's/(^.{11} )(.*)(\.webm)/\2/' )"
-		[ "$( ytmpsuite gt1 | tail -1 )" = 'ON' ] && gt1='L' || gt1=$( gum style --faint "L" )
+		[ "$( ytmpsuite gt2 | tail -1 )" = 'ON' ] && gt2='L' || gt2=$( gum style --faint "L" )
 		queue=$( sed -E -n 's/^queue="(.*)"/\1/p' "$conf" )
 		start_vol=$( sed -E -n 's/^vol=(.*)/\1/p' "$run_on_next" )
-		[ "$( ytmpsuite gt2 | tail -1 )" = 'ON' ] && gt2="V$start_vol" || gt2=$( gum style --faint "V$start_vol" )
+		[ "$( ytmpsuite gt1 | tail -1 )" = 'ON' ] && gt1="V$start_vol" || gt1=$( gum style --faint "V$start_vol" )
 		duration="$( echo '{ "command": ["get_property_string", "duration" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 | cut -d'.' -f1 )"
 		position="$( echo '{ "command": ["get_property_string", "time-pos" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 | cut -d'.' -f1 )"
 		[ "$duration" -lt 3600 ] && dur=$( printf "%02d:%02d / %02d:%02d\n" $((position%3600/60)) $((position%60)) $((duration%3600/60)) $((duration%60)) ) || dur=$( printf "%d:%02d:%02d / %d:%02d:%02d\n" $((position/3600)) $((position%3600/60)) $((position%60)) $((duration/3600)) $((duration%3600/60)) $((duration%60)) )
@@ -80,7 +80,7 @@ else
 		vol=$( gum style --foreground 249 "$vol" )
 		[ $( echo '{ "command": ["get_property_string", "pause" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 ) = 'no' ] && play=$( gum style --foreground 249 ">" ) || play=$( gum style --faint "P" )
 
-		all=$( gum join --horizontal --align=center "$daemon $loop $vol $play $name $dur $gt2 $gt1 $rand" )
+		all=$( gum join --horizontal --align=center "$daemon $loop $vol $play $name $dur $gt1 $gt2 $rand" )
 		acp="$( grep -C 1 -F '***' $queue | cut -d' ' -f2- )"
 		if [ "$1" = '-a' ]; then
 			joined="$( gum style --padding '5 5' "$( gum join --align center --vertical "$( gum style --border double "$queue" )" "$acp" "$( gum style --border rounded "$all" )" )" )"
