@@ -138,9 +138,9 @@ enter fzf for search.
 		default is 2. accepts p|l|m like 'm'.
 		ex: ytmp ls p 5 (to print the 5 entries around currently playing)
 
-  m [c] [p|l|m|#[+|-#]] [p|l|m|#[+|-#]] [r ...] [[c] x [x] ...] [s #|v]
+  m [c] [p|l|m|#[+|-#]] [p|l|m|#[+|-#]] [r ...] [[c] x [x] ...] [s [#]]
   		move, copy, remove entries. l means last, p means currently playing, m means a position mark
-		set with passing s #. set mark by passing s # and see current mark with s v.
+		set with passing s #. set mark by passing s # and see current mark with just s.
 		pass x # to move # to the position of the queue selected in the fzf window
 		that will pop up or send a following 'x' (and a position) to move the selection made
 		in fzf to the position passed from cli; preceed (first, if there's two) x with 'c' to copy.
@@ -686,8 +686,9 @@ viewQueue () {
 # move, copy, remove, set marks
 move () {
 	if [ "$1" = 's' ]; then
-		[ "$2" = 'v' ] && cat "$cache_dir/ytmpmark" && return
-		[ -n "$2" ] && echo "$2" | sed -e s/m/"$( cat "$cache_dir/ytmpmark" )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc > "$cache_dir/ytmpmark" && return 0 || return 1
+		[ -z "$2" ] && echo "Mark is set to "$( cat "$cache_dir/ytmpmark" )"." && return
+		echo "$2" | sed -e s/m/"$( cat "$cache_dir/ytmpmark" )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc > "$cache_dir/ytmpmark"
+		return
 	fi
 
 	case "$1" in
