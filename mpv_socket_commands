@@ -54,7 +54,7 @@ case "$1" in
 	"ac") sendtoall $* ;;
 	"n") notifyinfo ;;
 	"k") kill ;;
-	*) echo "g - get_property; gs - get_property_string; s - set_property; c - command (accepts 2-3 args); e - echo;
+	*) echo "g - get_property; gs - get_property_string; s - set_property; c - command; cc - like c except accepts 1 more arg; e - echo;
 		a - do something on all sockets. example: mpv_socket_commands a [g/s/c/cc/e] <property> <value>
 		ac - do something on all but current socket.
 		n - send a notification of containing info of all socket's loop state, position, and name.
