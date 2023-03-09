@@ -822,7 +822,6 @@ batchmove () {
 		r) shift; action='remove' ;;
 		*) action='move' ;;
 	esac
-	# [ "$1" = 'c' ] && shift && action='copy' || action='move'
 	if [ -n "$1" ]; then
 		if [ -z "$2" ] && [ "$action" != 'r']; then echo 'Missing destination.'; return 1; fi
 		sel="$( echo "$@" | sed 's/ \w*$//' )"
@@ -898,8 +897,8 @@ randomDaemon () {
 	start="$( echo "$1" | cut -d',' -f1 )"
 	end="$( echo "$1" | cut -d',' -f2 )"
 	while ( while true; do sleep .5 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && sleep .5 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && break; done ); do
-		if [ -n "$3" ]; then seq "$start" "$end" | shuf -n 1 | xargs ytmp e
-		else grep -c '' "$queue" | xargs seq | shuf -n 1 | xargs ytmp e; fi
+		if [ -n "$1" ]; then markAsPlaying "$( seq "$start" "$end" | shuf -n 1 )"
+		else markAsPlaying "$( grep -c '' "$queue" | xargs seq | shuf -n 1 )"; fi
 	done
 }
 
@@ -925,8 +924,9 @@ fzfPreview () {
 	fi
 
 	[ "$( printf "$id" | wc -m )" != '11' ] && return
+	if [ "$2" != 'vv' ] && [ "$2" != 'c' ]; then printf "$lsp"; fi
 
-	info="$( yt-dlp -q --no-warnings --output-na-placeholder 'ASDASIDJIASDJIAJDI' --print "${lsp}Name: %(title)s \nAlbum: %(album)s \nArtist(s): %(artist)s \nGenre: %(genre)s \nRelease Year: %(release_year)s \nLength: %(duration_string)s \nUpload Date: %(upload_date>%m/%d/%Y)s \nUploader: %(uploader)s \nURL: %(webpage_url)s \n${lsp}Description:\n${lsp}%(description)s \n$lsp" "https://www.youtube.com/watch?v=$id" )"
+	info="$( yt-dlp -q --no-warnings --output-na-placeholder 'ASDASIDJIASDJIAJDI' --print "Name: %(title)s \nAlbum: %(album)s \nArtist(s): %(artist)s \nGenre: %(genre)s \nRelease Year: %(release_year)s \nLength: %(duration_string)s \nUpload Date: %(upload_date>%m/%d/%Y)s \nUploader: %(uploader)s \nURL: %(webpage_url)s \n${lsp}Description:\n${lsp}%(description)s \n$lsp" "https://www.youtube.com/watch?v=$id" )"
 
 	printf "$info" | sed -e '/ASDASIDJIASDJIAJDI/d'
 }
