@@ -202,7 +202,7 @@ enter fzf for search.
 
 		many entries/ranges - play entries/ranges in the order they are sent
 			if 'k' is the last arg then exit once all entries are played
-			otherwise continue playing from where last arg stops
+			otherwise continue playing from last arg unless last arg is a range
 
 		* ranges must be comma separated
 
@@ -629,6 +629,9 @@ markAsPlaying () {
 	play
 }
 
+# pgrep for process instead of pinging the mpv socket because
+# tests have shown it takes a second to load so it's not always
+# a reliable indication of weather mpv is up
 daemon () {
 	if [ -z "$1" ] && ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 && ! grep -q '\*\*\*$' "$queue"; then markAsPlaying 1; fi
 	if [ -n "$1" ]; then
@@ -648,7 +651,7 @@ daemon () {
 			fi
 
 			while true; do
-				while true; do sleep .5 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && sleep .5 && sleep .5 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && sleep .5 && break; done
+				while true; do sleep .25 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && sleep .25 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && break; done
 
 				[ -n "$entry" ] && markAsPlaying $entry && break
 				playing="$( grep -n "$playing_regex" "$queue" | cut -d':' -f1 )"
@@ -665,11 +668,10 @@ daemon () {
 				counter=$(( counter+1 ))
 			done
 		done
-		if [ $# = 1 ] && ! echo "$1" | grep -q ','; then daemon;
-		elif [ $# -gt 1 ]; then daemon; fi
+		echo "$@" | sed 's/ .* //' | grep -q ',' || daemon
 	else
 		while true; do
-			sleep .5 && ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 && sleep .5 && ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 && markAsPlaying p+1
+			sleep .25 && ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 && sleep .25 && ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 && markAsPlaying p+1
 		done
 	fi
 }
@@ -896,7 +898,7 @@ playFromHistory () {
 randomDaemon () {
 	start="$( echo "$1" | cut -d',' -f1 )"
 	end="$( echo "$1" | cut -d',' -f2 )"
-	while ( while true; do sleep .5 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && sleep .5 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && break; done ); do
+	while ( while true; do sleep .25 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && sleep .25 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && break; done ); do
 		if [ -n "$1" ]; then markAsPlaying "$( seq "$start" "$end" | shuf -n 1 )"
 		else markAsPlaying "$( grep -c '' "$queue" | xargs seq | shuf -n 1 )"; fi
 	done
@@ -991,7 +993,7 @@ case "${1}" in
 	# playing another song which caused the last one to quit
 	# (suggested by finding another mpv instance immediately after)
 	-n) while true; do sleep .25 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && sleep .25 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && exit; done ;;
-	-N) while true; do sleep .4 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && exit; done ;;
+	-N) while true; do sleep .25 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && exit; done ;;
 	-p) echo cycle pause | socat - "$mpvsocket" >/dev/null 2>&1 ;;
 	-ff) [ -n "$2" ] && echo "{ \"command\": [\"seek\", \"+${2}\", \"exact\"] }" | socat - "$mpvsocket" >/dev/null 2>&1 && echo "Seeked forward $2 seconds." || echo 'Provide how many seconds to seek forward.' ;;
 	-bb) [ -n "$2" ] && echo "{ \"command\": [\"seek\", \"-${2}\", \"exact\"] }" | socat - "$mpvsocket" >/dev/null 2>&1 && echo "Seeked backward $2 seconds." || echo 'Provide how many seconds to seek backward.' ;;
@@ -1016,7 +1018,7 @@ case "${1}" in
 		! grep -Fxq "$entry" "$favorites_file" >/dev/null 2>&1 && echo "$entry" >> "$favorites_file"
 		;;
 	w)
-		[ "$( echo '{ "command": ["get_property_string", "force-window" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 )" = 'no' ] && ( echo '{ "command": ["set_property", "force-window", true] }' | socat - "$mpvsocket" >/dev/null 2>&1; echo 'Opened mpv window.'; echo '{ "command": ["keypress", "I"] }' | socat - "$mpvsocket" >/dev/null 2>&1 && sleep .5; echo '{ "command": ["keypress", "O"] }' | socat - "$mpvsocket" >/dev/null 2>&1 ) || ( echo '{ "command": ["set_property", "force-window", false] }' | socat - "$mpvsocket" >/dev/null 2>&1; echo 'Closed mpv window.' )
+		[ "$( echo '{ "command": ["get_property_string", "force-window" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 )" = 'no' ] && ( echo '{ "command": ["set_property", "force-window", true] }' | socat - "$mpvsocket" >/dev/null 2>&1; echo 'Opened mpv window.'; echo '{ "command": ["keypress", "I"] }' | socat - "$mpvsocket" >/dev/null 2>&1 && sleep .25; echo '{ "command": ["keypress", "O"] }' | socat - "$mpvsocket" >/dev/null 2>&1 ) || ( echo '{ "command": ["set_property", "force-window", false] }' | socat - "$mpvsocket" >/dev/null 2>&1; echo 'Closed mpv window.' )
 		;;
 	-l)
 		[ "$( echo '{ "command": ["get_property_string", "loop" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 )" = 'no' ] && ( echo '{ "command": ["set_property", "loop", true] }' | socat - "$mpvsocket" >/dev/null 2>&1; echo 'Loop on.' ) || ( echo '{ "command": ["set_property", "loop", false] }' | socat - "$mpvsocket" >/dev/null 2>&1; echo 'Loop off.' )
