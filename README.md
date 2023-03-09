@@ -1,7 +1,7 @@
 # ytmp
 a shell script for searching, playing, downloading, and keeping track of music from youtube and local files with extensive queue management using fzf, vim, or cli
 
-demo: https://www.reddit.com/r/bash/comments/10i7cb2/ytmp_shell_script_for_yt_and_local_music_that_has/
+demo: https://www.reddit.com/r/unixporn/comments/11mxwb0/oc_i_wrote_a_cli_and_keyboard_centric/
 
 **FEATURES:**
   - Keyboard centered
@@ -90,7 +90,7 @@ the thumbnail is sourced from /tmp/muscover.webp (don't forget to set 'download_
 
 - if you wanted to use this for videos instead of music, do a global remove of `--vid=no` and a global replace of `--ytdl-format='bestaudio'` with your preference of video and audio quality (like `--ytdl-format=bestvideo'[height<=?1080]'+bestaudio`) in the source
 
-- you can make a scratchpad (i recommend tdrop if your wm doesn't support them) of `ytmp E` which can be your one stop for music management (you can invoke ytmp with keybindings by using the vim config provided)
+- you can make a scratchpad (i recommend tdrop(https://github.com/noctuid/tdrop) if your wm doesn't support them) of `ytmp E` which can be your one stop for music management (you can invoke ytmp with keybindings by using the vim config provided)
 
 # credit
 - this is a fork of the now deleted repo ifeelalright1970/ytmp with additional features and bug fixes
