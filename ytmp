@@ -924,7 +924,7 @@ fzfPreview () {
 	fi
 
 	[ "$( printf "$id" | wc -m )" != '11' ] && return
-	if [ "$2" != 'vv' ] && [ "$2" != 'c' ]; then printf "$lsp"; fi
+	if [ "$2" != 'vv' ] && [ "$2" != 's' ] && [ "$2" != 'c' ]; then printf "$lsp"; fi
 
 	info="$( yt-dlp -q --no-warnings --output-na-placeholder 'ASDASIDJIASDJIAJDI' --print "Name: %(title)s \nAlbum: %(album)s \nArtist(s): %(artist)s \nGenre: %(genre)s \nRelease Year: %(release_year)s \nLength: %(duration_string)s \nUpload Date: %(upload_date>%m/%d/%Y)s \nUploader: %(uploader)s \nURL: %(webpage_url)s \n${lsp}Description:\n${lsp}%(description)s \n$lsp" "https://www.youtube.com/watch?v=$id" )"
 
