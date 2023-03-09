@@ -46,6 +46,7 @@ cache_dir="$prefix/.cache"
 [ -z "$run_on_next" ] && run_on_next="$prefix/run_on_next"
 
 mkdir -p "$prefix" "$cache_dir" "$dl_dir" "$songs_dir" "$thumb_dir"
+touch "$played_urls" "$favorites_file" "$search_history" "$queue" "$cache_dir/ytmpmark"
 
 # regex to match what's currently playing
 # note: options for ERE are not passed to sed or grep so ERE must be escaped
