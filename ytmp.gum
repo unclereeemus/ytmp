@@ -79,7 +79,7 @@ else
 		[ "$duration" -lt 3600 ] && dur=$( printf "%02d:%02d / %02d:%02d\n" $((position%3600/60)) $((position%60)) $((duration%3600/60)) $((duration%60)) ) || dur=$( printf "%d:%02d:%02d / %d:%02d:%02d\n" $((position/3600)) $((position%3600/60)) $((position%60)) $((duration/3600)) $((duration%3600/60)) $((duration%60)) )
 		dur=$( gum style --foreground 249 "$dur" )
 		vol=$( gum style --foreground 249 "$vol" )
-		[ $( echo '{ "command": ["get_property_string", "pause" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 ) = 'no' ] && play=$( gum style --foreground 249 ">" ) || play=$( gum style --faint "P" )
+		[ $( echo '{ "command": ["get_property_string", "pause" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 ) = 'no' ] && play=$( gum style --foreground 249 ">" ) || play=$( gum style --foreground 249 "P" )
 
 		all=$( gum join --horizontal --align=center "$daemon $loop $vol $play $name $dur $gt1 $gt2 $rand" )
 		acp="$( grep -C 1 -F '***' $queue | cut -d' ' -f2- )"
