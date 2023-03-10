@@ -3,7 +3,8 @@
 #		(have a look at the fzf binds below)
 #	-c: don't exit wrapper after selections
 #	-a: display art with status line
-#	-o: show status and quit
+#	-o: show status and queue and quit
+#	-O: show just status and quit
 # No arg - show a non-interactive mpv/ytmp status line and entries around queue
 # gray val means its inactive
 # status line: [-d] [-vl] [-p] [name] [-dur] [ytmpsuite t1] [ytmpsuite t2] [-r]
@@ -89,6 +90,9 @@ else
 			gum join --horizontal "$( sed 1d $artfile )" "$joined"
 			# or don't
 			# gum join --horizontal "$( cat $artfile )" "$joined"
+		elif [ "$1" = '-O' ]; then
+			gum style --border rounded "$all"
+			break
 		else
 			gum style --padding '5 5' "$( gum join --align center --vertical "$( gum style --border double "$queue" )" "$acp" "$( gum style --border rounded "$all" )" )"
 			[ "$1" = '-o' ] && break
