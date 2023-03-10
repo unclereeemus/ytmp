@@ -64,7 +64,7 @@ if [ "$1" = '-s' ]; then
 else
 	while true; do
 		! echo '{ "command": ["get_property_string", "pid" ] }' | socat - "$mpvsocket" >/dev/null 2>&1 && sleep 1 && continue
-		clear
+		[ "$1" != '-O' ] && clear
 		pgrep -f 'ytmp -d' >/dev/null 2>&1 && daemon="D" || daemon=$( gum style --faint "D" )
 		pgrep -f 'ytmp -r' >/dev/null 2>&1 && rand="R" || rand=$( gum style --faint "R" )
 		[ "$( echo '{ "command": ["get_property_string", "loop" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 )" = 'inf' ] && loop='L' || loop=$( gum style --faint "L" )
