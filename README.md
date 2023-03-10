@@ -99,7 +99,7 @@ the thumbnail is sourced from /tmp/muscover.webp (don't forget to set 'download_
 # usage
 ```
 Usage: ytmp [z] [<search>]/s|x [# of results] [<search>]/sp [<search>]/a <local path|dir|url>/e #
-       OR v/ls/m [c] [# #] [r|x #] [s #|v]/-m [c] [r]/E
+       OR v/ls/m [c] [# #] [r|x #] [s [#]]/-m [c] [r] .../E
        OR -l/-p OR n/p/pl/pf/mln/mfn/l [#|s]/P <search> OR -r [#,#]/-d [[#] #...[k|l]]]
 
 On first installing ytmp, there won't be any history to select from when you enter ytmp
@@ -134,7 +134,8 @@ enter fzf for search.
   		(pass them as arguement - accepts many of all the kinds mentioned).
 		does not check if file is a media file or not before adding.
 
-  -af #		add entry # to $favorites_file. accepts p|l|m like 'm'.
+  -af [#]	add entry # to $favorites_file. if no arg, print $favorites_file.
+  		accepts only one arg and p|l|m like 'm'.
 
   e 		play entry #; can specify relative places with p|l|m like 'm'
   n 		play next on queue
@@ -170,9 +171,9 @@ enter fzf for search.
 		default is 2. accepts p|l|m like 'm'.
 		ex: ytmp ls p 5 (to print the 5 entries around currently playing)
 
-  m [c] [p|l|m|#[+|-#]] [p|l|m|#[+|-#]] [r ...] [[c] x [x] ...] [s #|v]
+  m [c] [p|l|m|#[+|-#]] [p|l|m|#[+|-#]] [r ...] [[c] x [x] ...] [s [#]]
   		move, copy, remove entries. l means last, p means currently playing, m means a position mark
-		set with passing s #. set mark by passing s # and see current mark with s v.
+		set with passing s #. set mark by passing s # and see current mark with just s.
 		pass x # to move # to the position of the queue selected in the fzf window
 		that will pop up or send a following 'x' (and a position) to move the selection made
 		in fzf to the position passed from cli; preceed (first, if there's two) x with 'c' to copy.
@@ -213,7 +214,8 @@ enter fzf for search.
 
   -sd <#> 	get listen history and other details about entry (accepts p|l|m like 'm')
   -dl 		download song # (accepts p|l|m like 'm'). does not respect \$max_len_for_dl.
-  -shuf 	runs shuf on the queue file and overwrites it.
+  -shuf 	runs shuf on the queue file and overwrites it. the original queue can be found in
+  		"$cache_dir/queue_noshuf".
 
   -vd 		prints $cache_dir/ytmpqdiscards which contains list of songs that were selected to
   		be added to the queue in the last search but were already found on the queue.
@@ -234,7 +236,7 @@ enter fzf for search.
 
 		many entries/ranges - play entries/ranges in the order they are sent
 			if 'k' is the last arg then exit once all entries are played
-			otherwise continue playing from where last arg stops
+			otherwise continue playing from last arg unless last arg is a range
 
 		* ranges must be comma separated
 
