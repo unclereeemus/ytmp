@@ -26,8 +26,8 @@ if [ "$1" = '-s' ]; then
 		[ $( echo '{ "command": ["get_property_string", "pause" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 ) = 'no' ] && toggle_play='Playing' || toggle_play=$( gum style --faint "Playing" )
 		echo '{ "command": ["get_property_string", "pid" ] }' | socat - "$mpvsocket" >/dev/null 2>&1 && quit='Quit' || quit=$( gum style --faint "Quit" )
 		start_vol="VOL $( sed -E -n 's/^vol=(.*)/\1/p' "$run_on_next" )"
-		[ "$( ytmpsuite gt2 | tail -1 )" = 'ON' ] && gt2='Loop On Start' || gt2=$( gum style --faint "Loop On Start" )
-		[ "$( ytmpsuite gt1 | tail -1 )" = 'ON' ] && gt1="$start_vol On Start" || gt1=$( gum style --faint "$start_vol On Start" )
+		[ "$( ytmpsuite gt2 | head -1 )" = 'ON' ] && gt2='Loop On Start' || gt2=$( gum style --faint "Loop On Start" )
+		[ "$( ytmpsuite gt1 | head -1 )" = 'ON' ] && gt1="$start_vol On Start" || gt1=$( gum style --faint "$start_vol On Start" )
 		queue="QUEUE $( sed -E -n 's/^queue="(.*)"/\1/p' "$conf" )"
 		# printf '%s\n' 'Reload' "$toggle_play" "$vol" "$loop" "$quit" "$daemon" "$rand" "$gt1" "$gt2" "$start_vol" "$queue" | gum filter --no-limit --prompt='' --placeholder='' | cat -v | while read s; do
 		printf '%s\n' "$toggle_play" "$vol" "$loop" "$quit" "$daemon" "$rand" "$gt1" "$gt2" "$start_vol" "$queue" 'Reload' | \
@@ -69,10 +69,10 @@ else
 		[ "$( echo '{ "command": ["get_property_string", "loop" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 )" = 'inf' ] && loop='L' || loop=$( gum style --faint "L" )
 		vol="V$( echo '{ "command": ["get_property_string", "volume" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 | cut -d '.' -f1 )"
 		name="$( echo '{ "command": ["get_property_string", "media-title" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 | sed -E 's/(^.{11} )(.*)(\.webm)/\2/' )"
-		[ "$( ytmpsuite gt2 | tail -1 )" = 'ON' ] && gt2='L' || gt2=$( gum style --faint "L" )
+		[ "$( ytmpsuite gt2 | head -1 )" = 'ON' ] && gt2='L' || gt2=$( gum style --faint "L" )
 		queue=$( sed -E -n 's/^queue="(.*)"/\1/p' "$conf" )
 		start_vol=$( sed -E -n 's/^vol=(.*)/\1/p' "$run_on_next" )
-		[ "$( ytmpsuite gt1 | tail -1 )" = 'ON' ] && gt1="V$start_vol" || gt1=$( gum style --faint "V$start_vol" )
+		[ "$( ytmpsuite gt1 | head -1 )" = 'ON' ] && gt1="V$start_vol" || gt1=$( gum style --faint "V$start_vol" )
 		duration="$( echo '{ "command": ["get_property_string", "duration" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 | cut -d'.' -f1 )"
 		position="$( echo '{ "command": ["get_property_string", "time-pos" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 | cut -d'.' -f1 )"
 		[ "$duration" -lt 3600 ] && dur=$( printf "%02d:%02d / %02d:%02d\n" $((position%3600/60)) $((position%60)) $((duration%3600/60)) $((duration%60)) ) || dur=$( printf "%d:%02d:%02d / %d:%02d:%02d\n" $((position/3600)) $((position%3600/60)) $((position%60)) $((duration/3600)) $((duration%3600/60)) $((duration%60)) )
