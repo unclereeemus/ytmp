@@ -828,7 +828,7 @@ batchmove () {
 		*) action='move' ;;
 	esac
 	if [ -n "$1" ]; then
-		if [ -z "$2" ] && [ "$action" != 'r']; then echo 'Missing destination.'; return 1; fi
+		if [ -z "$2" ] && [ "$action" != 'remove']; then echo 'Missing destination.'; return 1; fi
 		sel="$( echo "$@" | sed 's/ \w*$//' )"
 		place="$( echo "$@" | grep -o '\w*$' )"
 	else
