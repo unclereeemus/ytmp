@@ -183,7 +183,8 @@ enter fzf for search.
 
   -sd <#> 	get listen history and other details about entry (accepts p|l|m like 'm')
   -dl 		download song # (accepts p|l|m like 'm'). does not respect \$max_len_for_dl.
-  -shuf 	runs shuf on the queue file and overwrites it.
+  -shuf 	runs shuf on the queue file and overwrites it. the original queue can be found in
+  		"$cache_dir/queue_noshuf".
 
   -vd 		prints $cache_dir/ytmpqdiscards which contains list of songs that were selected to
   		be added to the queue in the last search but were already found on the queue.
@@ -985,7 +986,7 @@ case "${1}" in
 	-c) shift; batchmove c "$@" ;;
 	-R) shift; batchmove r "$@" ;;
 	-sd) fzfPreview a c "$2" ;;
-	-shuf) shuf "$queue" -o "$queue" ;;
+	-shuf) cp -f "$queue" "$cache_dir/queue_noshuf"; shuf "$queue" -o "$queue" ;;
 	-vd) transferQDiscards v ;;
 	-rd) transferQDiscards "$2" ;;
 	-dl) dlSong "$*" ;;
