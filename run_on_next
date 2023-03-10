@@ -4,7 +4,7 @@
 # wait for mpv to load before continuing so the commands aren't sent to a black hole
 # while true; do [ -n "$( echo '{ "command": ["get_property", "pid"] }' | socat - /tmp/mpvsocketytmp )" ] && break; sleep .2; done >/dev/null 2>&1
 
-# the two lines below are toggled by the ytmpsuite script; don't change the comments
+# the four lines below are toggled by the ytmpsuite script; don't change the comments
 # (feel free to change the commands or move the comment and command to a different place
 # but be sure to leave a space after the # and put the cmds directly below the comments)
 # or else the toggle system won't work
