@@ -671,7 +671,9 @@ daemon () {
 				counter=$(( counter+1 ))
 			done
 		done
-		echo "$@" | sed 's/ .* //' | grep -q ',' || daemon
+		if [ "$arg_ct" = 1 ] && ! echo "$1" | grep -q ','; then daemon
+		else echo "$@" | sed 's/.* //' | grep -q ',' || daemon
+		fi
 	else
 		while true; do
 			sleep .25 && ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 && sleep .25 && ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 && markAsPlaying p+1
