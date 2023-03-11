@@ -412,11 +412,11 @@ addToQueue () {
 
 	! grep -Fxq "$title" "$search_history" && echo "$title" >> "$search_history"
 
-	if ( ! grep -Fq "$id" "$queue" ); then
+	if ( ! grep -Fq "$( echo $id | sed 's/^-/\\-/' )" "$queue" ); then
 		echo "$id $title" >> "$queue"
 		echo "Added '$title'"
 	else
-		found="$( grep -n "$id" "$queue" | cut -d':' -f1 | head -1 )"
+		found="$( grep -n "$( echo $id | sed 's/^-/\\-/' )" "$queue" | cut -d':' -f1 | head -1 )"
 		echo "'$title' was found at line $found in the queue. It will not be newly added."
 		queue_len="$( grep -c '' "$queue" )"
 		echo "$queue_len $id $title" >> "$qdiscards_file"
@@ -476,7 +476,7 @@ searchSongs () {
 		query="$2"
 	elif [ "$1" = 's' ] || [ "$1" = 'x' ]; then
 		if [ -n "$2" ]; then
-			if printf "$2" | grep -xq '[0-9]*'; then
+			if printf '%s' "$2" | grep -xq '[0-9]*'; then
 				results_n="$2"
 				[ -n "$3" ] && query="$( echo "$@" | cut -d' ' -f3- )" || query=$( searchInFzf )
 			else
@@ -561,10 +561,10 @@ incrAmntPlayed () {
 	[ -n "$1" ] && id="$1" || id=$( sed -n "s/$playing_regex/\1/p" "$queue" | cut -d' ' -f1 )
 	[ -n "$2" ] && title=$( echo "$*" | cut -d' ' -f2- ) || title=$( sed -n -e "s/$playing_regex/\3/p" "$queue" )
 	dt="$( date +'%m/%d/%y+%T' )"
-	amnt_played="$( grep -F "$id" "$played_urls" | head -1 | cut -d' ' -f2 )"
+	amnt_played="$( grep -F "$( echo $id | sed 's/^-/\\-/' )" "$played_urls" | head -1 | cut -d' ' -f2 )"
 	[ -n "$amnt_played" ] && amnt_played=$((amnt_played + 1)) || amnt_played=1
 	sed -i "/^$id/d" "$played_urls"
-	[ "$( printf "$id" | wc -m )" = '12' ] && echo "$id $amnt_played $dt $title" >> "$played_urls" && return
+	[ "$( printf '%s' "$id" | wc -m )" = '12' ] && echo "$id $amnt_played $dt $title" >> "$played_urls" && return
 	[ -z "$id" ] && return 1
 	if [ $download_songs = "y" ] && [ "$amnt_played" -gt "$max_stream_amount" ]; then
 		if ( ls "$songs_dir"/*"${id}"* >/dev/null 2>&1 ); then
@@ -581,7 +581,7 @@ incrAmntPlayed () {
 
 dlThumbnail () {
 	[ -n "$1" ] && id="$1" || id=$( sed -n "s/$playing_regex/\1/p" "$queue" )
-	[ "$( printf "$id" | wc -m )" != '11' ] && return 1
+	[ "$( printf '%s' "$id" | wc -m )" != '11' ] && return 1
 	if ( ! ls "$thumb_dir"/*"${id}"* >/dev/null 2>&1 ); then
 		title=$( sed -n -e "s/$playing_regex/\3/p" "$queue" )
 		yt-dlp -q --no-warnings --get-thumbnail "https://www.youtube.com/watch?v=$id" | xargs curl --output "$thumb_dir/$id $title.webp"
@@ -596,7 +596,7 @@ play () {
 	[ -n "$1" ] && id="$1" || id=$( sed -n "s/$playing_regex/\1/p" "$queue" )
 	[ -z "$id" ] && return 1
 	# if the length of id (first field) is 12 then it is a checksum of a local file and not a youtube id so play it and exit
-	if [ "$( printf "$id" | wc -m )" = '12' ]; then
+	if [ "$( printf '%s' "$id" | wc -m )" = '12' ]; then
 		setsid -f mpv --x11-name='ytmp_mpv' --no-terminal --vid=no --input-ipc-server="$mpvsocket" "$( sed -n -e "s/$playing_regex/\3/p" "$queue" )"
 	else
 		if ( ls "$songs_dir"/*"${id}"* >/dev/null 2>&1 ); then
@@ -655,9 +655,8 @@ daemon () {
 			elif [ "$pos" = 'k' ]; then
 				exit
 			else
-				entry="$pos"
 				songEnd
-				markAsPlaying "$entry"
+				markAsPlaying "$pos"
 				continue
 			fi
 
@@ -798,7 +797,7 @@ move () {
 			[ "$action_v" = 'Remove' ] && pos='1'
 			if [ $start -gt $last ] || [ $end -gt $last ] || [ $pos -gt $last ]; then echo 'Invalid args $start,$last $pos'; continue; fi
 
-			if printf "${start}${end}${pos}" | grep -xq '[0-9]*'; then
+			if printf '%s' "${start}${end}${pos}" | grep -xq '[0-9]*'; then
 				pos_entry="$( sed -E -n "/^${pos}:/s/[^ ]* (.*)/'\1'/p" "$numbered_q" )"
 				[ "$action_v" = 'Remove' ] && printf '%b' "${lsp}$action_a $start-$end\n" || printf '%b' "${lsp}$action_a $start-$end to [$pos] $pos_entry\n"
 				[ $start -lt $end ] && sed -E -n "/^${start}:/,/^${end}:/s/[^ ]* (.*)/$action_p '\1'/p" "$numbered_q" && printf "$lsp" || ( sed -E -n "/^${end}:/,/^${start}:/s/[^ ]* (.*)/$action_p '\1'/p" "$numbered_q" | tac && printf "$lsp" )
@@ -877,7 +876,7 @@ transferQDiscards () {
 
 	cat "$qdiscards_file" | while read -r f; do
 		id="$( echo "$f" | cut -d' ' -f2 )"
-		found="$( grep -n "$id" "$queue" | cut -d':' -f1 | head -1 )"
+		found="$( grep -n "$( echo $id | sed 's/^-/\\-/' )" "$queue" | cut -d':' -f1 | head -1 )"
 		place="$( echo "$f" | cut -d' ' -f1 )"
 		[ "$1" = 'c' ] && move c $found $place || move $found $place
 	done
@@ -899,7 +898,7 @@ fuzzyPlay () {
 
 playFromHistory () {
 	[ -z "$1" ] && fuzzyPlay -id "$( tail -2 "$played_urls" | head -1 | cut -d' ' -f1 )" && return
-	if ( echo "$1" | grep -qxE '[0-9]*' ); then
+	if ( printf '%s' "$1" | grep -qxE '[0-9]*' ); then
 		fuzzyPlay -id "$( tail "-$1" "$played_urls" | head -1 | cut -d' ' -f1 )"
 	elif [ "$1" = 's' ]; then
 		cat "$played_urls" | fzf --bind="ctrl-j:jump,ctrl-o:execute-silent(echo {} | cut -d' ' -f1 | xargs -I ,, ytmp openInBrowser -id ',,')" --prompt='search: ' --info=inline --border=bottom --color=gutter:black,hl+:bold:bright-red,hl:bright-red,label:italic:white,marker:cyan,pointer:cyan,bg+:black,label:white,info:white:dim,label:white:dim,spinner:white:dim --border-label-pos=3 --border-label="{   ytmp history   }" --separator='' \
@@ -926,21 +925,21 @@ fzfPreview () {
  	[ "$2" = s ] && id="$( sed -n "${fzf_index}"p "$cache_dir/ytmpids" | cut -d" " -f1 )" || id="$( sed -n "${fzf_index}s/${field_regex}/\1/p" "$queue" )"
 
 	if [ "$2" = 'vv' ] || [ "$2" = 'c' ]; then
-		entry="$( grep "$id" "$played_urls" | head -1 )"
+		entry="$( grep "$( echo $id | sed 's/^-/\\-/' )" "$played_urls" | head -1 )"
 		last_played="$( echo "$entry" | cut -s -d' ' -f3 )"
 		amnt_played="$( echo "$entry" | cut -s -d' ' -f2 )"
 		[ -z "$last_played" ] && last_played='Never'
 		[ -z "$amnt_played" ] && amnt_played='None'
 
 		if ( ls "$songs_dir"/*"${id}"* >/dev/null 2>&1 ); then dl='\nDownloaded: Yes\n'
-		elif [ "$( printf "$id" | wc -m )" != '11' ]; then dl='\n'
+		elif [ "$( printf '%s' "$id" | wc -m )" != '11' ]; then dl='\n'
 		else dl='\nDownloaded: No\n'; fi
 
 		[ "$2" = 'c' ] && echo "[$fzf_index] "$( echo "$entry" | cut -s -d' ' -f4- | sed 's/^dl //' )""
 		printf "${lsp}Times Played: ${amnt_played}\nLast Played: ${last_played}${dl}${lsp}"
 	fi
 
-	[ "$( printf "$id" | wc -m )" != '11' ] && return
+	[ "$( printf '%s' "$id" | wc -m )" != '11' ] && return
 	if [ "$2" != 'vv' ] && [ "$2" != 's' ] && [ "$2" != 'c' ]; then printf "$lsp"; fi
 
 	info="$( yt-dlp -q --no-warnings --output-na-placeholder 'ASDASIDJIASDJIAJDI' --print "Name: %(title)s \nAlbum: %(album)s \nArtist(s): %(artist)s \nGenre: %(genre)s \nRelease Year: %(release_year)s \nLength: %(duration_string)s \nUpload Date: %(upload_date>%m/%d/%Y)s \nUploader: %(uploader)s \nURL: %(webpage_url)s \n${lsp}Description:\n${lsp}%(description)s \n$lsp" "https://www.youtube.com/watch?v=$id" )"
@@ -953,7 +952,7 @@ dlSong () {
 	sel="$( echo "$2" | sed -e s/m/"$( cat "$cache_dir/ytmpmark" )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
 	id="$( sed -n "${sel}s/${field_regex}/\1/p" "$queue" )"
 	title="$( sed -n "${sel}s/${field_regex}/\2/p" "$queue" )"
-	[ "$( printf "$id" | wc -m )" != '11' ] && echo 'Invalid entry.' && return 1
+	[ "$( printf '%s' "$id" | wc -m )" != '11' ] && echo 'Invalid entry.' && return 1
 	( ! ls "$songs_dir"/*"${id}"* >/dev/null 2>&1 ) && setsid -f yt-dlp -q --no-warnings -f bestaudio -o "$songs_dir/%(id)s %(title)s.%(ext)s" "https://www.youtube.com/watch?v=$id" >/dev/null 2>&1 && echo "Downloading '${title}.'" || echo "A file of the name '$title' was found in $songs_dir. It will not be downloaded."
 }
 
@@ -962,7 +961,7 @@ openInBrowser () {
 	elif [ "$1" = 'id' ]; then id="$( sed -n "${2}"p "$cache_dir/ytmpids" )"
 	elif [ "$1" = '-id' ]; then id="$2"
 	else id=$( sed -n "${1}s/$field_regex/\1/p" "$queue" ); fi
-	[ "$( printf "$id" | wc -m )" != '11' ] && return 1
+	[ "$( printf '%s' "$id" | wc -m )" != '11' ] && return 1
 	setsid -f "$BROWSER" "https://www.youtube.com/watch?v=$id" >/dev/null 2>&1
 }
 
