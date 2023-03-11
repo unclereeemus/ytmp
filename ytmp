@@ -674,7 +674,7 @@ daemon () {
 				# get what's playing again in case user played something inside
 				# range in which case just play p+1
 				playing_n="$( grep -n "$playing_regex" "$queue" | cut -d':' -f1 )"
-				if [ "$playing_n" -ge "$start" ] && [ "$playing_n" -le "$end" ]; then markAsPlaying p+1; else markAsPlaying "$playing+1"; fi
+				if [ "$playing_n" -ge "$start" ] && [ "$playing_n" -lt "$end" ]; then markAsPlaying p+1; else markAsPlaying "$playing+1"; fi
 			done
 		done
 		# if arg count is 1 and it's not a range, run daemon
