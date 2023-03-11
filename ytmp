@@ -559,13 +559,13 @@ searchPlaylists () {
 # also downloads the file once it exceeds $max_stream_amount and it can't be found in the $songs_dir
 incrAmntPlayed () {
 	[ -n "$1" ] && id="$1" || id=$( sed -n "s/$playing_regex/\1/p" "$queue" | cut -d' ' -f1 )
+	[ -z "$id" ] && return 1
 	[ -n "$2" ] && title=$( echo "$*" | cut -d' ' -f2- ) || title=$( sed -n -e "s/$playing_regex/\3/p" "$queue" )
 	dt="$( date +'%m/%d/%y+%T' )"
 	amnt_played="$( grep -F "$( echo $id | sed 's/^-/\\-/' )" "$played_urls" | head -1 | cut -d' ' -f2 )"
 	[ -n "$amnt_played" ] && amnt_played=$((amnt_played + 1)) || amnt_played=1
 	sed -i "/^$id/d" "$played_urls"
 	[ "$( printf '%s' "$id" | wc -m )" = '12' ] && echo "$id $amnt_played $dt $title" >> "$played_urls" && return
-	[ -z "$id" ] && return 1
 	if [ $download_songs = "y" ] && [ "$amnt_played" -gt "$max_stream_amount" ]; then
 		if ( ls "$songs_dir"/*"${id}"* >/dev/null 2>&1 ); then
 			echo "$id $amnt_played $dt dl $title" >> "$played_urls"
@@ -595,6 +595,7 @@ dlThumbnail () {
 play () {
 	[ -n "$1" ] && id="$1" || id=$( sed -n "s/$playing_regex/\1/p" "$queue" )
 	[ -z "$id" ] && return 1
+	incrAmntPlayed "$id"
 	# if the length of id (first field) is 12 then it is a checksum of a local file and not a youtube id so play it and exit
 	if [ "$( printf '%s' "$id" | wc -m )" = '12' ]; then
 		setsid -f mpv --x11-name='ytmp_mpv' --no-terminal --vid=no --input-ipc-server="$mpvsocket" "$( sed -n -e "s/$playing_regex/\3/p" "$queue" )"
@@ -607,7 +608,6 @@ play () {
 			[ "$download_thumbnails" = 'y' ] && dlThumbnail "$id"
 		fi
 	fi
-	incrAmntPlayed "$id"
 	# title="$( echo '{ "command": ["get_property_string", "media-title" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 | sed -E -e 's/^.{11} //' -e 's/\.webm$//' )"
 	title="$( sed -n -e "s/$playing_regex/\3/p" "$queue" )"
 	echo "Playing '$title'"
@@ -624,7 +624,7 @@ markAsPlaying () {
 	line="$( echo "$line" | sed -e s/m/"$( cat "$cache_dir/ytmpmark" )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
 	lncount=$( grep -c '.' "$queue" )
 	if [ "$line" -le 0 ] || [ "$line" -gt "$lncount" ]; then
-		[ "$cycle_queue" = 'y' ] && line=1 || exit 0
+		[ "$cycle_queue" = 'y' ] && line=1 || return 0
 	fi
 	sed -i -e "s/$playing_regex/\1 \3/" "$queue"
 	sed -i "${line}s/${field_regex}/\1 \*\*\*\2\*\*\*/" "$queue"
@@ -653,7 +653,7 @@ daemon () {
 				songEnd
 				markAsPlaying "$start"
 			elif [ "$pos" = 'k' ]; then
-				exit
+				return
 			else
 				songEnd
 				markAsPlaying "$pos"
@@ -957,7 +957,7 @@ dlSong () {
 }
 
 openInBrowser () {
-	if [ "$1" = 'pl' ]; then url="$( sed -n "${2}"p "$cache_dir/ytmpplaylists" | cut -d' ' -f1 )"; setsid -f "$BROWSER" "$url" >/dev/null 2>&1; exit
+	if [ "$1" = 'pl' ]; then url="$( sed -n "${2}"p "$cache_dir/ytmpplaylists" | cut -d' ' -f1 )"; setsid -f "$BROWSER" "$url" >/dev/null 2>&1; return
 	elif [ "$1" = 'id' ]; then id="$( sed -n "${2}"p "$cache_dir/ytmpids" )"
 	elif [ "$1" = '-id' ]; then id="$2"
 	else id=$( sed -n "${1}s/$field_regex/\1/p" "$queue" ); fi
@@ -1004,7 +1004,7 @@ case "${1}" in
 	-d) pgrep -f 'ytmp (-d|-r)+' | grep -v $$ | xargs kill >/dev/null 2>&1; shift; daemon "$@" ;;
 	-r) pgrep -f 'ytmp (-d|-r)+' | grep -v $$ | xargs kill >/dev/null 2>&1; shift; randomDaemon "$@" ;;
 	-n) songEnd ;;
-	-N) while true; do sleep .25 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && exit; done ;;
+	-N) while true; do sleep .25 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && return; done ;;
 	-p) echo cycle pause | socat - "$mpvsocket" >/dev/null 2>&1 ;;
 	-ff) [ -n "$2" ] && echo "{ \"command\": [\"seek\", \"+${2}\", \"exact\"] }" | socat - "$mpvsocket" >/dev/null 2>&1 && echo "Seeked forward $2 seconds." || echo 'Provide how many seconds to seek forward.' ;;
 	-bb) [ -n "$2" ] && echo "{ \"command\": [\"seek\", \"-${2}\", \"exact\"] }" | socat - "$mpvsocket" >/dev/null 2>&1 && echo "Seeked backward $2 seconds." || echo 'Provide how many seconds to seek backward.' ;;
