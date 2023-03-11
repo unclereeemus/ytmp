@@ -31,8 +31,8 @@ case "$1" in
 	# comment/uncomment the line following the comment # LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT
 	tm) linetog '# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT MASTER' ;;
 	gtm) linetogstatus '# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT MASTER' ;;
-	on) if [ "$( ytmpsuite g"$2" | head -1 )" = 'OFF' ]; then ytmpsuite $2; fi ;;
-	off) if [ "$( ytmpsuite g"$2" | head -1 )" = 'ON' ]; then ytmpsuite $2; fi ;;
+	on) [ "$( ytmpsuite g"$2" | head -1 )" = 'OFF' ] && ytmpsuite $2 ;;
+	off) [ "$( ytmpsuite g"$2" | head -1 )" = 'ON' ] && ytmpsuite $2 ;;
 	to)
 		if [ "$( ytmpsuite gt | head -1 )" = 'ON' ]; then ytmpsuite t >/dev/null 2>&1; fi
 		if [ "$( ytmpsuite gT | head -1 )" = 'ON' ]; then ytmpsuite T >/dev/null 2>&1; fi
