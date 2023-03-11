@@ -678,9 +678,9 @@ daemon () {
 			done
 		done
 		# if arg count is 1 and it's not a range, run daemon
-		# if last arg is not range, run daemon
 		if [ "$arg_ct" = 1 ] && ! echo "$1" | grep -q ','; then daemon
-		else echo "$@" | sed 's/.* //' | grep -q ',' || daemon
+		# if last arg is not a range, run daemon
+		elif ( ! echo "$@" | sed 's/.* //' | grep -q ',' ); then daemon
 		fi
 	else
 		while true; do
