@@ -46,11 +46,11 @@ cache_dir="$prefix/.cache"
 [ -z "$run_on_next" ] && run_on_next="$prefix/run_on_next"
 
 mkdir -p "$prefix" "$cache_dir" "$dl_dir" "$songs_dir" "$thumb_dir"
+# touch files in case they are non-existent so cat, grep, sed don't complain about that
 touch "$played_urls" "$favorites_file" "$search_history" "$queue" "$cache_dir/ytmpmark"
 
 # regex to match what's currently playing
 # note: options for ERE are not passed to sed or grep so ERE must be escaped
-# also note that ERE might not be available for posix implementation of these utilities
 
 # regex to match what's playing and groups to separate various fields
 playing_regex="^\(.\{11,12\}\) \(\*\*\*\)\(.*\)\(\*\*\*\)$"
@@ -632,9 +632,17 @@ markAsPlaying () {
 	play
 }
 
+# exit function on song end
 # pgrep for process instead of pinging the mpv socket because
-# tests have shown it takes a second to load so it's not always
-# a reliable indication of weather mpv is up
+# tests have shown the socket takes some time to load at times so it's not always
+# a reliable indication of weather mpv is up.
+# sleep twice in case the song didn't actually end and the user started
+# playing another song which caused the last one to quit
+# (suggested by finding another mpv instance immediately after).
+songEnd () {
+	while true; do sleep .25 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && sleep .25 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && break; done
+}
+
 daemon () {
 	if [ -z "$1" ] && ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 && ! grep -q '\*\*\*$' "$queue"; then markAsPlaying 1; fi
 	if [ -n "$1" ]; then
@@ -642,41 +650,42 @@ daemon () {
 			if echo "$pos" | grep -q ','; then
 				start="$( echo "$pos" | cut -d',' -f1 )"
 				end="$( echo "$pos" | cut -d',' -f2 )"
-				counter="$start"
-				entry=''
+				songEnd
+				markAsPlaying "$start"
 			elif [ "$pos" = 'k' ]; then
 				exit
 			else
 				entry="$pos"
-				counter="$pos"
-				start=''
-				end=''
+				songEnd
+				markAsPlaying "$entry"
+				continue
 			fi
 
 			while true; do
-				while true; do sleep .25 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && sleep .25 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && break; done
-
-				[ -n "$entry" ] && markAsPlaying $entry && break
 				playing="$( grep -n "$playing_regex" "$queue" | cut -d':' -f1 )"
 
 				if [ "$playing" = "$end" ]; then
-					[ "$2" = 'l' ] && counter="$start" && continue || break
+					[ "$2" = 'l' ] && markAsPlaying "$start" && continue || break
 				fi
 
-				# if things are outside the range ...
-				if [ "$playing" -lt "$start" ] || [ "$playing" -ge "$end" ]; then markAsPlaying $counter
-				else markAsPlaying p+1; counter=$playing; fi
-
-				[ $counter -ge $end ] && break
-				counter=$(( counter+1 ))
+				# user song changes are not registered by songEnd
+				# which means that $playing will hold the vlaue
+				# of the last time something was played in the range provided
+				songEnd
+				# get what's playing again in case user played something inside
+				# range in which case just play p+1
+				playing_n="$( grep -n "$playing_regex" "$queue" | cut -d':' -f1 )"
+				if [ "$playing_n" -ge "$start" ] && [ "$playing_n" -le "$end" ]; then markAsPlaying p+1; else markAsPlaying "$playing+1"; fi
 			done
 		done
+		# if arg count is 1 and it's not a range, run daemon
+		# if last arg is not range, run daemon
 		if [ "$arg_ct" = 1 ] && ! echo "$1" | grep -q ','; then daemon
 		else echo "$@" | sed 's/.* //' | grep -q ',' || daemon
 		fi
 	else
 		while true; do
-			sleep .25 && ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 && sleep .25 && ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 && markAsPlaying p+1
+			songEnd && markAsPlaying p+1
 		done
 	fi
 }
@@ -903,12 +912,13 @@ playFromHistory () {
 randomDaemon () {
 	start="$( echo "$1" | cut -d',' -f1 )"
 	end="$( echo "$1" | cut -d',' -f2 )"
-	while ( while true; do sleep .25 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && sleep .25 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && break; done ); do
+	while ( songEnd ); do
 		if [ -n "$1" ]; then markAsPlaying "$( seq "$start" "$end" | shuf -n 1 )"
 		else markAsPlaying "$( grep -c '' "$queue" | xargs seq | shuf -n 1 )"; fi
 	done
 }
 
+# used by -sd and every search select option to get song details/fzf previews
 fzfPreview () {
 	[ -z "$3" ] && echo 'Provide a line number.' && return 1
 	fzf_index="$( echo "$3" | sed -e s/m/"$( cat "$cache_dir/ytmpmark" )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
@@ -994,19 +1004,16 @@ case "${1}" in
 	-dl) dlSong "$*" ;;
 	-d) pgrep -f 'ytmp (-d|-r)+' | grep -v $$ | xargs kill >/dev/null 2>&1; shift; daemon "$@" ;;
 	-r) pgrep -f 'ytmp (-d|-r)+' | grep -v $$ | xargs kill >/dev/null 2>&1; shift; randomDaemon "$@" ;;
-	# sleep twice in case the song didn't actually end and the user started
-	# playing another song which caused the last one to quit
-	# (suggested by finding another mpv instance immediately after)
-	-n) while true; do sleep .25 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && sleep .25 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && exit; done ;;
+	-n) songEnd ;;
 	-N) while true; do sleep .25 && ( ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 ) && exit; done ;;
 	-p) echo cycle pause | socat - "$mpvsocket" >/dev/null 2>&1 ;;
 	-ff) [ -n "$2" ] && echo "{ \"command\": [\"seek\", \"+${2}\", \"exact\"] }" | socat - "$mpvsocket" >/dev/null 2>&1 && echo "Seeked forward $2 seconds." || echo 'Provide how many seconds to seek forward.' ;;
 	-bb) [ -n "$2" ] && echo "{ \"command\": [\"seek\", \"-${2}\", \"exact\"] }" | socat - "$mpvsocket" >/dev/null 2>&1 && echo "Seeked backward $2 seconds." || echo 'Provide how many seconds to seek backward.' ;;
-	-qa) echo quit | socat - "$mpvsocket" ;;
+	-qa) echo quit | socat - "$mpvsocket" >/dev/null 2>&1 ;;
 	-kd) pkill -f 'ytmp -d'; exit ;;
 	-kr) pkill -f 'ytmp -r'; exit ;;
 	-kdr) pkill -f 'ytmp (-d|-r)+' ;;
-	-ka) echo quit | socat - "$mpvsocket"; pkill -f 'ytmp (-d|-r)+' ;;
+	-ka) echo quit | socat - "$mpvsocket" >/dev/null 2>&1; pkill -f 'ytmp (-d|-r)+'; exit ;;
 	ls)
 		if [ -z "$2" ]; then grep --color=auto -n '' "$queue"; else
 			entry="$( echo "$2" | sed -e s/m/"$( cat "$cache_dir/ytmpmark" )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
