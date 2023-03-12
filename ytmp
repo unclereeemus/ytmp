@@ -1,6 +1,6 @@
 #!/bin/sh
 # YTMP: a shell script for searching, playing, downloading, and keeping track of music from youtube and local files with extensive queue management using fzf, vim, or cli
-# DEPS: dash compatible shell, yt-dlp, mpv, socat, fzf, xargs, find, sed, awk, bc, ed, coreutils, (pipe-viewer for playlist search), (notify-send for notifications), (curl for thumbnails), (n/vim)
+# DEPS: dash compatible shell, yt-dlp, mpv, socat, fzf, xargs, find, sed, bc, ed, coreutils, (pipe-viewer for playlist search), (notify-send for notifications), (curl for thumbnails), (n/vim)
 # only tested with GNU versions of the above tools (GNU sed is a known requirement)
 
 [ -z "$prefix" ] && prefix="/home/$USER/Music/ytmp"
@@ -880,7 +880,7 @@ batchmove () {
 		return 0
 	fi
 	# insert $place after each $sel so move () can make the change in one go (preserving the correct positions)
-	sel=$( echo $sel | awk '{ for (i=NF; i>1; i--) printf("%s ",$i); print $1; }' | sed -e "s/ / $place /g" -e "s/$/ $place /" )
+	sel=$( echo $sel | sed -e "s/ / $place /g" -e "s/$/ $place /" )
 	set -- $sel
 	[ "$action" = 'copy' ] && move c $@ || move $@
 }
