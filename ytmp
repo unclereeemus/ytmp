@@ -70,8 +70,9 @@ qdiscards_file="$cache_dir/qdiscards"
 helper () {
 cat << CAT_EOF
 Usage: ytmp [z] [<search>]/s|x [# of results] [<search>]/sp [<search>]/a <local path|dir|url>/e #
-       OR v/ls/m [c] [r] [# #] [x [x] #] [s [#]]/-m [c] [r] .../E
-       OR -l/-p OR n/p/pl/pf/mln/mfn/l [#|s]/P <search> OR -r [#,#]/-d [[#] #...[k|l]]]
+         OR v/ls/m [c] [r] [# #] [x [x] #] [s [#]]/-m [c] [r] .../E
+         OR -l/-p/-ff #/-bb #/-vl #/-dur/ OR n/p/pl/pf/mln/mfn/l [#|s]/P <search>
+	 OR -r [#,#]/-d [[#] #...[k|l]]]
 
 On first installing ytmp, there won't be any history to select from when you enter ytmp
 so either pass arguements from the cli with ytmp [z] <search> or to search what's on the
@@ -142,7 +143,7 @@ enter fzf for search.
 		default is 2. accepts p|l|m like 'm'.
 		ex: ytmp ls p 5 (to print the 5 entries around currently playing)
 
-  m [ [c] [r] [p|l|m|#[+|-#]][,][[p|l|m|#][+|-#]] ... ] [[c] x [x] ...] [s [#]]
+  m [ [c] [r] [[[p|l|m[+|-#]]|[#]][,][[p|l|m[+|-#]]|[#]]] ... ] [[c] x [x] ...] [s [#]]
   		move, copy, remove entries. l means last, p means currently playing, m means a position mark
 		set with passing s #. set mark by passing s # and see current mark with just s.
 		pass x # to move # to the position of the queue selected in the fzf window
@@ -628,8 +629,8 @@ play () {
 # puts stars around line # and removes stars from any other lines
 markAsPlaying () {
 	line="$1"
-	[ -z "$line" ] && return 1
 	line="$( echo "$line" | sed -e s/m/"$( cat "$mark_file" )"/ -e s/p/"$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"/ -e s/l/"$( grep -c '.' "$queue" )"/ | bc )"
+	[ -z "$line" ] && return 1
 	lncount=$( grep -c '.' "$queue" )
 	if [ "$line" -le 0 ] || [ "$line" -gt "$lncount" ]; then
 		if [ "$cycle_queue" = 'y' ]; then line=1
@@ -659,6 +660,7 @@ songEnd () {
 
 daemon () {
 	if [ -z "$1" ] && ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 && ! grep -q '\*\*\*$' "$queue"; then markAsPlaying 1; fi
+	if [ -z "$1" ] && ! grep -q '\*\*\*$' "$queue"; then songEnd; markAsPlaying 1; fi
 	if [ -n "$1" ]; then
 		for pos in $@; do
 			if echo "$pos" | grep -q ','; then
@@ -785,8 +787,8 @@ move () {
 	if [ "$action_v" = 'Remove' ]; then
 		target="$( printf '%s\n' "$@" )"
 	else
-		target="$( printf '%s\n' "$@" | sed -n 'p;n' )"
-		dest="$( printf '%s\n' "$@" | sed -n 'n;p' )"
+		target="$( printf '%s\n' "$@" | sed -n 'p;n' | tac )"
+		dest="$( printf '%s\n' "$@" | sed -n 'n;p' | tac )"
 	fi
 
 	# make edits in this numbered queue to anchor the positions given by the
@@ -888,12 +890,16 @@ transferQDiscards () {
 	[ ! -s "$qdiscards_file" ] && echo "'$qdiscards_file' either doesn't exist or is empty." && return 1
 	[ "$1" = 'v' ] && cat "$qdiscards_file" && return
 
+	found_file="$cache_dir/vdfound"
+	place_file="$cache_dir/vdplace"
+	rm -f "$found_file" "$place_file"
 	cat "$qdiscards_file" | while read -r f; do
 		id="$( echo "$f" | cut -d' ' -f2 )"
-		found="$( grep -n "$( echo $id | sed 's/^-/\\-/' )" "$queue" | cut -d':' -f1 | head -1 )"
-		place="$( echo "$f" | cut -d' ' -f1 )"
-		[ "$1" = 'c' ] && move c $found $place || move $found $place
+		grep -n "$( echo $id | sed 's/^-/\\-/' )" "$queue" | cut -d':' -f1 | head -1 >> "$found_file"
+		echo "$f" | cut -d' ' -f1 >> "$place_file"
 	done
+	set -- $( paste -d ' \n' "$found_file" "$place_file" | tr '\n' ' ' )
+	[ "$1" = 'c' ] && move c "$@" || move "$@"
 }
 
 fuzzyPlay () {
