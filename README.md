@@ -4,7 +4,7 @@ a shell script for searching, playing, downloading, and keeping track of music f
 demo: https://www.reddit.com/r/unixporn/comments/11mxwb0/oc_i_wrote_a_cli_and_keyboard_centric/
 
 **FEATURES:**
-  - Keyboard centered
+  - Keyboard/cli centered
   - Add local files/directories
   - Select from search results
   - Search regular youtube or youtube music (kind of... in a round about way. see `ytmp h` for explanation)
@@ -20,13 +20,13 @@ demo: https://www.reddit.com/r/unixporn/comments/11mxwb0/oc_i_wrote_a_cli_and_ke
   - Everything is a plain text file
 
 # setup
-## DEPS: fzf, yt-dlp, mpv, socat, gnu coreutils, dash/bash, (n/vim, for playlist search - pipe-viewer(https://github.com/trizen/pipe-viewer/)) -- only tested on a GNU/Linux system
+## DEPS: fzf, yt-dlp, mpv, socat, gnu coreutils, dash compatible shell, (for playlist search - pipe-viewer(https://github.com/trizen/pipe-viewer/)) -- only tested on a GNU/Linux system
 ## NOT A DEP: accounts of any sort
 `git clone --depth 1 'https://github.com/unclereeemus/ytmp/'; cd ytmp; chmod +x ytmp run_on_next`
 
 (link/move ytmp to your $PATH like) `[ln -s|mv] $(pwd)/ytmp /home/$USER/.local/bin/`
 
-(if intending to use nvim) `mv ytmp.vim ~/.config/nvim/`
+(if intending to use nvim('E' option)) `mv ytmp.vim ~/.config/nvim/`
 
 move run_on_next to ~/Music/ytmp/ where it's looked for by default; if you move it elsewhere,
 change the location in the conf file which is also sourced from ~/Music/ytmp/ by default
@@ -78,7 +78,7 @@ the thumbnail is sourced from /tmp/muscover.webp (don't forget to set 'download_
 
 - play dmenu selection: `cat "/home/$USER/Music/ytmp/queue" | dmenu -l 15 | cut -d' ' -f1 | xargs -I ,, ytmp P -id ,,`
 
-- to play one song after another without moving them to a consecutive place and running the daemon, do `printf '%s\n' '<fuzzy search with P>' '<entry for e>' ... | while read p; do ( while (ytmp -n); do if (printf $p | grep -Eq '^.((\+|-)[0-9]*)?$|^[0-9]*$'); then ytmp e $p; else ytmp P $p; fi; break; done; ) done`. play queue backwards: `while (ytmp -n); do ytmp p; done`
+- to play one song after another without moving them to a consecutive place and running the daemon, do `printf '%s\n' '<fuzzy search with P>' '<entry for e>' ... | while read p; do ( while (ytmp -n); do if (printf $p | grep -Eq '^.((\+|-)[0-9]*)?$|^[0-9]*$'); then ytmp e $p; else ytmp P $p; fi; break; done; ) done`. play queue backwards: `while (ytmp -n); do ytmp p; done` or just play the next song after current one ends `ytmp -n; ytmp n`.
 
 - you don't need to use ytmp to make playlists for it. to create a queue file from a youtube playlist you can do `yt-dlp --print id --print title '<playlist_url>' | paste -s -d ' \n' > file` or to create a queue file from search results do `xargs -d '\n' -a <file-with-newline-sperated-searches> -I ,, yt-dlp --print id --print title ytsearch:",," | paste -s -d ' \n' > file` (to read from stdin instead of a file use `printf '%s\n' '<search1>' '<search2>' '<search3>' | xargs [without -a option]...`) or to search for playlists from the terminal (requires pipe-viewer): `search='YOUR_SEARCH'; pipe-viewer --no-interactive -sp --custom-playlist-layout='*VIDEOS*VIDS *TITLE* *URL*' "$search" | fzf --bind='ctrl-a:execute(echo {} | awk "{print $NF}" | xargs -0 -I ",," pipe-viewer --custom-layout="*AUTHOR* *TIME* *TITLE*" --no-interactive ",," | fzf)' | awk '{print $NF}' | xargs -0 -I ',,' yt-dlp --print id --print title ',,' | paste -s -d ' \n' > file` (have a look at `ytmpsuite sp` for a more featureful version with previews and individual song select or `ytmpsuite pvpl` to automate playlist search and add)
 
@@ -88,7 +88,7 @@ the thumbnail is sourced from /tmp/muscover.webp (don't forget to set 'download_
 
 - to sort your play history by how many times you've listened to something use `sort -nk2 "/home/$USER/Music/ytmp/played_urls" | less`
 
-- if you wanted to use this for videos instead of music, do a global remove of `--vid=no` and a global replace of `--ytdl-format='bestaudio'` with your preference of video and audio quality (like `--ytdl-format=bestvideo'[height<=?1080]'+bestaudio`) in the source
+- if you wanted to use this for videos instead of music, do a global remove of `--vid=no` and a global replace of `--ytdl-format='bestaudio'` with your preference of video and audio quality (like `--ytdl-format=bestvideo'[height<=?1080]'+bestaudio`) in the source. further, you could also display the covert art/always pop an mpv window open on the start of each song by doing a global replace of `--vid=no` with `--cover-art-file="$thumbnail_ln"` (having set `download_thumbnails='y'` in the conf of course).
 
 - you can make a scratchpad (i recommend tdrop(https://github.com/noctuid/tdrop) if your wm doesn't support them) of `ytmp E` which can be your one stop for music management (you can invoke ytmp with keybindings by using the vim config provided)
 
@@ -99,8 +99,9 @@ the thumbnail is sourced from /tmp/muscover.webp (don't forget to set 'download_
 # usage
 ```
 Usage: ytmp [z] [<search>]/s|x [# of results] [<search>]/sp [<search>]/a <local path|dir|url>/e #
-       OR v/ls/m [c] [# #] [r|x #] [s [#]]/-m [c] [r] .../E
-       OR -l/-p OR n/p/pl/pf/mln/mfn/l [#|s]/P <search> OR -r [#,#]/-d [[#] #...[k|l]]]
+         OR v/ls/m [c] [r] [# #] [x [x] #] [s [#]]/-m [c] [r] .../E
+         OR -l/-p/-ff #/-bb #/-vl #/-dur/ OR n/p/pl/pf/mln/mfn/l [#|s]/P <search>
+	 OR -r [#,#]/-d [[#] #...[k|l]]]
 
 On first installing ytmp, there won't be any history to select from when you enter ytmp
 so either pass arguements from the cli with ytmp [z] <search> or to search what's on the
@@ -159,8 +160,8 @@ enter fzf for search.
 		pass s to select from the history file with fzf.
 		* fzf bindings: ctrl-j: jump; ctrl-o: open entry in web browser.
 
-  w 		toggle mpv window. don't press q to close the window because that will close
-  		the file as well instead run ytmp w again to close it.
+  w 		toggle mpv window. don't close the window because that will quit
+  		the song as well instead run ytmp w again to close it.
 
 
   v 		view queue in fzf
@@ -171,7 +172,7 @@ enter fzf for search.
 		default is 2. accepts p|l|m like 'm'.
 		ex: ytmp ls p 5 (to print the 5 entries around currently playing)
 
-  m [c] [p|l|m|#[+|-#]] [p|l|m|#[+|-#]] [r ...] [[c] x [x] ...] [s [#]]
+  m [ [c] [r] [[[p|l|m[+|-#]]|[#]][,][[p|l|m[+|-#]]|[#]]] ... ] [[c] x [x] ...] [s [#]]
   		move, copy, remove entries. l means last, p means currently playing, m means a position mark
 		set with passing s #. set mark by passing s # and see current mark with just s.
 		pass x # to move # to the position of the queue selected in the fzf window
@@ -210,20 +211,21 @@ enter fzf for search.
   -c ...	alternative to -m c
   -R ...	alternative to -m r
 
-  E 		edit the queue in nvim and source rc from "$XDG_CONFIG_HOME/nvim/ytmp.vim"
+  E 		open the queue in nvim and source rc from "$XDG_CONFIG_HOME/nvim/ytmp.vim". nvim is started
+		with "--noplugin +/'***'" as well.
 
   -sd <#> 	get listen history and other details about entry (accepts p|l|m like 'm')
   -dl 		download song # (accepts p|l|m like 'm'). does not respect \$max_len_for_dl.
   -shuf 	runs shuf on the queue file and overwrites it. the original queue can be found in
   		"$cache_dir/queue_noshuf".
 
-  -vd 		prints $cache_dir/ytmpqdiscards which contains list of songs that were selected to
-  		be added to the queue in the last search but were already found on the queue.
+  -vd 		prints "$qdiscards_file" which contains a list of songs that were selected to
+  		be added to the queue in the last search but were already found in the queue.
 		it's removed with every search.
 
   -rd [c] 	copies or moves songs listed in $cache_dir/ytmpqdiscards; can be copied (when given c option)
   		to or moved (when no options are given) from their current position to the position they
-		would have been added on if they were never found on the queue.
+		would have been added to if they were never found on the queue.
 
   -d [<start on>] [[[<from>],[<to>]] [l]] [<from>],[<to>] [#] ... [k]]
   		no arg - play one song after another
@@ -401,16 +403,16 @@ Other features:
   	See https://pastebin.com/23PXxpiD for examples (make sure to pass commands to the
 	$mpvsocket socket) and \`mpv --list-properties\` for properties that can be controlled.
   - by default ytmp downloads songs after you have listened to them $max_stream_amount times, if you
-  	don't want this feature set \$download_songs to 'n' in $conf.
-	the downloads can be found in $songs_dir.
+  	don't want this feature set \$download_songs to 'n' in $conf. if you want to download every song
+	and never stream them set \$max_stream_amount to '1'. the downloads can be found in $songs_dir.
   - you can have multiple entries of the same song in multiple places and the program won't get confused
   	(in case you wanted to move tracks of albums around without changing their place in the album).
   - put commands you want to run at the start of each song in the script $run_on_next.
-  - set settings in $conf.
 
 You might be interested to know:
   - the editor config is made for nvim; not all binds are tested to be working in vim
   - songs are streamed/downloaded with the 'bestaudio' option
+  - song/thumbnail downloads are named as "<id> <title>.<ext>"
   - mpv is started with these options: --x11-name='ytmp_mpv' --no-terminal --vid=no --input-ipc-server=/tmp/mpvsocketytmp
   	--ytdl-format='bestaudio'
   - <search> with spaces don't have to be quoted
@@ -423,5 +425,6 @@ You might be interested to know:
 	work for you feel free to do a global replace of the bind (the keynames are not always what's
 	shown in this help so consult the fzf manpage to see what fzf calls them)
   - also unfortunately the program does not check and will not tell you if you've entered something unexpected/wrong
-	or do not have all the dependencies installed
+	or do not have all the dependencies installed. so be sure when passing ranges that the lesser number is first
+	and pass p|l|m only to options stated to accept them.
 ```
