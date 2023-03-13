@@ -1,10 +1,12 @@
 #!/bin/sh
 # vol=35
 
-# wait for mpv to load before continuing so the commands aren't sent to a black hole
-# while true; do [ -n "$( echo '{ "command": ["get_property", "pid"] }' | socat - /tmp/mpvsocketytmp )" ] && break; sleep .2; done >/dev/null 2>&1
+# some things here are redundant but that's only to show various ways of doing them
 
-# the four lines below are toggled by the ytmpsuite script; don't change the comments
+# wait for mpv to load before continuing so the commands aren't sent to a black hole
+# while true; do [ -n "$( echo '{ "command": ["get_property", "pid"] }' | socat - /tmp/mpvsocketytmp )" ] && break; sleep .1; done >/dev/null 2>&1
+
+# the lines below comments mentioning toggling are toggled by the ytmpsuite script; don't change the comments
 # (feel free to change the commands or move the comment and command to a different place
 # but be sure to leave a space after the # and put the cmds directly below the comments)
 # or else the toggle system won't work
@@ -33,7 +35,7 @@
 
 ifytmpactive () {
 	if [ "`cat /tmp/active_mpvsocket`" = '/tmp/mpvsocketytmp' ]; then
-		break
+		return
 	else
 		# if /tmp/mpvsocketytmp is not the active socket, lower the volume
 		mpv_socket_commands s volume $vol st /tmp/mpvsocketytmp
