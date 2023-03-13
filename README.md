@@ -101,9 +101,9 @@ the thumbnail is sourced from /tmp/muscover.webp (don't forget to set 'download_
 # usage
 ```
 Usage: ytmp [z] [<search>]/s|x [# of results] [<search>]/sp [<search>]/a <local path|dir|url>/e #
-         OR v/ls/m [c] [r] [# #] [x [x] #] [s [#]]/-m [c] [r] .../E
-         OR -l/-p/-ff #/-bb #/-vl #/-dur/ OR n/p/pl/pf/mln/mfn/l [#|s]/P <search>
-	 OR -r [#,#]/-d [[[+]#[,#] [L]] #...[k]]]
+         OR v/ls [# [#]]/m [c] [r] [# ... #] [x [x] #] [s [#]]/-m [c] [r] .../E
+         OR -l/-p/-ff|-bb #/-vl [+|-]#/-dur/ OR n/p/pl/pf/mln/mfn/l [#|s]/P <search>
+	 OR N <search|entry>/-r [#,#]/-d [[[+]#[,#] [L]] #...[k]]]
 
 On first installing ytmp, there won't be any history to select from when you enter ytmp
 so either pass arguements from the cli with ytmp [z] <search> or to search what's on the
@@ -132,20 +132,20 @@ enter fzf for search.
 
   sp [<search>] search for playlists (requires https://github.com/trizen/pipe-viewer/)
 
-  * for the above options (including [no arg]) if the first arg to the option is --startwith
+  a <local path|dir|url> ...
+	        add urls (direct links/playlists), paths, or directory.
+		does not check if file is a media file or not before adding.
+
+  * for the above options (including [no arg] but not 'a') if the first arg to the option is --startwith
     then fzf will start with the args that follow in its input field except for s and x for
     which if a <# of results> arg is sent, --startwith must follow that arg instead of being
     the first one, it may be the first one when a results arg is not being sent
 
-  * further, they also optionally accept a destination to add to with the positional -i option
-    (accepts args like 'm') - it must come before the search option (like -i # sp|x|a|<search>...
-    [--startwith ...]). when used with 'sp', individual song selects inherit the position to add to
-    and they are only added to the queue when the playlist selections are finalized. whether songs
-    are already in the queue is not checked for so this may lead to copies of entries.
-
-  a <local path|dir|url> ...
-	        add urls (direct links/playlists), paths, or directory.
-		does not check if file is a media file or not before adding.
+  * further, they (including 'a') also optionally accept a destination to add to with the positional -i option
+    (accepts args like 'm') - it must come before the search option (like -i # sp|x/s [#]|a|z|<search>
+    [--startwith ...] [<search>]). when used with 'sp', individual songs selected in playlists inherit the 
+    position to add to and they are only added to the queue when the playlist selections are finalized or cancelled. 
+    whether songs are already in the queue is not checked for so this may lead to copies of entries.
 
   -af [#] ...	add entry # to $favorites_file. if no arg, print $favorites_file.
   		accepts args like 'm'.
@@ -466,6 +466,8 @@ You might be interested to know:
   - entries for local files are created with \`cksum --untagged --algorithm=blake2b -l 48 <file> | sed 's@\b  @ @'\`
   - thumbnails are not automatically deleted. if \$download_thumbnails option is set to 1 then thumbnails are
 	downloaded and not removed regardless of whether the song is downloaded or not
+  - move functions are made last to first this is to insure that if multiple entries are competing for the same
+  	spot the order turns out to be the order sent. this is also why the msgs might be up side down.
   - sadly there's no way to customize the fzf keybinds without modifying the source so if something doesn't
 	work for you feel free to do a global replace of the bind (the keynames are not always what's
 	shown in this help so consult the fzf manpage to see what fzf calls them)
