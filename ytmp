@@ -124,8 +124,8 @@ enter fzf for search.
 
   * further, they (including 'a') also optionally accept a destination to add to with the positional -i option
     (accepts args like 'm') - it must come before the search option (like -i # sp|x/s [#]|a|z|<search>
-    [--startwith ...] [<search>]). when used with 'sp', individual songs selected in playlists inherit the 
-    position to add to and they are only added to the queue when the playlist selections are finalized or cancelled. 
+    [--startwith ...] [<search>]). when used with 'sp', individual songs selected in playlists inherit the
+    position to add to and they are only added to the queue when the playlist selections are finalized or cancelled.
     whether songs are already in the queue is not checked for so this may lead to copies of entries.
 
   -af [#] ...	add entry # to $favorites_file. if no arg, print $favorites_file.
@@ -166,7 +166,7 @@ enter fzf for search.
 		default is 2. accepts args like 'm'.
 		ex: ytmp ls p 5 (to print the 5 entries above and below currently playing)
 
-  m [ [c] [r] [[[p|l|m[+|-#]]|[#]][,][[p|l|m[+|-#]]|[#]]] ... ] [[c] x [x] ...] [s [#]]
+  m [[c] [r] [[[p|l|m[+|-#]]|[#]][,][[p|l|m[+|-#]]|[#]]] ... ] [[c] x [x] ...] [s [#]]
   		move, copy, remove entries. l means last, p means currently playing, m means a position mark
 		set with passing s #. set mark by passing s # and see current mark with just s.
 		pass x # to move # to the position of the queue selected in the fzf window
