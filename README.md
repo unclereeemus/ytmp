@@ -90,7 +90,7 @@ the thumbnail is sourced from /tmp/muscover.webp (don't forget to set 'download_
 
 - if you wanted to use this for videos instead of music, do a global remove of `--vid=no` and a global replace of `--ytdl-format='bestaudio'` with your preference of video and audio quality (like `--ytdl-format=bestvideo'[height<=?1080]'+bestaudio`) in the source. further, you could also display the covert art/always pop an mpv window open on the start of each song by doing a global replace of `--vid=no` with `--cover-art-file="$thumbnail_ln"` (having set `download_thumbnails='y'` in the conf of course).
 
-- if you want one less dependancy (socat), remove the line `echo quit | socat - "$mpvsocket" >/dev/null 2>&1` from `play ()` and replace it with `pkill -a "mpv.*--input-ipc-server=${mpvsocket}"` though that will mean that anything that's got to do with mpv/playback control will not work.
+- if you want one less dependancy (socat), remove the line `echo quit | socat - "$mpvsocket" >/dev/null 2>&1` from `play ()` and replace it with `pkill -f "mpv.*--input-ipc-server=${mpvsocket}"` though that will mean that anything that's got to do with mpv/playback control will not work.
 
 - you can make a scratchpad (i recommend tdrop(https://github.com/noctuid/tdrop) if your wm doesn't support them) of `ytmp E` which can be your one stop for music management (you can invoke ytmp with keybindings by using the vim config provided)
 
