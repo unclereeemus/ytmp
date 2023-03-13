@@ -41,7 +41,7 @@ nnoremap <C-t> :te <Enter>i
 nnoremap <C-y> :te ytmp<Enter>i
 nnoremap <C-w> :te ytmp z<Enter>i
 nnoremap <C-v> :te ytmp vv<Enter>i
-nnoremap <C-p> :silent !ytmpsuite qsn<Space>
+nnoremap <C-p> :silent !ytmp N<Space>
 
 nnoremap < :silent !ytmp p<Enter>
 nnoremap > :silent !ytmp n<Enter>
