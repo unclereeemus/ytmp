@@ -185,7 +185,7 @@ enter fzf for search.
 		default is 2. accepts args like 'm'.
 		ex: ytmp ls p 5 (to print the 5 entries above and below currently playing)
 
-  m [ [c] [r] [[[p|l|m[+|-#]]|[#]][,][[p|l|m[+|-#]]|[#]]] ... ] [[c] x [x] ...] [s [#]]
+  m [[c] [r] [[[p|l|m[+|-#]]|[#]][,][[p|l|m[+|-#]]|[#]]] ... ] [[c] x [x] ...] [s [#]]
   		move, copy, remove entries. l means last, p means currently playing, m means a position mark
 		set with passing s #. set mark by passing s # and see current mark with just s.
 		pass x # to move # to the position of the queue selected in the fzf window
