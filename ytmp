@@ -747,7 +747,7 @@ daemon () {
 				echo "$end" | grep -Eqx '(\+|-|\*|/)+[0-9]*' && end="$( echo "${start}${end}" | bc )" || end="$( echo "$end" | sed -e s/m/$mark/ -e s/p/$playing/ -e s/l/$last/ | bc )"
 				songEnd
 				playing="$( grep -n "$playing_regex" "$queue" | cut -d':' -f1 )"
-				if [ "$playing" -ge "$start" ] && [ "$playing" -lt "$end" ]; then markAsPlaying 'p+1'; else markAsPlaying "$start"; fi
+				if [ -n "$playing" ] && [ "$playing" -ge "$start" ] && [ "$playing" -lt "$end" ]; then markAsPlaying 'p+1'; else markAsPlaying "$start"; fi
 			elif [ "$pos" = 'k' ]; then
 				return
 			else
