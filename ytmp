@@ -447,6 +447,8 @@ You might be interested to know:
   - entries for local files are created with \`cksum --untagged --algorithm=blake2b -l 48 <file> | sed 's@\b  @ @'\`
   - thumbnails are not automatically deleted. if \$download_thumbnails option is set to 1 then thumbnails are
 	downloaded and not removed regardless of whether the song is downloaded or not
+  - move functions are made last to first this is to insure that if multiple entries are competing for the same
+  	spot the order turns out to be the order sent. this is also why the msgs might be up side down.
   - sadly there's no way to customize the fzf keybinds without modifying the source so if something doesn't
 	work for you feel free to do a global replace of the bind (the keynames are not always what's
 	shown in this help so consult the fzf manpage to see what fzf calls them)
@@ -966,6 +968,7 @@ batchmove () {
 transferQDiscards () {
 	[ ! -s "$qdiscards_file" ] && echo "'$qdiscards_file' either doesn't exist or is empty." && return 1
 	[ "$1" = 'v' ] && cat "$qdiscards_file" && return
+	[ "$1" = 'c' ] && action='copy'
 
 	found_file="$cache_dir/qdfound"
 	place_file="$cache_dir/qdplace"
@@ -976,7 +979,7 @@ transferQDiscards () {
 		echo "$f" | cut -d' ' -f1 >> "$place_file"
 	done
 	set -- $( paste -d ' \n' "$found_file" "$place_file" | tr '\n' ' ' )
-	[ "$1" = 'c' ] && move c "$@" || move "$@"
+	[ "$action" = 'copy' ] && move c "$@" || move "$@"
 }
 
 fuzzyPlay () {
