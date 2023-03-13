@@ -734,7 +734,7 @@ daemon () {
 	if [ "$1" = '-C' ]; then cycle_queue='n'; shift; fi
 	if [ -z "$1" ] && ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 && ! grep -q "$playing_regex" "$queue"; then markAsPlaying 1; fi
 	if [ -z "$1" ] && ! grep -q "$playing_regex" "$queue"; then songEnd; markAsPlaying 1; fi
-	if ( echo "$1" | grep -qx '+[0-9]*' ); then playing="$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"; set -- "$( echo "${playing}+1" | bc ),$( echo "${playing}${1}" | bc )" k; fi
+	if ( echo "$1" | grep -qx '+[0-9]\+' ); then playing="$( grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1 )"; set -- "$( echo "${playing}+1" | bc ),$( echo "${playing}${1}" | bc )" k; fi
 	if [ -n "$1" ]; then
 		for pos in $@; do
 			last="$( grep -c '.' "$queue" )"
@@ -761,7 +761,7 @@ daemon () {
 				playing="$( grep -n "$playing_regex" "$queue" | cut -d':' -f1 )"
 
 				if [ "$playing" = "$end" ]; then
-					[ "$2" = 'L' ] && markAsPlaying "$start" && continue || break
+					[ "$2" = 'L' ] && songEnd && markAsPlaying "$start" && continue || break
 				fi
 
 				# user song changes are not registered by songEnd
