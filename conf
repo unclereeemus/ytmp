@@ -6,26 +6,26 @@
 # daemonize, notifications, download_thumbnails, download_songs, cycle_queue
 
 # if to play one song after another by default
-daemonize="y"
+daemonize='y'
 
 # thumbnails are downloaded to $thumb_dir but the thumbnail of
 # what's currently playing is linked to /tmp/muscover.webp
 # (they are never deleted)
-download_thumbnails="n"
+download_thumbnails='n'
 # where to link the thumbnail of currently playing
 thumbnail_ln='/tmp/muscover.webp'
 # Only two kinds of notifications:
 # on song play, on song download
-notifications="y"
+notifications='y'
 # whether to start playing from the top when queue reaches the end
-cycle_queue="n"
+cycle_queue='n'
 # whether to confirm removal of '-m r' selections
 confirm_removal='n'
 
 # if to download songs after they are played more than $max_stream_amount
-download_songs="y"
+download_songs='y'
 # maximum amount of times to stream a song before downloading it
-max_stream_amount=3
+max_stream_amount='3'
 # the maximum a length a file can be (in seconds) if it's to be downloaded
 max_len_for_dl='600'
 
@@ -37,8 +37,24 @@ thumb_dir="$dl_dir/thumbnails"
 played_urls="$prefix/played_urls"
 search_history="$prefix/search_history"
 
+# used by '-af' which copies entries to this file
+favorites_file="$prefix/favorites"
+
 queue="$prefix/queue"
 
 # this is run everytime a song is played so if you want certain
 # mpv settings to remain consistent (volume, loop, seek, etc) then put them in this file
 run_on_next="$prefix/run_on_next"
+
+# fzf colors; 'P' is substitute for '+'
+fzf_gutter='black'
+fzf_hlP='bold:bright-red'
+fzf_hl='bright-red'
+fzf_label='italic:white'
+fzf_marker='cyan'
+fzf_pointer='cyan'
+fzf_bgP='black'
+fzf_label='white'
+fzf_info='white:dim'
+fzf_label='white:dim'
+fzf_spinner='white:dim'
