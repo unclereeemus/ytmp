@@ -4,10 +4,10 @@ a shell script for searching, playing, downloading, and keeping track of music f
 demo: https://www.reddit.com/r/unixporn/comments/11mxwb0/oc_i_wrote_a_cli_and_keyboard_centric/
 
 **FEATURES:**
-  - Keyboard/cli centered
+  - CLI/keyboard centered
   - Add local files/directories
+  - Search regular youtube or youtube music (kind of... in a round about way. see usage for explanation)
   - Select from search results
-  - Search regular youtube or youtube music (kind of... in a round about way. see `ytmp h` for explanation)
   - Search and add youtube playlists to the queue (or only select songs of playlists)
   - Select from past searches in fzf to reduce typing
   - Download songs after they have been played a chosen amount of times (and play the download in the future)
@@ -15,7 +15,7 @@ demo: https://www.reddit.com/r/unixporn/comments/11mxwb0/oc_i_wrote_a_cli_and_ke
   - Manage the queue from fzf, vim, cli
   - Keep track of listen history/amount
   - Run commands on song start
-  - Specify a queue order to iterate through without having to shift entries in the queue file (see help for -d)
+  - Specify a queue order to iterate through without having to shift entries in the queue file (see usage for -d)
   - Communicate with mpv through its ipc server
   - Everything is a plain text file
 
@@ -130,13 +130,17 @@ enter fzf for search.
 
   sp [<search>] search for playlists (requires https://github.com/trizen/pipe-viewer/)
 
+  * for the above options (including [no arg]) if the first arg to the option is --startwith
+    then fzf will start with the args that follow in its input field except for s and x for
+    which if a <# of results> arg is sent, --startwith must follow that arg instead of being
+    the first one, it may be the first one when a results arg is not being sent
+
   a <local path|dir|url> ...
-	        add urls (direct links/playlists), paths, or directory
-  		(pass them as arguement - accepts many of all the kinds mentioned).
+	        add urls (direct links/playlists), paths, or directory.
 		does not check if file is a media file or not before adding.
 
-  -af [#]	add entry # to $favorites_file. if no arg, print $favorites_file.
-  		accepts only one arg and p|l|m like 'm'.
+  -af [#] ...	add entry # to $favorites_file. if no arg, print $favorites_file.
+  		accepts p|l|m like 'm'.
 
   e 		play entry #; can specify relative places with p|l|m like 'm'
   n 		play next on queue
@@ -149,12 +153,13 @@ enter fzf for search.
   		fuzzy search string in queue and play match. if -id is passed <search> is parsed for
 		in ids too otherwise only in song titles.
 
-  -p 		toggle playback
-  -l 		toggle loop
-  -vl <[+|-]#>	set volume. can be an absolute number or <+|-># to current volume (as in -vl +30, -vl -30, -vl 80)
   -ff <secs>	seek forward <seconds>
   -bb <secs>	seek backward <seconds>
   -dur		get the position and duration of song
+  -vl <[+|-]#>	set volume. can be an absolute number or <+|-># to current volume
+  			(as in -vl +30, -vl -30, -vl 80)
+  -p 		toggle playback
+  -l 		toggle loop
 
   l [#|s] 	play the song that was played before this one or # before this one or
 		pass s to select from the history file with fzf.
@@ -170,7 +175,7 @@ enter fzf for search.
   ls [# [#]]	show a numbered list of the queue. optionally accepts two args - one for focusing on a certain
   		# on the queue and another for how much of the surrounding queue to print. if no second arg,
 		default is 2. accepts p|l|m like 'm'.
-		ex: ytmp ls p 5 (to print the 5 entries around currently playing)
+		ex: ytmp ls p 5 (to print the 5 entries above and below currently playing)
 
   m [ [c] [r] [[[p|l|m[+|-#]]|[#]][,][[p|l|m[+|-#]]|[#]]] ... ] [[c] x [x] ...] [s [#]]
   		move, copy, remove entries. l means last, p means currently playing, m means a position mark
@@ -187,6 +192,11 @@ enter fzf for search.
 		syntax for ytmp m|m c|m r is [<target>|<from>,<to>] <destination> ...
 
 		* if for 'a,b', a is greater than b then move starting from b to a - move range bottom up
+
+		* when it is said that an option "accepts p|l|m like 'm'", it is meant that the program
+			will accept anything like 'p+#' or if ranges are also accepted then something like
+			'm,+2' as well. the above 'bottom up' rule does not hold in such cases and
+			will you'll get errors if used for any option than 'm' and '-m'
 
   c ...		alternative to m c
   r ...		alternative to m r
@@ -216,7 +226,7 @@ enter fzf for search.
 
   -sd <#> 	get listen history and other details about entry (accepts p|l|m like 'm')
   -dl 		download song # (accepts p|l|m like 'm'). does not respect \$max_len_for_dl.
-  -shuf 	runs shuf on the queue file and overwrites it. the original queue can be found in
+  -shuf 	runs \`shuf\` on the queue file and overwrites it. the original queue can be found in
   		"$cache_dir/queue_noshuf".
 
   -vd 		prints "$qdiscards_file" which contains a list of songs that were selected to
@@ -227,8 +237,15 @@ enter fzf for search.
   		to or moved (when no options are given) from their current position to the position they
 		would have been added to if they were never found on the queue.
 
-  -d [<start on>] [[[<from>],[<to>]] [l]] [<from>],[<to>] [#] ... [k]]
+  -d [-c|-C] [+#] [<start on>] [[[<from>],[<to>]] [l]] [<from>],[<to>] [#] ... [k]]
+		options:
+		-c - cycle queue (start playing from the top once queue reaches the end)
+		-C - don't cycle queue (default)
+
+		args:
   		no arg - play one song after another
+
+		+# - play # of songs after currently what's currently playing and quit
 
   		single arg - start playing from <arg> (if another song is playing, it will wait
 			for it to end to start playing from the entry provided.)
@@ -240,16 +257,19 @@ enter fzf for search.
 			if 'k' is the last arg then exit once all entries are played
 			otherwise continue playing from last arg unless last arg is a range
 
-		* ranges must be comma separated
-
-		if you happen to play something outside of the current range,
-		the program will pick up from where you left off when you left the range.
-		but if you play something inside the range, it will continue on playing from there.
-
 		you can specfiy many ranges, entries, effectively queueing things up to play
 		without moving them in the queue file.
 
-		example: ytmp -d 4 25,29 35 110,112
+		* ranges must be comma separated
+
+		* if you happen to play something outside of the current range,
+		the program will pick up from where you left off when you left the range.
+		but if you play something inside the range, it will continue on playing from there.
+
+		* accepts p|l|m like 'm'
+
+		examples: ytmp -d 4 (start playing from entry four); ytmp -d +4 (play four more songs and quit)
+			  ytmp -d 4 25,+7 38 110,112
 
 		(kills any other instances of -r or -d running on start.)
 
@@ -340,9 +360,10 @@ enter fzf for search.
 	ctrl-s		search query in background
 	ctrl-z		search query in background with ytmp z
 	ctrl-r		replace input field with entry
-	ctrl-alt-f	'favorite' entry (copy entry to a seperate file)
+	ctrl-alt-f	-af ('favorite') entry
 	ctrl-alt-d	download selection
 	ctrl-alt-j	jump to currently playing
+	alt-j		jump to mark (does not update with mark change)
 	alt-r		reload queue
 	ctrl-o		open entry in web browser
 	alt-up		move entry to first
@@ -353,6 +374,14 @@ enter fzf for search.
 	ctrl-space	ytmp m x for entry
 	alt-space	ytmp m x x for entry
 	alt-bspace	ytmp m c x for entry
+	alt-c		ytmp m c x x for entry
+	alt-s		run ytmp and inherit the input field
+	alt-z		run ytmp z and inherit the input field
+	ctrl-alt-s	run ytmp s and inherit the input field
+	ctrl-alt-x	run ytmp x and inherit the input field
+	alt-p		run ytmp sp and inherit the input field
+
+  * readline binds are also available in all fzf instances
 
   --------------------------------------------------------
   nvim key bindings:
@@ -413,9 +442,10 @@ You might be interested to know:
   - the editor config is made for nvim; not all binds are tested to be working in vim
   - songs are streamed/downloaded with the 'bestaudio' option
   - song/thumbnail downloads are named as "<id> <title>.<ext>"
-  - mpv is started with these options: --x11-name='ytmp_mpv' --no-terminal --vid=no --input-ipc-server=/tmp/mpvsocketytmp
+  - mpv is started with these options: --x11-name='ytmp_mpv' --no-terminal --vid=no --input-ipc-server=$mpvsocket
   	--ytdl-format='bestaudio'
   - <search> with spaces don't have to be quoted
+  - when using the 'P' option, the word 'remastered' is not matched
   - when allowed to multi-select in fzf, if no selections are made and enter is pressed, the entry under
   	the cursor is sent; if selections are made and enter is pressed, only the selections are passed
   - entries for local files are created with \`cksum --untagged --algorithm=blake2b -l 48 <file> | sed 's@\b  @ @'\`
@@ -425,6 +455,6 @@ You might be interested to know:
 	work for you feel free to do a global replace of the bind (the keynames are not always what's
 	shown in this help so consult the fzf manpage to see what fzf calls them)
   - also unfortunately the program does not check and will not tell you if you've entered something unexpected/wrong
-	or do not have all the dependencies installed. so be sure when passing ranges that the lesser number is first
-	and pass p|l|m only to options stated to accept them.
+	or do not have all the dependencies installed. so be sure when passing ranges to -d and -r that the lesser number
+	is first and pass p|l|m only to options stated to accept them.
 ```
