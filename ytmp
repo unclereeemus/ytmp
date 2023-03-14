@@ -551,7 +551,7 @@ searchSongs () {
 	if [ "$1" = 'ss' ]; then
 		[ "$2" = '--startwith' ] && query="$(searchInFzf 'yt-music search' --startwith "$(echo "$@" | cut -d' ' -f2-)")" || query="$(echo "$@" | cut -d' ' -f2-)"
 	# p = playlist url
-	elif [ "$1" = 'p' ]; then
+	elif [ "$1" = 'ps' ]; then
 		# this is not so much a search as it is the line number for the id in $cache_dir/id_res
 		query="$2"
 		# state of the art way of recognizing weather 'sp' was invoked with -i
@@ -583,16 +583,16 @@ searchSongs () {
 		query="$(searchInFzf 'yt-music search')"
 	fi
 
-	if [ -n "$query" ]; then [ "$1" != 'p' ] && echo "Searching for '$query'"; else return 1; fi
+	if [ -n "$query" ]; then [ "$1" != 'ps' ] && echo "Searching for '$query'"; else return 1; fi
 
 	(! grep -Fxq "$query" "$search_history") && (! echo "$songs_dir_ls" | grep -Fq "$query") && echo "$query" >> "$search_history"
-	[ "$1" != 'p' ] && [ "$3" != 'sp' ] && rm -f "$qdiscards_file"
+	[ "$1" != 'ps' ] && [ "$3" != 'sp' ] && rm -f "$qdiscards_file"
 
 	# allows user to browse search results and select
-	if [ "$1" = 'p' ] || [ "$1" = 'x' ] || [ "$1" = 's' ]; then
+	if [ "$1" = 'ps' ] || [ "$1" = 'x' ] || [ "$1" = 's' ]; then
 		if [ "$1" = 'x' ]; then
 			ids_titles=$(yt-dlp -q --no-warnings -e --get-id ytsearch"${results_n}":"$query")
-		elif [ "$1" = 'p' ]; then
+		elif [ "$1" = 'ps' ]; then
 			if [ "$3" = 'sp' ]; then
 				url="$(sed -n "${query}s/ .*//p" "$cache_dir/playlist_res")"
 				ids_titles=$(pipe-viewer --no-interactive --no-use-colors --results=50 --custom-layout="*TITLE*\n*ID*" -e="*ID* *TITLE*" "$url" | sed 1d)
@@ -655,21 +655,21 @@ searchPlaylists () {
 # add songs to a certain position; first add them to a temp queue
 # and set $queue to the temp one then transfer them
 addToDest () {
-	! printf '%s' "$1" | grep -xq '[0-9]\+' && echo 'Provide position to add song(s) to.' && return 1
-
 	last="$(grep -c '.' "$queue")"
 	playing="$(grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1)"
 	mark="$(cat "$mark_file")"
 	destination="$(echo "$1" | sed -e s/m/$mark/ -e s/p/$playing/ -e s/l/$last/ | bc)"
+	if [ "$destination" = '0' ] || ! printf '%s' "$destination" | grep -xq '[0-9]\+'; then echo 'Provide position to add song(s) to.'; return; fi
+	shift
 
 	old_queue="$queue"
 	queue="$cache_dir/insertadd"
 	printf '' > "$queue"
-	if [ -z "$2" ]; then searchSongs; else case "$2" in
-		a) shift 2; add "$@" ;;
-		sp) shift 2; searchPlaylists "$@" ;;
-		x|s|z) shift 2; searchSongs "$@" ;;
-		*) shift; searchSongs ss "$@" ;;
+	if [ -z "$1" ]; then searchSongs; else case "$1" in
+		a) shift; add "$@" ;;
+		sp) shift; searchPlaylists "$@" ;;
+		x|s|z|ps) searchSongs "$@" ;;
+		*) searchSongs ss "$@" ;;
 	esac
 	fi
 	printf "%s\n" "${destination}+" "-r $queue" "wq" | ed -s "$old_queue" >/dev/null 2>&1
