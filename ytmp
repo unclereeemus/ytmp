@@ -23,6 +23,10 @@ cache_dir="$prefix/.cache"
 [ -z "$fzf_label" ] && fzf_label='white:dim'
 [ -z "$fzf_spinner" ] && fzf_spinner='white:dim'
 
+# what chars to use to surround what's currently playing
+# if a meta BRE char like *$[ then escape them like \*\$\[
+[ -z "$playing_ind" ] && playing_ind='\*\*\*'
+
 # the char(s) with which a line can begin so that it's ignored
 # if a meta BRE char like *$[ then escape them like \*\$\[
 [ -z "$comment_char" ] && comment_char='#'
@@ -79,7 +83,7 @@ touch "$played_urls" "$favorites_file" "$search_history" "$queue" "$mark_file"
 # note: options for ERE are not passed to sed or grep so ERE must be escaped
 
 # regex to match what's playing and groups to separate various fields
-playing_regex="^\(.\{11,12\}\) \(\*\*\*\)\(.*\)\(\*\*\*\)\( *$tag_char.*\)\?$"
+playing_regex="^\(.\{11,12\}\) \($playing_ind\)\(.*\)\($playing_ind\)\( *$tag_char.*\)\?$"
 
 # regex for the <id> and <title> fields of any entry
 field_regex="^\(.\{11,12\}\) \([^$tag_char]*\)\( $tag_char.*\)\?"
@@ -781,7 +785,7 @@ markAsPlaying () {
 	# from a tag removal and the user forgot to remove the space
 	sed -i 's/ $//' "$queue"
 	sed -i -e "s/$playing_regex/\1 \3\5/" "$queue"
-	sed -i "${line}s/${field_regex}/\1 \*\*\*\2\*\*\*\3/" "$queue"
+	sed -i "${line}s/${field_regex}/\1 $playing_ind\2$playing_ind\3/" "$queue"
 	play
 }
 
