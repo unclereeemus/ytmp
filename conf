@@ -46,6 +46,18 @@ queue="$prefix/queue"
 # mpv settings to remain consistent (volume, loop, seek, etc) then put them in this file
 run_on_next="$prefix/run_on_next"
 
+# the char(s) with which a line can begin so that it's ignored
+# if a meta BRE char like *$[ then escape them like \*\$\[
+[ -z "$comment_char" ] && comment_char='#'
+
+# the char(s) with which an entry can end so that and be ignored
+# by the program so that it can be used as a tagging system.
+# if a meta BRE char like *$[ then escape them like \*\$\[
+# also make sure to pick something that's unlikely to appear
+# in a song title because then there won't be any way of
+# knowing where the title ends and where the tag starts
+[ -z "$tag_char" ] && tag_char='\[\['
+
 # fzf colors; 'P' is substitute for '+'
 fzf_gutter='black'
 fzf_hlP='bold:bright-red'
