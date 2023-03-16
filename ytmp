@@ -456,10 +456,10 @@ enter fzf for search.
 
 Other features:
   - kind of a superfluous features but: begin a comment in the queue file with '#'
-  	which means it will be ignored by the program. further, tag entries by adding '[[<tag>]]'
-	at the end of the entry (including the '[[]]'. add as many as you like but put a space after
-	the title and first tag. the program only looks for '[[' and ignores the rest of the entry
-	so the closing ']]' is not necessary.
+  	which means it will be ignored by the program. further, tag entries by adding '<tag>'
+	at the end of the entry (including the '<>'. add as many as you like but put a space after
+	the title and first tag. the program only looks for '<' and ignores the rest of the entry
+	so the closing '>' is not necessary.
   - by default ytmp downloads songs after you have listened to them $max_stream_amount times, if you
   	don't want this feature set \$download_songs to 'n' in $conf. if you want to download every song
 	and never stream them set \$max_stream_amount to '1'. the downloads can be found in $songs_dir.
