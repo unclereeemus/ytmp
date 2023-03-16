@@ -33,13 +33,8 @@ case "$1" in
 	gtm) linetogstatus '# LINE BELOW IS TOGGLED BY AN EXTERNAL SCRIPT MASTER' ;;
 	on) [ "$( ytmpsuite g"$2" | head -1 )" = 'OFF' ] && ytmpsuite $2 ;;
 	off) [ "$( ytmpsuite g"$2" | head -1 )" = 'ON' ] && ytmpsuite $2 ;;
-	to)
-		[ "$( ytmpsuite gt | head -1 )" = 'ON' ] && ytmpsuite t >/dev/null 2>&1
-		[ "$( ytmpsuite gT | head -1 )" = 'ON' ] && ytmpsuite T >/dev/null 2>&1
-		[ "$( ytmpsuite gt1 | head -1 )" = 'ON' ] && ytmpsuite t1 >/dev/null 2>&1
-		[ "$( ytmpsuite gt2 | head -1 )" = 'ON' ] && ytmpsuite t2 >/dev/null 2>&1
-		[ "$( ytmpsuite gtm | head -1 )" = 'ON' ] && ytmpsuite tm >/dev/null 2>&1
-		;;
+	gto) for f in t T t1 t2 tm; do ytmpsuite g"$f" | paste -s -d ' \n'; done ;;
+	to) for f in t T t1 t2 tm; do [ "$( ytmpsuite g"$f" | head -1 )" = 'ON' ] && ytmpsuite $f >/dev/null 2>&1; done ;;
 	# toggle master (smartly) only if one of t1/t2 are on; otherwise off
 	tms)
 		if [ $( ytmpsuite gt1 | head -1 ) = 'ON' ] || [ $( ytmpsuite gt2 | head -1 ) = 'ON' ]; then
