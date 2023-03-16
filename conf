@@ -54,13 +54,13 @@ playing_ind='\*\*\*'
 # if a meta BRE char like *$[ then escape them like \*\$\[
 comment_char='#'
 
-# the char(s) with which an entry can end so that and be ignored
-# by the program so that it can be used as a tagging system.
-# if a meta BRE char like *$[ then escape them like \*\$\[
-# also make sure to pick something that's unlikely to appear
-# in a song title because then there won't be any way of
+# the char with which an entry can end so that what comes after can be
+# ignored by the program so that it can be used as a tagging system.
+# make sure to pick something that's unlikely to appear
+# in a song title because otherwise there won't be any way of
 # knowing where the title ends and where the tag starts
-tag_char='\[\['
+# setting it to '\[', '(' is unadvised
+tag_char='<'
 
 # fzf colors; 'P' is substitute for '+'
 fzf_gutter='black'
