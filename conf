@@ -59,8 +59,14 @@ comment_char='#'
 # make sure to pick something that's unlikely to appear
 # in a song title because otherwise there won't be any way of
 # knowing where the title ends and where the tag starts
-# setting it to '\[', '(' is unadvised
+# setting it to '\[', '(', or '/' is unadvised
 tag_char='<'
+closing_tag_char='>'
+
+# which tags to add to song entries when adding them. anything that
+# yt-dlp --print accepts is good. if any field is not available, it is
+# the respective tag is not added.
+tags='<Length: %(duration_string)s><Album: %(album)s-%(track_number)s><Artist(s): %(artist)s><Genre: %(genre)s><Channel: %(channel)s><Album type: %(album_type)s><Playlist: %(playlist_title)s>'
 
 # fzf colors; 'P' is substitute for '+'
 fzf_gutter='black'
