@@ -99,7 +99,7 @@ qdiscards_file="$cache_dir/qdiscards"
 
 helper () {
 cat << CAT_EOF
-Usage: ytmp [z] [<search>]/s|x [# of results] [<search>]/sp [<search>]/a <local path|dir|url>/e #
+Usage: ytmp [-i #] [z|x|s|sp|a] [-t|--tag <tags>] [[--startwith] <search>]/e #
          OR v/ls [# [#]]/m [c] [r] [# ... #] [x [x] #] [s [#]]/-m [c] [r] .../E
          OR -l/-p/-ff|-bb #/-vl [+|-]#/-dur/ OR n/p/pl/pf/mln/mfn/l [#|s]/P <search>
 	 OR N [-r] <search|entry>/-r [#,#]/-d [[[+]#[,#] [L]] #...[k]]]
@@ -140,22 +140,23 @@ enter fzf for search.
 	        add urls (direct links/playlists), paths, or directory.
 		does not check if file is a media file or not before adding.
 
-  * if any of the above options is prefixed with a '-' as in (-x,-s,-sp,-ps,-a) then the program will add tags
-    to the entries defined in the var $tags. this can be useful to hardcode things like the album, artists, or
-    length of a song onto the queue. if you want to define the tag var from cli, two '-t' may preceed
-    the regular option (without the dash - like ytmp -t -t '<tags>' [x [# [--startwith ...]] [search]]).
-    (a single -t would not let you define the tag var; with two -t the arg that comes after is set as the tag var)
-    the tags are sent unmodified to yt-dlp so everything that yt-dlp supports for '--print' option is ok here.
-    the default tags are "$tags".
-    for [no arg], the following is ok: 'ytmp -t', 'ytmp -t search', 'ytmp -t -t tags', 'ytmp -t -t tags search'.
+  * all of the above options accept the positional args '-t' and '--tag <tag>'; when passed
+    the -t as the first arg the \$tags will be appended to the song entry. an alternate tag can be specified
+    with --tag <tag> (as first and seconds args). this can be useful to hardcode things like the album, artists, or
+    length of a song onto the queue. the tags are sent unmodified to yt-dlp so everything that yt-dlp supports for '--print'
+    option is ok here. the default tags are "$tags" (if it's from youtube.)
+    tags don't have to be related to youtube. tags can also be passed for local files when using 'a' option
+    for [no arg], the following is ok: 'ytmp -t', 'ytmp -t search', 'ytmp --tag <tags>',
+    'ytmp --tag <tags> search'.
+    syntax: ytmp x/s [#]|z|ps|sp|a [-t]|[--tag tag] [[--startwith] search]; ytmp x --tag <tag1> 10 --startwith search
 
-  * for the above options (including [no arg] but not 'a') if the first arg to the option is --startwith
+  * for the above options (including [no arg] but not 'a' and 'ps') if the first arg to the option is --startwith
     then fzf will start with the args that follow in its input field except for s and x for
     which if a <# of results> arg is sent, --startwith must follow that arg instead of being
     the first one, it may be the first one when a results arg is not being sent
 
   * further, they (including 'a') can be preceeded by '-i #' to specify a destination to add to (accepts args like 'm')
-    (ex: ytmp -i # [-t [-t <tags>]] [sp|x/s [#]|a|z [--startwith ...]] [<search>]). when used with 'sp', individual
+    (ex: ytmp -i # [-t|--tag <tags>] [sp|x/s [#]|a|z [--startwith ...]] [<search>]). when used with 'sp', individual
     songs selected in playlists inherit the position to add to and they are only added to the queue when the playlist
     selections are finalized or cancelled. whether songs are already in the queue is not checked for so this may lead
     to duplicates of entries.
@@ -529,9 +530,9 @@ addToQueue () {
 
 	if (! grep -Fq "$(echo $id | sed 's/^-/\\-/')" "$queue"); then
 		placeholder='ASDASIDJIASDJIAJDI'
-		if [ "$(printf '%s' "$id" | wc -m)" = '11' ] && [ "$tagadd" = 't' ]; then
-			tags="$(yt-dlp -q --no-warnings --output-na-placeholder "$placeholder" --print "$tags" "https://www.youtube.com/watch?v=$id")"
-			tags="$(echo "$tags" | sed "s/$closing_tag_char/$closing_tag_char\n/g" | sed "/$placeholder/d" | tr -d '\n')"
+		if [ "$tagadd" = 't' ]; then
+			echo "$tags" | grep -q '%(.*)s' && tags="$(yt-dlp -q --no-warnings --output-na-placeholder "$placeholder" --print "$tags" "https://www.youtube.com/watch?v=$id" | sed "s/$closing_tag_char/$closing_tag_char\n/g" | sed "/$placeholder/d" | tr -d '\n')"
+			# tags="$(echo "$tags" | sed "s/$closing_tag_char/$closing_tag_char\n/g" | sed "/$placeholder/d" | tr -d '\n')"
 			echo "$id $title $tags" >> "$queue"
 			echo "Added '$title'"
 		else
@@ -549,11 +550,8 @@ addToQueue () {
 
 # add urls, playlists, dirs, paths
 add () {
-	# this '-t' means the search option was prefixed with '-'
-	# which means add tags to the entry
 	[ "$1" = '-t' ] && tagadd='t' && shift
-	# if the user sends -a AND -t, set $tag to the arg following
-	[ "$1" = '-t' ] && tags="$2" && shift 2
+	[ "$1" = '--tag' ] && tagadd='t' && tags="$2" && shift 2
 	[ "$1" = '-pl' ] && shift || rm -f "$qdiscards_file"
 	[ -z "$1" ] && echo 'Provide a url, path, or directory to add as arguement' && return 1
 
@@ -567,11 +565,11 @@ add () {
 		elif [ -d "$f" ]; then
 			find "$f" | sed 1d | while read -r f; do
 				entry="$(cksum --untagged --algorithm=blake2b -l 48 "$f" | sed 's@\b  @ @')"
-				addToQueue f "$entry"
+				if [ "$tagadd" = 't' ]; then addToQueue -t f "$entry"; else addToQueue f "$entry"; fi
 			done
 		elif [ -e "$f" ]; then
 			entry="$(cksum --untagged --algorithm=blake2b -l 48 "$f" | sed 's@\b  @ @')"
-			addToQueue f "$entry"
+			if [ "$tagadd" = 't' ]; then addToQueue -t f "$entry"; else addToQueue f "$entry"; fi
 		else
 			echo "'$f' is not valid; provide a url, path, or directory."
 		fi
@@ -598,12 +596,21 @@ searchInFzf () {
 }
 
 searchSongs () {
-	[ "$1" = '-t' ] && tagadd='t' && shift
-	[ "$1" = '-t' ] && tagadd='t' && tags="$2" && shift 2 && [ -n "$1" ] && ! echo "$1" | grep -Exq 'x|ps|s|z' && set -- ss "$@"
-	# echo "$tags || $@" && exit
+	if echo "$1" | grep -Eqx 'x|s|z|ps'; then
+		opt="$1"
+		[ "$2" = '-t' ] && tagadd='t' && shift 2
+		[ "$2" = '--tag' ] && tagadd='t' && tags="$3" && shift 3
+		set -- $opt "$@"
+	else
+		[ "$1" = '-t' ] && tagadd='t' && shift
+		[ "$1" = '--tag' ] && tagadd='t' && tags="$2" && shift 2 && [ -n "$1" ] && set -- ss "$@"
+	fi
+	# echo "TAGS: $tags" && exit
 	# ss means <query> was passed from cli
 	if [ "$1" = 'ss' ]; then
 		[ "$2" = '--startwith' ] && query="$(searchInFzf 'yt-music search' --startwith "$(echo "$@" | cut -d' ' -f2-)")" || query="$(echo "$@" | cut -d' ' -f2-)"
+	elif [ "$1" = '--startwith' ]; then
+		query="$(searchInFzf 'yt-music search' --startwith "$(echo "$@" | cut -d' ' -f2-)")"
 	# p = playlist url
 	elif [ "$1" = 'ps' ]; then
 		# this is not so much a search as it is the line number for the id in $cache_dir/id_res
@@ -681,7 +688,7 @@ searchSongs () {
 
 searchPlaylists () {
 	[ "$1" = '-t' ] && tagadd='t' && shift
-	[ "$1" = '-t' ] && tags="$2" && shift 2
+	[ "$1" = '--tag' ] && tagadd='t' && tags="$2" && shift 2
 	if [ -z "$1" ]; then
 		query="$(searchInFzf 'playlist search')"
 	else
@@ -728,6 +735,7 @@ addToDest () {
 		sp) shift; searchPlaylists "$@" ;;
 		x|s|z|ps) searchSongs "$@" ;;
 		-t) searchSongs "$@" ;;
+		--tag) searchSongs "$@" ;;
 		*) searchSongs ss "$@" ;;
 	esac
 	fi
@@ -1181,17 +1189,11 @@ openInBrowser () {
 	pl) markAsPlaying l ;;
 	v) viewQueue v ;;
 	vv) viewQueue v p ;;
-	-s) shift; searchSongs -t s "$@" ;;
-	-z) shift; searchSongs -t z "$@" ;;
-	-x) shift; searchSongs -t x "$@" ;;
-	-ps) shift; searchSongs -t ps "$@" ;;
-	-a) shift; add -t "$@" ;;
-	-sp) shift; searchPlaylists -t "$@" ;;
-	s) shift; searchSongs s "$@" ;;
-	z) shift; searchSongs z "$@" ;;
-	x) shift; searchSongs x "$@" ;;
+	s) searchSongs "$@" ;;
+	z) searchSongs "$@" ;;
+	x) searchSongs "$@" ;;
+	ps) searchSongs "$@" ;;
 	sp) shift; searchPlaylists "$@" ;;
-	ps) shift; searchSongs ps "$@" ;;
 	a) shift; add "$@" ;;
 	n) markAsPlaying 'p+1' ;;
 	p) markAsPlaying 'p-1' ;;
@@ -1274,6 +1276,7 @@ openInBrowser () {
 		[ "$duration" -lt 3600 ] && printf "%02d:%02d / %02d:%02d\n" $((position%3600/60)) $((position%60)) $((duration%3600/60)) $((duration%60)) || printf "%d:%02d:%02d / %d:%02d:%02d\n" $((position/3600)) $((position%3600/60)) $((position%60)) $((duration/3600)) $((duration%3600/60)) $((duration%60))
 		;;
 	h|help|-h|--help) helper ;;
-	-t) shift; searchSongs -t "$@" ;;
+	-t) searchSongs "$@" ;;
+	--tag) searchSongs "$@" ;;
 	*) searchSongs ss "$@" ;;
 esac
