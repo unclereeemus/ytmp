@@ -144,9 +144,10 @@ enter fzf for search.
   * if any of the above options is prefixed with a '-' as in (-x,-s,-sp,-ps,-a) then the program will add tags
     to the entries defined in the var $tags. this can be useful to hardcode things like the album, artists, or
     length of a song onto the queue. if you want to define the tag var from cli, two '-t' may preceed
-    (like ytmp -t -t '<tags>' x [#] [search]) the regular option (without the dash).
+    the regular option (without the dash - like ytmp -t -t '<tags>' [x [# [--startwith ...]] [search]]).
     (a single -t would not let you define the tag var; with two -t the arg that comes after is set as the tag var)
     the tags are sent unmodified to yt-dlp so everything that yt-dlp supports for '--print' option is ok here.
+    the default tags are "$tags".
     for [no arg], the following is ok: 'ytmp -t', 'ytmp -t search', 'ytmp -t -t tags', 'ytmp -t -t tags search'.
 
   * for the above options (including [no arg] but not 'a') if the first arg to the option is --startwith
@@ -154,11 +155,11 @@ enter fzf for search.
     which if a <# of results> arg is sent, --startwith must follow that arg instead of being
     the first one, it may be the first one when a results arg is not being sent
 
-  * further, they (including 'a') also optionally accept a destination to add to with the positional -i option
-    (accepts args like 'm') - it must come before the search option (like -i # [-t [-t <tags>]] sp|x/s [#]|a|z|<search>
-    [--startwith ...] [<search>]). when used with 'sp', individual songs selected in playlists inherit the
-    position to add to and they are only added to the queue when the playlist selections are finalized or cancelled.
-    whether songs are already in the queue is not checked for so this may lead to copies of entries.
+  * further, they (including 'a') can be preceeded by '-i #' to specify a destination to add to (accepts args like 'm')
+    (ex: ytmp -i # [-t [-t <tags>]] [sp|x/s [#]|a|z [--startwith ...]] [<search>]). when used with 'sp', individual
+    songs selected in playlists inherit the position to add to and they are only added to the queue when the playlist
+    selections are finalized or cancelled. whether songs are already in the queue is not checked for so this may lead
+    to duplicates of entries.
 
   -af [#] ...	add entries to $favorites_file. if no arg, print $favorites_file.
   		accepts args like 'm'.
@@ -309,12 +310,14 @@ enter fzf for search.
   		there's no way to remove the range; if you want it to play beyond it,
 		run it again. (kills any other instances of -r or -d running on start.)
 
-  N <search|entry> ...
+  N [-r] <search|entry> ...
   		accepts args acceptable for 'P' and 'e'. plays the songs in the order the args are sent
-		one after another. example: ytmp e <search1> <2> <search2> <p+5> will play the fuzzy match
+		one after another. if the first arg is '-r' then once all the args have been played play
+		the next thing after what was playing before 'N' was run.
+		example: ytmp e <search1> <2> <search2> <p+5> will play the fuzzy match
 		for search1 then entry 2 then fuzzy match for search2 then the entry 5 ahead of what's
 		currently playing.
-		* if a 'p' or 'n' is sent (without +|-#) the previous/next song will play.
+		* if a 'p' or 'n' is sent (without +|-#), it will be interpreted as ytmp n|p.
 
   -n 		get notified when mpv exits (i.e. song finishes) except when it quits because the
   			user changes songs
@@ -456,7 +459,7 @@ enter fzf for search.
 	ctrl-w 		:te ytmp z
 	ctrl-s 		:te ytmp v
 	ctrl-v 		:te ytmp vv
-	ctrl-p 		:silent !ytmp N
+	ctrl-n 		:silent !ytmp N
 
 	leader-v 	change the value of the \$vol var in the run_on_next file
 	leader-l 	set volume of what's currently playing
@@ -466,14 +469,15 @@ enter fzf for search.
   --------------------------------------------------------
 
 Other features:
-  - kind of a superfluous features but: begin a comment in the queue file with '#'
-  	which means it will be ignored by the program. further, tag entries by adding '<tag>'
-	at the end of the entry (including the '<>'. add as many as you like but put a space after
-	the title and first tag. the program only looks for '<' and ignores the rest of the entry
-	so the closing '>' is not necessary.
   - by default ytmp downloads songs after you have listened to them $max_stream_amount times, if you
   	don't want this feature set \$download_songs to 'n' in $conf. if you want to download every song
 	and never stream them set \$max_stream_amount to '1'. the downloads can be found in $songs_dir.
+  - any line in the queue that's not <id (a word of 11 or 12 chars> <name> is ignored by the program
+	so such lines can be considered a comment but for robustness in case your comment happens to
+	begin with an 11 or 12 letter word, it's best to begin it with a comment character like '#'.
+  	further, tag entries by adding '<tag>' to the end of the entry (including the '<>'. add as many
+	as you like but put a space after the title and first tag. the program only looks for '<' and
+	ignores the rest of the entry so the closing '>' is not necessary.
   - one can communicate with mpv through the ipc socket the script opens at $mpvsocket.
   	See https://pastebin.com/23PXxpiD for examples (make sure to pass commands to the
 	$mpvsocket socket) and \`mpv --list-properties\` for properties that can be controlled.
