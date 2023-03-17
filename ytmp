@@ -598,9 +598,8 @@ searchInFzf () {
 searchSongs () {
 	if echo "$1" | grep -Eqx 'x|s|z|ps'; then
 		opt="$1"
-		[ "$2" = '-t' ] && tagadd='t' && shift 2
-		[ "$2" = '--tag' ] && tagadd='t' && tags="$3" && shift 3
-		set -- $opt "$@"
+		[ "$2" = '-t' ] && tagadd='t' && shift 2 && set -- $opt "$@"
+		[ "$2" = '--tag' ] && tagadd='t' && tags="$3" && shift 3 && set -- $opt "$@"
 	else
 		[ "$1" = '-t' ] && tagadd='t' && shift
 		[ "$1" = '--tag' ] && tagadd='t' && tags="$2" && shift 2 && [ -n "$1" ] && set -- ss "$@"
@@ -622,7 +621,7 @@ searchSongs () {
 	elif [ "$1" = 's' ] || [ "$1" = 'x' ]; then
 		[ "$1" = 'x' ] && border_str='yt search select' || border_str='yt-music search select'
 		if [ -n "$2" ]; then
-			if printf '%s' "$2" | grep -xq '[0-9]*'; then
+			if printf '%s' "$2" | grep -xq '[0-9]\+'; then
 				results_n="$2"
 				[ -n "$3" ] && query="$(echo "$@" | cut -d' ' -f3-)"
 			else
