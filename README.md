@@ -100,10 +100,10 @@ the thumbnail is sourced from /tmp/muscover.webp (don't forget to set 'download_
 
 # usage
 ```
-Usage: ytmp [z] [<search>]/s|x [# of results] [<search>]/sp [<search>]/a <local path|dir|url>/e #
+Usage: ytmp [-i #] [z|x|s|sp|a] [-t|--tag <tags>] [[--startwith] <search>]/e #
          OR v/ls [# [#]]/m [c] [r] [# ... #] [x [x] #] [s [#]]/-m [c] [r] .../E
          OR -l/-p/-ff|-bb #/-vl [+|-]#/-dur/ OR n/p/pl/pf/mln/mfn/l [#|s]/P <search>
-	 OR N <search|entry>/-r [#,#]/-d [[[+]#[,#] [L]] #...[k]]]
+	 OR N [-r] <search|entry>/-r [#,#]/-d [[[+]#[,#] [L]] #...[k]]]
 
 On first installing ytmp, there won't be any history to select from when you enter ytmp
 so either pass arguements from the cli with ytmp [z] <search> or to search what's on the
@@ -141,22 +141,23 @@ enter fzf for search.
 	        add urls (direct links/playlists), paths, or directory.
 		does not check if file is a media file or not before adding.
 
-  * if any of the above options is prefixed with a '-' as in (-x,-s,-sp,-ps,-a) then the program will add tags
-    to the entries defined in the var $tags. this can be useful to hardcode things like the album, artists, or
-    length of a song onto the queue. if you want to define the tag var from cli, two '-t' may preceed
-    the regular option (without the dash - like ytmp -t -t '<tags>' [x [# [--startwith ...]] [search]]).
-    (a single -t would not let you define the tag var; with two -t the arg that comes after is set as the tag var)
-    the tags are sent unmodified to yt-dlp so everything that yt-dlp supports for '--print' option is ok here.
-    the default tags are "$tags".
-    for [no arg], the following is ok: 'ytmp -t', 'ytmp -t search', 'ytmp -t -t tags', 'ytmp -t -t tags search'.
+  * all of the above options accept the positional args '-t' and '--tag <tag>'; when passed
+    the -t as the first arg the \$tags will be appended to the song entry. an alternate tag can be specified
+    with --tag <tag> (as first and seconds args). this can be useful to hardcode things like the album, artists, or
+    length of a song onto the queue. the tags are sent unmodified to yt-dlp so everything that yt-dlp supports for '--print'
+    option is ok here. the default tags are "$tags" (if it's from youtube.)
+    tags don't have to be related to youtube. tags can also be passed for local files when using 'a' option
+    for [no arg], the following is ok: 'ytmp -t', 'ytmp -t search', 'ytmp --tag <tags>',
+    'ytmp --tag <tags> search'.
+    syntax: ytmp x/s [#]|z|ps|sp|a [-t]|[--tag tag] [[--startwith] search]; ytmp x --tag <tag1> 10 --startwith search
 
-  * for the above options (including [no arg] but not 'a') if the first arg to the option is --startwith
+  * for the above options (including [no arg] but not 'a' and 'ps') if the first arg to the option is --startwith
     then fzf will start with the args that follow in its input field except for s and x for
     which if a <# of results> arg is sent, --startwith must follow that arg instead of being
     the first one, it may be the first one when a results arg is not being sent
 
   * further, they (including 'a') can be preceeded by '-i #' to specify a destination to add to (accepts args like 'm')
-    (ex: ytmp -i # [-t [-t <tags>]] [sp|x/s [#]|a|z [--startwith ...]] [<search>]). when used with 'sp', individual
+    (ex: ytmp -i # [-t|--tag <tags>] [sp|x/s [#]|a|z [--startwith ...]] [<search>]). when used with 'sp', individual
     songs selected in playlists inherit the position to add to and they are only added to the queue when the playlist
     selections are finalized or cancelled. whether songs are already in the queue is not checked for so this may lead
     to duplicates of entries.
@@ -482,7 +483,7 @@ Other features:
   	See https://pastebin.com/23PXxpiD for examples (make sure to pass commands to the
 	$mpvsocket socket) and \`mpv --list-properties\` for properties that can be controlled.
   - put commands you want to run at the start of each song in the script $run_on_next.
-  - you can have multiple entries of the same song in multiple places and the program won't get confused
+  - you can have multiple entries of the same song in multiple places and the program won't mind
   	(in case you wanted to move tracks of albums around without changing their place in the album).
 
 You might be interested to know:
