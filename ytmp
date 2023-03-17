@@ -1234,7 +1234,7 @@ openInBrowser () {
 			elif [ "$p" = 'p' ]; then markAsPlaying 'p-1'
 			elif [ "$p" = 'n' ]; then markAsPlaying 'p+1'
 			else fuzzyPlay "$p"; fi; break; done;) done
-		[ -n "$return_to_start" ] && markAsPlaying "$return_to_start+1"
+		[ -n "$return_to_start" ] && songEnd && markAsPlaying "$return_to_start+1"
 		;;
 	ls)
 		if [ -z "$2" ]; then grep --color=auto -n '' "$queue"; else
