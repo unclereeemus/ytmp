@@ -526,9 +526,9 @@ addToQueue () {
 
 # add urls, playlists, dirs, paths
 add () {
+	[ "$1" = '-pl' ] && shift || rm -f "$qdiscards_file"
 	[ -z "$1" ] && echo 'Provide a url, path, or directory to add as arguement' && return 1
 
-	[ "$1" = '-pl' ] && shift || rm -f "$qdiscards_file"
 	for f in "$@"; do
 		if echo "$f" | grep -q 'http.*\.com'; then
 			ids="$(yt-dlp -q --no-warnings --get-id "$f")"
@@ -1148,7 +1148,7 @@ openInBrowser () {
 	z) shift; searchSongs z "$@" ;;
 	x) shift; searchSongs x "$@" ;;
 	sp) shift; searchPlaylists "$@" ;;
-	ps) searchSongs p "$2" "$3" "$4" ;;
+	ps) shift; searchSongs ps "$@" ;;
 	a) shift; add "$@" ;;
 	n) markAsPlaying 'p+1' ;;
 	p) markAsPlaying 'p-1' ;;
