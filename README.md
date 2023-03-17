@@ -141,13 +141,21 @@ enter fzf for search.
 	        add urls (direct links/playlists), paths, or directory.
 		does not check if file is a media file or not before adding.
 
+  * if any of the above options is prefixed with a '-' as in (-x,-s,-sp,-ps,-a) then the program will add tags
+    to the entries defined in the var $tags. this can be useful to hardcode things like the album, artists, or
+    length of a song onto the queue. if you want to define the tag var from cli, two '-t' may preceed
+    (like ytmp -t -t '<tags>' x [#] [search]) the regular option (without the dash).
+    (a single -t would not let you define the tag var; with two -t the arg that comes after is set as the tag var)
+    the tags are sent unmodified to yt-dlp so everything that yt-dlp supports for '--print' option is ok here.
+    for [no arg], the following is ok: 'ytmp -t', 'ytmp -t search', 'ytmp -t -t tags', 'ytmp -t -t tags search'.
+
   * for the above options (including [no arg] but not 'a') if the first arg to the option is --startwith
     then fzf will start with the args that follow in its input field except for s and x for
     which if a <# of results> arg is sent, --startwith must follow that arg instead of being
     the first one, it may be the first one when a results arg is not being sent
 
   * further, they (including 'a') also optionally accept a destination to add to with the positional -i option
-    (accepts args like 'm') - it must come before the search option (like -i # sp|x/s [#]|a|z|<search>
+    (accepts args like 'm') - it must come before the search option (like -i # [-t [-t <tags>]] sp|x/s [#]|a|z|<search>
     [--startwith ...] [<search>]). when used with 'sp', individual songs selected in playlists inherit the
     position to add to and they are only added to the queue when the playlist selections are finalized or cancelled.
     whether songs are already in the queue is not checked for so this may lead to copies of entries.
@@ -459,10 +467,10 @@ enter fzf for search.
 
 Other features:
   - kind of a superfluous features but: begin a comment in the queue file with '#'
-  	which means it will be ignored by the program. further, tag entries by adding '[[<tag>]]'
-	at the end of the entry (including the '[[]]'. add as many as you like but put a space after
-	the title and first tag. the program only looks for '[[' and ignores the rest of the entry
-	so the closing ']]' is not necessary.
+  	which means it will be ignored by the program. further, tag entries by adding '<tag>'
+	at the end of the entry (including the '<>'. add as many as you like but put a space after
+	the title and first tag. the program only looks for '<' and ignores the rest of the entry
+	so the closing '>' is not necessary.
   - by default ytmp downloads songs after you have listened to them $max_stream_amount times, if you
   	don't want this feature set \$download_songs to 'n' in $conf. if you want to download every song
 	and never stream them set \$max_stream_amount to '1'. the downloads can be found in $songs_dir.
