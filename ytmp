@@ -150,6 +150,7 @@ enter fzf for search.
     (like ytmp -t -t '<tags>' x [#] [search]) the regular option (without the dash).
     (a single -t would not let you define the tag var; with two -t the arg that comes after is set as the tag var)
     the tags are sent unmodified to yt-dlp so everything that yt-dlp supports for '--print' option is ok here.
+    the default tags are "$tags".
     for [no arg], the following is ok: 'ytmp -t', 'ytmp -t search', 'ytmp -t -t tags', 'ytmp -t -t tags search'.
 
   * for the above options (including [no arg] but not 'a') if the first arg to the option is --startwith
@@ -529,7 +530,7 @@ addToQueue () {
 
 	if (! grep -Fq "$(echo $id | sed 's/^-/\\-/')" "$queue"); then
 		placeholder='ASDASIDJIASDJIAJDI'
-		if [ "$(printf '%s' "$id" | wc -m)" = '11' ]; then
+		if [ "$(printf '%s' "$id" | wc -m)" = '11' ] && [ "$tagadd" = 't' ]; then
 			tags="$(yt-dlp -q --no-warnings --output-na-placeholder "$placeholder" --print "$tags" "https://www.youtube.com/watch?v=$id")"
 			tags="$(echo "$tags" | sed "s/$closing_tag_char/$closing_tag_char\n/g" | sed "/$placeholder/d" | tr -d '\n')"
 			echo "$id $title $tags" >> "$queue"
