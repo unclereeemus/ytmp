@@ -50,10 +50,6 @@ run_on_next="$prefix/run_on_next"
 # if a meta BRE char like *$[ then escape them like \*\$\[
 playing_ind='\*\*\*'
 
-# the char(s) with which a line can begin so that it's ignored
-# if a meta BRE char like *$[ then escape them like \*\$\[
-comment_char='#'
-
 # the char with which an entry can end so that what comes after can be
 # ignored by the program so that it can be used as a tagging system.
 # make sure to pick something that's unlikely to appear
