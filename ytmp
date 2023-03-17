@@ -102,7 +102,7 @@ cat << CAT_EOF
 Usage: ytmp [z] [<search>]/s|x [# of results] [<search>]/sp [<search>]/a <local path|dir|url>/e #
          OR v/ls [# [#]]/m [c] [r] [# ... #] [x [x] #] [s [#]]/-m [c] [r] .../E
          OR -l/-p/-ff|-bb #/-vl [+|-]#/-dur/ OR n/p/pl/pf/mln/mfn/l [#|s]/P <search>
-	 OR N <search|entry>/-r [#,#]/-d [[[+]#[,#] [L]] #...[k]]]
+	 OR N [-r] <search|entry>/-r [#,#]/-d [[[+]#[,#] [L]] #...[k]]]
 
 On first installing ytmp, there won't be any history to select from when you enter ytmp
 so either pass arguements from the cli with ytmp [z] <search> or to search what's on the
@@ -481,7 +481,7 @@ Other features:
   	See https://pastebin.com/23PXxpiD for examples (make sure to pass commands to the
 	$mpvsocket socket) and \`mpv --list-properties\` for properties that can be controlled.
   - put commands you want to run at the start of each song in the script $run_on_next.
-  - you can have multiple entries of the same song in multiple places and the program won't get confused
+  - you can have multiple entries of the same song in multiple places and the program won't mind
   	(in case you wanted to move tracks of albums around without changing their place in the album).
 
 You might be interested to know:
@@ -1229,11 +1229,14 @@ openInBrowser () {
 	N)
 		shift; [ -z "$1" ] && return 1
 		[ "$1" = '-r' ] && return_to_start="$(grep -n "$playing_regex" "$queue" | head -1 | cut -d':' -f1)" && shift
-		printf '%s\n' "$@" | while read p; do (while (songEnd); do
-		if (printf $p | grep -Eq '^(l|m)+((\+|-)[0-9]+)?$|p(\+|-)[0-9]+|^[0-9]+$'); then markAsPlaying "$p"
-			elif [ "$p" = 'p' ]; then markAsPlaying 'p-1'
-			elif [ "$p" = 'n' ]; then markAsPlaying 'p+1'
-			else fuzzyPlay "$p"; fi; break; done;) done
+		printf '%s\n' "$@" | while read p; do
+			while (songEnd); do
+				if (printf $p | grep -Eq '^(l|m)+((\+|-)[0-9]+)?$|p(\+|-)[0-9]+|^[0-9]+$'); then markAsPlaying "$p"
+				elif [ "$p" = 'p' ]; then markAsPlaying 'p-1'
+				elif [ "$p" = 'n' ]; then markAsPlaying 'p+1'
+				else fuzzyPlay "$p"; fi; break
+			done
+		done
 		[ -n "$return_to_start" ] && songEnd && markAsPlaying "$return_to_start+1"
 		;;
 	ls)
