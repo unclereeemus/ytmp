@@ -148,7 +148,7 @@ enter fzf for search.
     tags don't have to be related to youtube. tags can also be passed for local files when using 'a' option
     for [no arg], the following is ok: 'ytmp -t', 'ytmp -t search', 'ytmp --tag <tags>',
     'ytmp --tag <tags> search'.
-    syntax: ytmp x/s [#]|z|ps|sp|a [-t]|[--tag tag] [[--startwith] search]; ytmp x --tag <tag1> 10 --startwith search
+    syntax: ytmp x|s|z|ps|sp|a [-t]|[--tag tag] [#] [[--startwith] search]; ytmp x --tag <tag1> 10 --startwith search
 
   * for the above options (including [no arg] but not 'a' and 'ps') if the first arg to the option is --startwith
     then fzf will start with the args that follow in its input field except for s and x for
@@ -156,7 +156,7 @@ enter fzf for search.
     the first one, it may be the first one when a results arg is not being sent
 
   * further, they (including 'a') can be preceeded by '-i #' to specify a destination to add to (accepts args like 'm')
-    (ex: ytmp -i # [-t|--tag <tags>] [sp|x/s [#]|a|z [--startwith ...]] [<search>]). when used with 'sp', individual
+    (ex: ytmp -i # [sp|x/s [#]|a|z [--startwith ...]] [-t|--tag <tags>] [<search>]). when used with 'sp', individual
     songs selected in playlists inherit the position to add to and they are only added to the queue when the playlist
     selections are finalized or cancelled. whether songs are already in the queue is not checked for so this may lead
     to duplicates of entries.
