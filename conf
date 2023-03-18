@@ -49,6 +49,7 @@ run_on_next="$prefix/run_on_next"
 # what chars to use to surround what's currently playing
 # if a meta BRE char like *$[ then escape them like \*\$\[
 playing_ind='\*\*\*'
+closing_playing_ind='\*\*\*'
 
 # the char with which an entry can end so that what comes after can be
 # ignored by the program so that it can be used as a tagging system.
