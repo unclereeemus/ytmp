@@ -111,11 +111,14 @@ case "$1" in
 	# use case: add individual songs of albums instead of a long video containing all songs;
 	# pipe-viewer is used instead of yt-dlp because it's quicker and only
 	# rarely would albums track count exceed the max videos pipe-viewer can return
-	# args: <file-containing-searches-sep-by-newline> <path-to-dump-the-results> [<optional-string-to-add-to-the-end-of-all-search>]
+	# args: <file-containing-searches-sep-by-newline> <path-to-dump-the-results> [< ><optional-string-to-add-to-the-end-of-all-search>]
 	# for the last optional arg - put a space before the string like: ' full album'
 	pvpl)
 		[ -z "$3" ] && exit
 		cat "$2" | while read -r search; do
+			# if line starts with #, append it and continue
+			echo "$search" | grep -q '^#' && echo "$search" >> "$3" && continue
+			[ -z "$search" ] && continue
 			pipe-viewer --no-use-colors --no-interactive --results=1 -e='*URL*' --custom-playlist-layout='*URL*' -sp "${search}${4}" | sed -n 2p | xargs -d '\n' -I ',,' pipe-viewer --results=50 --no-use-colors --no-interactive -e='*ID* *TITLE*' --custom-layout='*ID* *TITLE*' ",," | sed 1d >> "$3"
 		done
 	;;
