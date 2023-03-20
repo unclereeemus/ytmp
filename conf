@@ -65,6 +65,18 @@ closing_tag_char='>'
 # the respective tag is not added.
 tags='<Length: %(duration_string)s><Album: %(album)s-%(track_number)s><Artist(s): %(artist)s><Genre: %(genre)s><Channel: %(channel)s><Album type: %(album_type)s><Playlist: %(playlist_title)s>'
 
+# whether to always add $tags to songs from youtube
+tagadd='n'
+
+# whether to move songs when they are already in the queue
+# to the end of the queue
+move_dup='n'
+# whether to add songs despite them already being in the queue
+add_dup='n'
+
+# line seperator for preview windows / stdout msgs
+lsp='--------------------------------\n'
+
 # fzf colors; 'P' is substitute for '+'
 fzf_gutter='black'
 fzf_hlP='bold:bright-red'
