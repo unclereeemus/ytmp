@@ -771,6 +771,7 @@ addToDest () {
 		sp) shift; searchPlaylists -i "$@" ;;
 		x|s|z|ps) searchSongs "$@" ;;
 		-t|--tag) searchSongs "$@" ;;
+		-f|-fc) searchSongs "$@" ;;
 		*) searchSongs ss "$@" ;;
 	esac
 	fi
