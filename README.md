@@ -100,9 +100,9 @@ the thumbnail is sourced from /tmp/muscover.webp (don't forget to set 'download_
 
 # usage
 ```
-Usage: ytmp [-i #] [z|x|s|sp|a] [-t|--tag <tags>] [[--startwith] <search>]/e #
-         OR v/ls [# [#]]/m [c] [r] [# ... #] [x [x] #] [s [#]]/-m [c] [r] .../E
-         OR -l/-p/-ff|-bb #/-vl [+|-]#/-dur/ OR n/p/pl/pf/mln/mfn/l [#|s]/P <search>
+Usage: ytmp [-i #] [a|z|x|s|ps|sp] [-f|-fc] [[-t]|[--tag <tags>]] [[--startwith] <search>]/e #
+         OR v/ls [# [#]]/m [[c] [r] [# ... #]] [[c] x [x] #] [s [#]]/-m [[c] [r] ...]/E
+         OR -l/-p/-ff|-bb #/-vl [+|-]#/-dur OR n/p/pl/pf/mln/mfn/l [#|s]/P <search>
 	 OR N [-r] <search|entry>/-r [#,#]/-d [[[+]#[,#] [L]] #...[k]]]
 
 On first installing ytmp, there won't be any history to select from when you enter ytmp
@@ -141,26 +141,33 @@ enter fzf for search.
 	        add urls (direct links/playlists), paths, or directory.
 		does not check if file is a media file or not before adding.
 
-  * all of the above options accept the positional args '-t' and '--tag <tag>'; when passed
-    the -t as the first arg the \$tags will be appended to the song entry. an alternate tag can be specified
-    with --tag <tag> (as first and seconds args). this can be useful to hardcode things like the album, artists, or
-    length of a song onto the queue. the tags are sent unmodified to yt-dlp so everything that yt-dlp supports for '--print'
-    option is ok here. the default tags are "$tags" (if it's from youtube.)
-    tags don't have to be related to youtube. tags can also be passed for local files when using 'a' option
-    for [no arg], the following is ok: 'ytmp -t', 'ytmp -t search', 'ytmp --tag <tags>',
-    'ytmp --tag <tags> search'.
-    syntax: ytmp x/s [#]|z|ps|sp|a [-t]|[--tag tag] [[--startwith] search]; ytmp x --tag <tag1> 10 --startwith search
+  * the above options take the following positional flags: '[-f|-fc] [[-t]|--tag <tag ...>] [--startwith search]'
+  they have to take this order of preceedence when appearing together.
+	  -f: force add entry meaning if the song is already found in the queue delete the entry that already exists
+	  	in the queue and add it again (insuring any new tags are added as well).
+	  -fc: don't bother deleting the old entry, just add the new entry.
+	  -t: append \$tags to entry
+	  --tag <tag ...>: define \$tags from the cli (no need to pass '-t' before)
+	  --startwith: start fzf with the search string (not available for 'ps' and 'a')
 
-  * for the above options (including [no arg] but not 'a' and 'ps') if the first arg to the option is --startwith
-    then fzf will start with the args that follow in its input field except for s and x for
-    which if a <# of results> arg is sent, --startwith must follow that arg instead of being
-    the first one, it may be the first one when a results arg is not being sent
+    the default tag is "$tags".
 
-  * further, they (including 'a') can be preceeded by '-i #' to specify a destination to add to (accepts args like 'm')
-    (ex: ytmp -i # [-t|--tag <tags>] [sp|x/s [#]|a|z [--startwith ...]] [<search>]). when used with 'sp', individual
-    songs selected in playlists inherit the position to add to and they are only added to the queue when the playlist
-    selections are finalized or cancelled. whether songs are already in the queue is not checked for so this may lead
-    to duplicates of entries.
+    tags are sent unmodified to yt-dlp --print when it's a song from youtube and a tag contains '%(.*)s' so anything yt-dlp
+    --print accepts is good if the pattern is not found the tag is just added.
+
+  * further, the search options themselves may be preceeded by '-i #' to specify a destination to add to (accepts args like 'm').
+    whether songs are already in the queue is not checked for so this may lead to duplicates of entries.
+
+    when '-i #' or '--tag' is passed for 'sp', the individual songs selected in playlists inherit the position to
+    add to and the tags and they are only added to the queue when the playlist selections are finalized or cancelled.
+
+    in sum, the syntax is: ytmp [-i #] [a|z|x|s|ps|sp] [[-t]|[--tag tag]] [[--startwith] search]
+    when it's [no arg], just pass the flags (like ex 2)
+
+    ex: ytmp x --tag '<tag: 1> <tag: 2>' 10 search
+        ytmp --tag tags --startwith search
+        ytmp -i p sp -t search
+
 
   -af [#] ...	add entries to $favorites_file. if no arg, print $favorites_file.
   		accepts args like 'm'.
@@ -475,7 +482,7 @@ Other features:
 	and never stream them set \$max_stream_amount to '1'. the downloads can be found in $songs_dir.
   - any line in the queue that's not <id (a word of 11 or 12 chars> <name> is ignored by the program
 	so such lines can be considered a comment but for robustness in case your comment happens to
-	begin with an 11 or 12 letter word, it's best to begin it with a comment character like '#'.
+	begin with an 11 or 12 letter word, it's best to begin it with a comment character and space like '# '.
   	further, tag entries by adding '<tag>' to the end of the entry (including the '<>'. add as many
 	as you like but put a space after the title and first tag. the program only looks for '<' and
 	ignores the rest of the entry so the closing '>' is not necessary.
