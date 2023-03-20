@@ -172,6 +172,8 @@ enter fzf for search.
 
     ex: ytmp x --tag '<tag: 1> <tag: 2>' 10 search
         ytmp --tag tags --startwith search
+        ytmp -f -t search
+        ytmp -i 2 s search
         ytmp -i p sp -t search
 
 
@@ -525,10 +527,9 @@ You might be interested to know:
 CAT_EOF
 }
 
-# who would have thought my assistant would need an assitant?????
-# this func ACTUALLY adds things to the queue instead of addToQueue
-# it's here to avoid redundancy
-tagFunc () {
+# this func creates the string that should go into the queue/qdiscards
+# it's here to avoid redundancy for making checks to add tags
+entryMaker () {
 	placeholder='ASDASIDJIASDJIAJDI'
 	if [ "$tagadd" = 'y' ] && [ "$(printf '%s' "$id" | wc -m)" = '11' ] && echo "$tags" | grep -q '%(.*)s'; then
 		tags_yt="$(yt-dlp -q --no-warnings --output-na-placeholder "$placeholder" --print "$tags" "https://www.youtube.com/watch?v=$id" | sed "s/$closing_tag_char/&\n/g" | sed "/$placeholder/d" | tr -d '\n')"
@@ -555,21 +556,21 @@ addToQueue () {
 
 	if (! grep -Fq "$(echo $id | sed 's/^-/\\-/')" "$queue"); then
 		echo "Added '$title'"
-		tagFunc >> "$queue"
+		entryMaker >> "$queue"
 	# elif [ "$queue" != "$cache_dir/insertadd" ]; then
 	else
 		found="$(grep -n "$(echo $id | sed 's/^-/\\-/')" "$queue" | cut -d':' -f1 | head -1)"
 		if [ "$move_dup" = 'y' ]; then
 			sed -i "${found}d" "$queue"
-			tagFunc >> "$queue"
+			entryMaker >> "$queue"
 			echo "Found '$title' at line $found in the queue. Moved to new position."
 		elif [ "$add_dup" = 'y' ]; then
-			tagFunc >> "$queue"
+			entryMaker >> "$queue"
 			echo "Found '$title' at line $found in the queue. Added to new position."
 		else
 			echo "'$title' was found at line $found in the queue. It will not be newly added."
 			queue_len="$(grep -c '' "$queue")"
-			echo "$queue_len $(tagFunc)" >> "$qdiscards_file"
+			echo "$queue_len $(entryMaker)" >> "$qdiscards_file"
 			return 1
 		fi
 	fi
@@ -638,7 +639,7 @@ searchSongs () {
 		[ "$1" = '-fc' ] && add_dup='y' && move_dup='n' && shift
 		[ "$1" = '-t' ] && tagadd='y' && shift
 		[ "$1" = '--tag' ] && tagadd='y' && tags="$2" && shift 2
-		[ -n "$1" ] && set -- ss "$@"
+		# [ -n "$1" ] && set -- ss "$@"
 	fi
 
 	case "$1" in
