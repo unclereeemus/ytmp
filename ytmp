@@ -51,6 +51,9 @@ cache_dir="$prefix/.cache"
 # the respective tag is not added.
 [ -z "$tags" ] && tags='<Length: %(duration_string)s><Album: %(album)s><T#%(track_number)s><Artist(s): %(artist)s><Genre: %(genre)s><Channel: %(channel)s><Album type: %(album_type)s><Playlist: %(playlist_title)s>'
 
+# an alternative tag which will be used when passing '--tag alt'
+[ -z "$alt_tags" ] && alt_tags='<Length: %(duration_string)s><Album: %(album)s><T#%(track_number)s><Artist(s): %(artist)s><Playlist: %(playlist_title)s>'
+
 # A value of y means yes/true and n means no/false
 
 # if to play one song after another by default
@@ -112,7 +115,7 @@ qdiscards_file="$cache_dir/qdiscards"
 
 helper () {
 cat << CAT_EOF
-Usage: ytmp [-i #] [a|z|x|s|ps|sp] [-f|-fc] [[-t]|[--tag <tags>]] [[--startwith] <search>]/e #
+Usage: ytmp [-i #] [a|z|x|s|ps|sp] [-f|-fc] [[-t]|[--tag <'alt'|tags>]] [[--startwith] <search>]/e #
          OR v/ls [# [#]]/m [[c] [r] [# ... #]] [[c] x [x] #] [s [#]]/-m [[c] [r] ...]/E
          OR -l/-p/-ff|-bb [#]/-vl [[+|-]#]/-dur OR n/p/pl/pf/mln/mfn/l [#|s]/P <search>
 	 OR N [-r] <search|entry>/-r [#,#]/-d [[[+]#[,#] [L]] #...[k]]]
@@ -155,10 +158,11 @@ enter fzf for search.
 
   * the above options take the following flags: '[-f|-fc] [[-t]|--tag <tag ...>] [--startwith search]'
 		-f: force add entry meaning if the song is already found in the queue delete the entry that already exists
-		      in the queue and add it again (insuring any new tags are added as well).
+		      in the queue and add it again (ensuring any new tags are added as well).
 		-fc: don't bother deleting the old entry, just add the new entry.
 		-t: append \$tags to entry.
-		--tag <tag ...>: define \$tags from the cli (no need to pass '-t' before)
+		--tag <'alt'|tag ...>: define \$tags to append (no need to pass '-t' before)
+			if 'alt' is passed use \$alt_tags instead of \$tags
 		--startwith: start fzf with the search string (not available for 'ps' and 'a')
 
     the default tag is "$tags".
@@ -557,7 +561,12 @@ parseArgs () {
 			' ') shift ;;
 			--sptag) tagadd='y'; shift; tags="$@" ;;
 			--tag)
-				tagadd='y'; tags="$2"; sp_tag="--sptag $2"; shift 2
+				tagadd='y';
+				if echo "$2" | grep -qx 'alt'; then
+					tags="$alt_tags"; sp_tag="--sptag $alt_tags"; shift 2
+				else
+					tags="$2"; sp_tag="--sptag $2"; shift 2
+				fi
 			        ! echo "$tags" | grep -Eq "$tag_char" && echo "Warning: '$tags' does not contain a tag char ($tag_char)."
 				;;
 			*) args="$@"; return ;;
@@ -1154,7 +1163,7 @@ transferQDiscards () {
 		# replace the entry with the entry in $qdiscards_file
 		# if the entry in $qdiscards_file's length is greater than
 		# its counterpart in the $queue
-		# which means the user passed -t|--tags to add tags
+		# which means the user passed -t|--tag to add tags
 		# and this should retain them if they are passed from cli
 		# or they were previously there
 		if [ "$(echo "$id $title" | wc -m)" -gt "$(sed -n "${line}p" "$queue" | wc -m)" ]; then
