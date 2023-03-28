@@ -2,21 +2,23 @@
 # this file is looked for in /home/$USER/Music/ytmp/ by default and it is prioritized over source settings. change the path to something else in source if necessary.
 
 # A value of y means yes/true and n means no/false
-# for the following settings:
-# daemonize, notifications, download_thumbnails, download_songs, cycle_queue
 
-# if to play one song after another by default
+# if to always turn on the daemon (play one song after another)
+# on playing a song and it's not already on
 daemonize='y'
 
 # thumbnails are downloaded to $thumb_dir but the thumbnail of
-# what's currently playing is linked to /tmp/muscover.webp
+# what's currently playing is linked to $thumbnail_ln
 # (they are never deleted)
 download_thumbnails='n'
 # where to link the thumbnail of currently playing
 thumbnail_ln='/tmp/muscover.webp'
-# Only two kinds of notifications:
-# on song play, on song download
+
+# there's only three notifications:
+# on song play, when a song is being downloaded for exceeding $max_stream_amount
+# and when queue reaches the end it's not being cycled
 notifications='y'
+
 # whether to start playing from the top when queue reaches the end
 cycle_queue='n'
 # whether to confirm removal of '-m r' selections
@@ -26,25 +28,8 @@ confirm_removal='n'
 download_songs='y'
 # maximum amount of times to stream a song before downloading it
 max_stream_amount='3'
-# the maximum a length a file can be (in seconds) if it's to be downloaded
+# the maximum length a song can be in seconds if it's to be downloaded
 max_len_for_dl='600'
-
-prefix="/home/$USER/Music/ytmp"
-
-dl_dir="$prefix/downloads"
-songs_dir="$dl_dir/songs"
-thumb_dir="$dl_dir/thumbnails"
-played_urls="$prefix/played_urls"
-search_history="$prefix/search_history"
-
-# used by '-af' which copies entries to this file
-favorites_file="$prefix/favorites"
-
-queue="$prefix/queue"
-
-# this is run everytime a song is played so if you want certain
-# mpv settings to remain consistent (volume, loop, seek, etc) then put them in this file
-run_on_next="$prefix/run_on_next"
 
 # what chars to use to surround what's currently playing
 # if a meta BRE char like *$[ then escape them like \*\$\[
@@ -63,10 +48,13 @@ closing_tag_char='>'
 # which tags to add to song entries when adding them. anything that
 # yt-dlp --print accepts is good. if any field is not available, it is
 # the respective tag is not added.
-tags='<Length: %(duration_string)s><Album: %(album)s-%(track_number)s><Artist(s): %(artist)s><Genre: %(genre)s><Channel: %(channel)s><Album type: %(album_type)s><Playlist: %(playlist_title)s>'
+tags='<Length: %(duration_string)s><Album: %(album)s><T#%(track_number)s><Artist(s): %(artist)s><Genre: %(genre)s><Channel: %(channel)s><Album type: %(album_type)s><Playlist: %(playlist_title)s>'
 
-# whether to always add $tags to songs from youtube
+# whether to always add $tags to songs
 tagadd='n'
+
+# how many secs to seek if no arg is provided for -ff|-bb
+def_seek_secs='3'
 
 # whether to move songs when they are already in the queue
 # to the end of the queue
@@ -89,3 +77,20 @@ fzf_label='white'
 fzf_info='white:dim'
 fzf_label='white:dim'
 fzf_spinner='white:dim'
+
+prefix="/home/$USER/Music/ytmp"
+
+dl_dir="$prefix/downloads"
+songs_dir="$dl_dir/songs"
+thumb_dir="$dl_dir/thumbnails"
+played_urls="$prefix/played_urls"
+search_history="$prefix/search_history"
+
+# used by '-af' which copies entries to this file
+favorites_file="$prefix/favorites"
+
+queue="$prefix/queue"
+
+# this is run everytime a song is played so if you want certain
+# mpv settings to remain consistent (volume, loop, seek, etc) then put them in this file
+run_on_next="$prefix/run_on_next"
