@@ -50,6 +50,9 @@ closing_tag_char='>'
 # the respective tag is not added.
 tags='<Length: %(duration_string)s><Album: %(album)s><T#%(track_number)s><Artist(s): %(artist)s><Genre: %(genre)s><Channel: %(channel)s><Album type: %(album_type)s><Playlist: %(playlist_title)s>'
 
+# an alternative tag which will be used when passing '--tag alt'
+alt_tags='<Length: %(duration_string)s><Album: %(album)s><T#%(track_number)s><Artist(s): %(artist)s><Playlist: %(playlist_title)s>'
+
 # whether to always add $tags to songs
 tagadd='n'
 
