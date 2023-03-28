@@ -34,6 +34,9 @@ cache_dir="$prefix/.cache"
 # how many secs to seek if no arg is provided for -ff|-bb
 [ -z "$def_seek_secs" ] && def_seek_secs='3'
 
+# how many results to return for x|s when a count is not specified
+[ -z "$def_res_count" ] && def_res_count='5'
+
 # the char with which an entry can end so that what comes after can be
 # ignored by the program so that it can be used as a tagging system.
 # make sure to pick something that's unlikely to appear
@@ -131,13 +134,13 @@ enter fzf for search.
 
   s [<# of results>] [<search>]
   		search with the jargon. view search results and select (can select multiple).
-		can specify amount of search results to return with the first arguement (no flag)
-		- defaults to 5.
+		can specify count of search results to return with the first arguement (no flag)
+		- defaults to \$def_res_count($def_res_count).
 
   x [<# of results>] [<search>]
   		search without the jargon. view search results and select (can select multiple).
-		can specify amount of search results to return with the first arguement (no flag)
-		- defaults to 5.
+		can specify count of search results to return with the first arguement (no flag)
+		- defaults to \$def_res_count($def_res_count).
 
   sp [<search>] search for playlists (requires https://github.com/trizen/pipe-viewer/)
 
@@ -182,8 +185,8 @@ enter fzf for search.
   -af [#] ...	add entries to $favorites_file. if no arg, print $favorites_file.
 
   e 		play entry #
-  n 		play next on queue
-  p 		play prev on queue
+  n 		play next song
+  p 		play prev song
   pf 		play first entry
   pl 		play last entry
   mfn 		move first entry to after currently playing
@@ -195,7 +198,7 @@ enter fzf for search.
   -ff [<secs>]	seek forward <seconds>; if no arg then use \$def_seek_secs($def_seek_secs)
   -bb [<secs>]	seek backward <seconds>; if no arg then use \$def_seek_secs($def_seek_secs)
   -dur		get the position and duration of song
-  -vl <[+|-]#>	set volume. can be an absolute number or <+|-># to current volume. if no arg, print volume.
+  -vl [[+|-]#]	set volume. can be an absolute number or <+|-># to current volume. if no arg, print volume.
   			(as in -vl +30, -vl -30, -vl 80)
   -p 		toggle playback
   -l 		toggle loop
@@ -269,16 +272,16 @@ enter fzf for search.
   E 		open the queue in nvim and source rc from "$XDG_CONFIG_HOME/nvim/ytmp.vim". nvim is started
 		with "--noplugin +/'***'" as well.
 
-  -op <#> ...	open entry in web browser
   -sd <#> [-b] 	get listen history and other details about entry and its youtube
   			description unless '-b' follows # in which case just print the listen history.
   -dl <#> ...	download song #. does not respect \$max_len_for_dl.
+  -op <#> ...	open entry in web browser
   -shuf 	runs \`shuf\` on the queue file and overwrites it. the original queue can be found in
   		"$cache_dir/queue_noshuf".
 
   -vd 		prints "$qdiscards_file" which contains a list of songs that were selected to
-  		be added to the queue in the last search but were already found in the queue.
-		it's removed with every search.
+  		be added to the queue in the last search/'a' but were already found in the queue.
+		it's removed with every search/'a'.
 
   -rd [c] 	copies or moves songs listed in $cache_dir/ytmpqdiscards; can be copied (when given c option)
   		to or moved (when no options are given) from their current position to the position they
@@ -337,8 +340,9 @@ enter fzf for search.
 		one after another. starts playing after current song ends if there is a song playing.
 		if the first arg is '-r' then once all the args have been played play
 		the next thing after what was playing before 'N' was run (useful for '-d' trailings).
-		example: ytmp '<search 1>' <p+5> <search2> <80> p will play the fuzzy match
+		example: ytmp N -r '<search 1>' <p+5> <search2> <80> p will play the fuzzy match
 		for 'search 1' then 5 ahead of that match then the match for search2 then entry 74 then entry 73
+		and then entry 6 (assuming entry 5 was playing before 'N' was run)
 		* if a 'p' or 'n' is sent (without +|-#), it will be interpreted as ytmp n|p.
 
   -n 		get notified when mpv exits (i.e. song finishes) except when it quits because the
@@ -400,6 +404,7 @@ enter fzf for search.
 	ctrl-x		see songs in the playlist; one can select
 			songs in the playlist to add with
 			<tab> and press <enter> to add them
+			the above binds are also valid
 
   --------------------------------------
   fzf bindings for viewing queue (v|vv):
@@ -558,6 +563,7 @@ parseArgs () {
 			*) args="$@"; return ;;
 		esac
 	done
+	args=''
 }
 
 # this func creates the string that should go into the queue/qdiscards
@@ -585,7 +591,7 @@ addToQueue () {
 	id="$(echo "$1" | cut -d' ' -f1)"
 	title="$(echo "$1" | cut -d' ' -f2-)"
 
-	! grep -Fxq "$title" "$search_history" && echo "$title" >> "$search_history"
+	! grep -Fxq -- "$title" "$search_history" && echo "$title" >> "$search_history"
 
 	if (! grep -Fq -- "$id" "$queue"); then
 		echo "Added '$title'"
@@ -643,7 +649,7 @@ suggestsForFzf () {
 		(ls "$songs_dir" | cut -d' ' -f2- | sed 's/\.webm$//'; cat "$played_urls" | cut -s -d' ' -f4- | sed 's/^dl //'; cat "$search_history"; cat "$queue" | cut -d' ' -f2-) | sort -u
 	elif [ "$1" = 'a' ]; then
 		shift
-		! grep -Fxq "$@" "$search_history" && echo "$@" >> "$search_history"
+		! grep -Fxq -- "$@" "$search_history" && echo "$@" >> "$search_history"
 	elif [ "$1" = 'r' ]; then
 		shift
 		sed -i "/^$@$/d" "$search_history"
@@ -660,7 +666,7 @@ searchInFzf () {
 searchSongs () {
 	if echo "$1" | grep -Eqx 'x|s|z|ps'; then opt="$1"; shift; parseArgs "$@"; set -- $opt $args; else parseArgs "$@"; set -- $args; fi
 	case "$1" in
-		--startwith) query="$(searchInFzf 'yt-music search' --startwith "$(echo "$@" | cut -d' ' -f2-)")" ;;
+		--startwith) shift; query="$(searchInFzf 'yt-music search' --startwith "${@:-}")" ;;
 		ps) query="$2" ;;
 		s|x)
 			[ "$1" = 'x' ] && border_str='yt search select' || border_str='yt-music search select'
@@ -669,14 +675,14 @@ searchSongs () {
 					results_n="$2"
 					[ -n "$3" ] && query="$(echo "$@" | cut -d' ' -f3-)"
 				else
-					results_n='5'
+					results_n="$def_res_count"
 					query="$(echo "$@" | cut -d' ' -f2-)"
 				fi
 				if [ "$2" = '--startwith' ] || [ "$3" = '--startwith' ]; then startwith="$(echo "$@" | sed 's/.*--startwith //')"; fi
 				if [ -n "$startwith" ]; then query="$(searchInFzf "$border_str" --startwith "$startwith")"
 				elif [ -z "$query" ]; then query="$(searchInFzf "$border_str")"; fi
 			else
-				results_n="5"
+				results_n="$def_res_count"
 				query="$(searchInFzf "$border_str")"
 			fi
 			;;
@@ -689,7 +695,7 @@ searchSongs () {
 
 	if [ -n "$query" ]; then [ "$1" != 'ps' ] && echo "Searching for '$query'"; else return 1; fi
 
-	(! grep -Fxq "$query" "$search_history") && echo "$query" >> "$search_history"
+	(! grep -Fxq -- "$query" "$search_history") && echo "$query" >> "$search_history"
 	[ "$1" != 'ps' ] && [ "$3" != 'sp' ] && rm -f "$qdiscards_file"
 
 	# allows user to browse search results and select
@@ -742,7 +748,7 @@ searchPlaylists () {
 	fi
 
 	[ -z "$query" ] && return 1
-	! grep -Fxq "$query" "$search_history" && echo "$query" >> "$search_history"
+	! grep -Fxq -- "$query" "$search_history" && echo "$query" >> "$search_history"
 	echo "Searching for '$query'"
 
 	playlist_sel="$(pipe-viewer --no-use-colors --no-interactive --results=50 -sp --custom-playlist-layout='*URL* *TITLE*' "$query" | sed -n -e 1d -e "\@https://www.youtube.com/playlist?list=@p" | tee "$cache_dir/playlist_res" | cut -d" " -f2- | fzf --prompt='search: ' --info=inline --padding=2,2,2,2 --border=bottom --color=gutter:"$fzf_gutter",hl+:"$fzf_hlP",hl:"$fzf_hl",label:"$fzf_label",marker:"$fzf_marker",pointer:"$fzf_pointer",bg+:"$fzf_bgP",label:"$fzf_label",info:"$fzf_info",label:"$fzf_label",spinner:"$fzf_spinner" --border-label-pos=3 --border-label="{   ytmp playlist select   }" --separator='' \
@@ -876,13 +882,13 @@ markAsPlaying () {
 	play
 }
 
-# exit function on song end pgrep for process instead of pinging the mpv socket because
+# exit function on song end. pgrep for process instead of pinging the mpv socket because
 # tests have shown the socket takes some time to load at times so it's not always
 # a reliable indication of weather mpv is up. sleep twice in case the song didn't
 # actually end and the user started playing another song which caused the last one to quit
 # (suggested by finding another mpv instance immediately after).
 songEnd () {
-	while true; do sleep .25 && (! pgrep -fa "^mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1) && sleep .25 && (! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1) && break; done
+	while true; do sleep .25 && (! pgrep -fa "^mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1) && sleep .25 && (! pgrep -fa "^mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1) && break; done
 }
 
 songEndStrict () {
@@ -892,7 +898,7 @@ songEndStrict () {
 daemon () {
 	if [ "$1" = '-c' ]; then cycle_queue='y'; shift; fi
 	if [ "$1" = '-C' ]; then cycle_queue='n'; shift; fi
-	if [ -z "$1" ] && ! pgrep -fa "mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 && ! grep -q "$playing_regex" "$queue"; then markAsPlaying 1; fi
+	if [ -z "$1" ] && ! pgrep -fa "^mpv.*--input-ipc-server=${mpvsocket}" >/dev/null 2>&1 && ! grep -q "$playing_regex" "$queue"; then markAsPlaying 1; fi
 	if [ -z "$1" ] && ! grep -q "$playing_regex" "$queue"; then songEnd; markAsPlaying 1; fi
 	if (echo "$1" | grep -qx '+[0-9]\+'); then playing="$(interpretEntry p)"; set -- "$(echo "${playing}+1" | bc),$(echo "${playing}${1}" | bc)" k; fi
 	if [ -n "$1" ]; then
@@ -1051,20 +1057,32 @@ move () {
 
 			if printf '%s' "${start}${end}${pos}" | grep -xq '[0-9]*'; then
 				pos_entry="$(sed -E -n "/^${pos}:/s/[^ ]* (.*)/'\1'/p" "$numbered_q")"
-				[ "$action_v" = 'Remove' ] && printf '%b' "${lsp}$action_a $start-$end\n" || printf '%b' "${lsp}$action_a $start-$end to [$pos] $pos_entry\n"
-				[ $start -lt $end ] && sed -E -n "/^${start}:/,/^${end}:/s/[^ ]* (.*)/$action_p '\1'/p" "$numbered_q" && printf '%b' "$lsp" || (sed -E -n "/^${end}:/,/^${start}:/s/[^ ]* (.*)/$action_p '\1'/p" "$numbered_q" | tac && printf '%b' "$lsp")
+				[ "$action_v" = 'Remove' ] && printf '%b' "${prev_arg_range}$action_a $start-$end\n" || printf '%b' "${prev_arg_range}$action_a $start-$end to [$pos] $pos_entry\n" # $prev_arg_range is $lsp if prev arg was not a range and empty otherwise; this ensures $lsp not doubling up
+
+				if [ $start -lt $end ]; then
+					# run thru each line instead of pattern matching /^$start/,/$end/ because things
+					# might have been moved about in that pattern
+					seq $start $end | while read e; do sed -E -n "/^$e:/s/[^ ]* (.*)/$action_p '\1'/p" "$numbered_q"; done
+				else
+					seq $end $start | tac | while read e; do sed -E -n "/^$e:/s/[^ ]* (.*)/$action_p '\1'/p" "$numbered_q"; done
+				fi
+
+				printf '%b' "$lsp"
+
 				if [ "$action_v" = 'Remove' ]; then
-					printf "%s\n" "/^${start}:/;/^${end}:/${ed_opt}" "wq" | ed -s "$numbered_q" >/dev/null
+					seq $start $end | tac | while read e; do printf "%s\n" "/^${e}:/${ed_opt}" "wq" | ed -s "$numbered_q" >/dev/null; done
 				else
 					if [ $start -gt $end ]; then
 						seq $end $start | while read e; do printf "%s\n" "/^${e}:/${ed_opt}/^${pos}:/" "wq" | ed -s "$numbered_q" >/dev/null; done
 					else
-						printf "%s\n" "/^${start}:/;/^${end}:/${ed_opt}/^${pos}:/" "wq" | ed -s "$numbered_q" >/dev/null
+						seq $start $end | tac | while read e; do printf "%s\n" "/^${e}:/${ed_opt}/^${pos}:/" "wq" | ed -s "$numbered_q" >/dev/null; done
 					fi
 				fi
 			fi
+			prev_arg_range=''
 
 		else
+			prev_arg_range="$lsp"
 			sel="$(interpretEntry "$f")"
 			echo "$d" | grep -Eqx '(\+|-|\*|/)+[0-9]*' && place="$(interpretEntry ${sel} "${d}")" || place="$(interpretEntry "$d")"
 
@@ -1091,7 +1109,7 @@ batchmove () {
 	esac
 	if [ -n "$1" ]; then
 		if [ -z "$2" ] && [ "$action" != 'remove']; then echo 'Missing destination.'; return 1; fi
-		sel="$(echo "$@" | sed 's/ \w*$//')"
+		[ "$action" = 'remove' ] && sel="$@" || sel="$(echo "$@" | sed 's/ \w*$//')"
 		place="$(echo "$@" | grep -o '\w*$')"
 	else
 		sel=$(cat "$queue" | cut -d' ' -f2- | fzf -m --prompt='search: ' --info=inline --padding=2,2,2,2 --border=bottom --color=gutter:"$fzf_gutter",hl+:"$fzf_hlP",hl:"$fzf_hl",label:"$fzf_label",marker:"$fzf_marker",pointer:"$fzf_pointer",bg+:"$fzf_bgP",label:"$fzf_label",info:"$fzf_info",label:"$fzf_label",spinner:"$fzf_spinner" --border-label-pos=3 --border-label="{   Make selections to $action   }" --separator='' --layout=reverse --height 100% --bind="ctrl-j:jump,tab:toggle+clear-query+down,shift-tab:clear-selection,enter:execute(printf '%s\n' {+n} | xargs -I ,, echo ',,+1' | bc)+abort")
@@ -1121,7 +1139,7 @@ batchmove () {
 
 # copies or moves entries found in $qdiscards_file from their place in the $queue
 transferQDiscards () {
-	[ ! -s "$qdiscards_file" ] && echo "No discards from last search." && return 1
+	[ ! -s "$qdiscards_file" ] && echo "No discards from last search or addition." && return 1
 	[ "$1" = 'v' ] && cat "$qdiscards_file" && return
 	[ "$1" = 'c' ] && action='copy'
 
@@ -1225,7 +1243,7 @@ dlSong () {
 		[ "$(printf '%s' "$id" | wc -m)" != '11' ] && echo 'Invalid entry.' && return 1
 		if (! ls "$songs_dir"/*"${id}"* >/dev/null 2>&1); then
 			setsid -f yt-dlp -q --no-warnings -f bestaudio -o "$songs_dir/%(id)s %(title)s.%(ext)s" "https://www.youtube.com/watch?v=$id" >/dev/null 2>&1
-			echo "Downloading '${title}.'"
+			echo "Downloading '${title}'."
 		else
 			echo "A file of the name '$title' was found in $songs_dir. It will not be downloaded."
 		fi
@@ -1319,7 +1337,7 @@ case "$1" in
 		for e in "$@"; do
 			entry=$(interpretEntry "$e")
 			sed -n "${entry}p" "$queue" | grep -q "$playing_regex" && entry="$(sed -n "${entry}s/$playing_regex/\1 \3/p" "$queue")" || entry="$(sed -n "${entry}p" "$queue")"
-			! grep -Fxq "$entry" "$favorites_file" >/dev/null 2>&1 && echo "$entry" >> "$favorites_file"
+			! grep -Fxq -- "$entry" "$favorites_file" >/dev/null 2>&1 && echo "$entry" >> "$favorites_file"
 		done
 		;;
 	w)
