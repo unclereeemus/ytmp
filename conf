@@ -56,6 +56,9 @@ tagadd='n'
 # how many secs to seek if no arg is provided for -ff|-bb
 def_seek_secs='3'
 
+# how many results to return for x|s when a count is not specified
+def_res_count='5'
+
 # whether to move songs when they are already in the queue
 # to the end of the queue
 move_dup='n'
