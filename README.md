@@ -78,11 +78,9 @@ the thumbnail is sourced from /tmp/muscover.webp (don't forget to set 'download_
 
 - play dmenu selection: `cat "/home/$USER/Music/ytmp/queue" | dmenu -l 15 | cut -d' ' -f1 | xargs -I ,, ytmp P -id ,,`
 
-- you don't need to use ytmp to make playlists for it. to create a queue file from a youtube playlist you can do `yt-dlp --print id --print title '<playlist_url>' | paste -s -d ' \n' > file` or to create a queue file from search results do `xargs -d '\n' -a <file-with-newline-sperated-searches> -I ,, yt-dlp --print id --print title ytsearch:",," | paste -s -d ' \n' > file` (to read from stdin instead of a file use `printf '%s\n' '<search1>' '<search2>' '<search3>' | xargs [without -a option]...`) or to search for playlists from the terminal (requires pipe-viewer): `search='YOUR_SEARCH'; pipe-viewer --no-interactive -sp --custom-playlist-layout='*VIDEOS*VIDS *TITLE* *URL*' "$search" | fzf --bind='ctrl-a:execute(echo {} | awk "{print $NF}" | xargs -0 -I ",," pipe-viewer --custom-layout="*AUTHOR* *TIME* *TITLE*" --no-interactive ",," | fzf)' | awk '{print $NF}' | xargs -0 -I ',,' yt-dlp --print id --print title ',,' | paste -s -d ' \n' > file` (have a look at `ytmpsuite sp` for a more featureful version with previews and individual song select or `ytmpsuite pvpl` to automate playlist search and add)
+- you don't need to use ytmp to make playlists for it. to create a queue file from a youtube playlist you can do `yt-dlp --print id --print title '<playlist_url>' | paste -s -d ' \n' > file` or to create a queue file from search results do `xargs -d '\n' -a <file-with-newline-sperated-searches> -I ,, yt-dlp --print id --print title ytsearch:",," | paste -s -d ' \n' > file` (to read from stdin instead of a file use `printf '%s\n' '<search1>' '<search2>' '<search3>' | xargs [without -a option]...`) or to search for playlists from the terminal (requires pipe-viewer): `search='YOUR_SEARCH'; pipe-viewer --no-interactive -sp --custom-playlist-layout='*VIDEOS*VIDS *TITLE* *URL*' "$search" | fzf --bind='ctrl-a:execute(echo {} | awk "{print $NF}" | xargs -0 -I ",," pipe-viewer --custom-layout="*AUTHOR* *TIME* *TITLE*" --no-interactive ",," | fzf)' | awk '{print $NF}' | xargs -0 -I ',,' yt-dlp --print id --print title ',,' | paste -s -d ' \n' > file` (have a look at `ytmpsuite sp` for a more featureful version with previews and individual song select or `ytmpsuite pvpl` to automate playlist search, add, and add comments)
 
-- convert spotify playlists to something ytmp can use: export the playlist to csv with https://github.com/watsonbox/exportify then run `cut -d'"' --output-delimiter=' ' -f4,8 PLAYLIST.CSV | sed -n 1d | sed -E -e 's/\(?.*[Rr]emaster(ed)?.*//g' | tr -d '()[]' | xargs -d '\n' -I ',,' yt-dlp --print id --print title ytsearch1:",," | paste -s -d ' \n' > file`
-
-- to play a random song once, run `grep -c '' "/home/$USER/Music/ytmp/queue" | xargs seq | shuf -n 1 | xargs ytmp e`
+- convert spotify playlists to something ytmp can use: export the playlist to csv with https://github.com/watsonbox/exportify then run `cut -d'"' --output-delimiter=' ' -f4,8 PLAYLIST.CSV | sed 1d | sed -E -e 's/\(?.*[Rr]emaster(ed)?.*//g' | tr -d '()[]' | xargs -d '\n' -I ',,' yt-dlp --print id --print title ytsearch1:",," | paste -s -d ' \n' > file`
 
 - play queue backwards: `while (ytmp -n); do ytmp p; done`
 
@@ -90,7 +88,7 @@ the thumbnail is sourced from /tmp/muscover.webp (don't forget to set 'download_
 
 - if you wanted to use this for videos instead of music, do a global remove of `--vid=no` and a global replace of `--ytdl-format='bestaudio'` with your preference of video and audio quality (like `--ytdl-format=bestvideo'[height<=?1080]'+bestaudio`) in the source. further, you could also display the covert art/always pop an mpv window open on the start of each song by doing a global replace of `--vid=no` with `--cover-art-file="$thumbnail_ln"` (having set `download_thumbnails='y'` in the conf of course).
 
-- if you want one less dependancy (socat), remove the line `echo quit | socat - "$mpvsocket" >/dev/null 2>&1` from `play ()` and replace it with `pkill -f "mpv.*--input-ipc-server=${mpvsocket}"` though that will mean that anything that's got to do with mpv/playback control will not work. fzf can also be considered an optional dep because the cli covers everything.
+- if you want one less dependancy (socat), remove the line `echo quit | socat - "$mpvsocket" >/dev/null 2>&1` from `play ()` and replace it with `pkill -f "mpv.*--input-ipc-server=${mpvsocket}"` though that will mean that anything that's got to do with mpv/playback control will not work. fzf can also be considered an optional dep because the cli covers everything except result select.
 
 - you can make a scratchpad (i recommend tdrop(https://github.com/noctuid/tdrop) if your wm doesn't support them) of `ytmp E` which can be your one stop for music management (you can invoke ytmp with keybindings by using the vim config provided)
 
@@ -102,7 +100,7 @@ the thumbnail is sourced from /tmp/muscover.webp (don't forget to set 'download_
 ```
 Usage: ytmp [-i #] [a|z|x|s|ps|sp] [-f|-fc] [[-t]|[--tag <tags>]] [[--startwith] <search>]/e #
          OR v/ls [# [#]]/m [[c] [r] [# ... #]] [[c] x [x] #] [s [#]]/-m [[c] [r] ...]/E
-         OR -l/-p/-ff|-bb #/-vl [+|-]#/-dur OR n/p/pl/pf/mln/mfn/l [#|s]/P <search>
+         OR -l/-p/-ff|-bb [#]/-vl [[+|-]#]/-dur OR n/p/pl/pf/mln/mfn/l [#|s]/P <search>
 	 OR N [-r] <search|entry>/-r [#,#]/-d [[[+]#[,#] [L]] #...[k]]]
 
 On first installing ytmp, there won't be any history to select from when you enter ytmp
@@ -122,13 +120,13 @@ enter fzf for search.
 
   s [<# of results>] [<search>]
   		search with the jargon. view search results and select (can select multiple).
-		can specify amount of search results to return with a following arguement
-		(must be the second one) - defaults to 5.
+		can specify amount of search results to return with the first arguement (no flag)
+		- defaults to 5.
 
   x [<# of results>] [<search>]
   		search without the jargon. view search results and select (can select multiple).
-		can specify amount of search results to return with a following arguement
-		(must be the second one) - defaults to 5.
+		can specify amount of search results to return with the first arguement (no flag)
+		- defaults to 5.
 
   sp [<search>] search for playlists (requires https://github.com/trizen/pipe-viewer/)
 
@@ -138,41 +136,41 @@ enter fzf for search.
 		is faster than yt-dlp but does not return all the songs in a playlist.
 
   a <local path|dir|url> ...
-	        add urls (direct links/playlists), paths, or directory.
+	        add urls (direct links/playlists), paths, or directory. send absolute paths.
 		does not check if file is a media file or not before adding.
 
-  * the above options take the following positional flags: '[-f|-fc] [[-t]|--tag <tag ...>] [--startwith search]'
-  they have to take this order of preceedence when appearing together.
-	  -f: force add entry meaning if the song is already found in the queue delete the entry that already exists
-	  	in the queue and add it again (insuring any new tags are added as well).
-	  -fc: don't bother deleting the old entry, just add the new entry.
-	  -t: append \$tags to entry
-	  --tag <tag ...>: define \$tags from the cli (no need to pass '-t' before)
-	  --startwith: start fzf with the search string (not available for 'ps' and 'a')
+  * the above options take the following flags: '[-f|-fc] [[-t]|--tag <tag ...>] [--startwith search]'
+		-f: force add entry meaning if the song is already found in the queue delete the entry that already exists
+		      in the queue and add it again (insuring any new tags are added as well).
+		-fc: don't bother deleting the old entry, just add the new entry.
+		-t: append \$tags to entry.
+		--tag <tag ...>: define \$tags from the cli (no need to pass '-t' before)
+		--startwith: start fzf with the search string (not available for 'ps' and 'a')
 
     the default tag is "$tags".
 
     tags are sent unmodified to yt-dlp --print when it's a song from youtube and a tag contains '%(.*)s' so anything yt-dlp
-    --print accepts is good if the pattern is not found the tag is just added.
+    --print accepts is good if the pattern is not found, the tag is just added. if yt-dlp returns NA for a field then
+    the tag containing the field is not added.
 
-  * further, the search options themselves may be preceeded by '-i #' to specify a destination to add to (accepts args like 'm').
+  * further, the search options themselves may be preceeded by '-i #' to specify a destination to add to.
     whether songs are already in the queue is not checked for so this may lead to duplicates of entries.
 
     when '-i #' or '--tag' is passed for 'sp', the individual songs selected in playlists inherit the position to
     add to and the tags and they are only added to the queue when the playlist selections are finalized or cancelled.
 
-    in sum, the syntax is: ytmp [-i #] [a|z|x|s|ps|sp] [[-t]|[--tag tag]] [[--startwith] search]
+    in sum, the syntax is: ytmp [-i #] [a|z|x|s|ps|sp] [-f|-fc] [[-t]|[--tag tag]] [[--startwith] search]
     when it's [no arg], just pass the flags (like ex 2)
 
     ex: ytmp x --tag '<tag: 1> <tag: 2>' 10 search
         ytmp --tag tags --startwith search
+        ytmp -f -t search
+        ytmp -i 2 s search
         ytmp -i p sp -t search
 
-
   -af [#] ...	add entries to $favorites_file. if no arg, print $favorites_file.
-  		accepts args like 'm'.
 
-  e 		play entry #; can specify relative places with p|l|m like 'm'
+  e 		play entry #
   n 		play next on queue
   p 		play prev on queue
   pf 		play first entry
@@ -183,51 +181,54 @@ enter fzf for search.
   		fuzzy search string in queue and play match. if -id is passed <search> is parsed for
 		in ids too otherwise only in song titles.
 
-  -ff <secs>	seek forward <seconds>
-  -bb <secs>	seek backward <seconds>
+  -ff [<secs>]	seek forward <seconds>; if no arg then use \$def_seek_secs($def_seek_secs)
+  -bb [<secs>]	seek backward <seconds>; if no arg then use \$def_seek_secs($def_seek_secs)
   -dur		get the position and duration of song
-  -vl <[+|-]#>	set volume. can be an absolute number or <+|-># to current volume
+  -vl <[+|-]#>	set volume. can be an absolute number or <+|-># to current volume. if no arg, print volume.
   			(as in -vl +30, -vl -30, -vl 80)
   -p 		toggle playback
   -l 		toggle loop
-
-  l [#|s] 	play the song that was played before this one or # before this one or
-		pass s to select from the history file with fzf.
-		* fzf bindings: ctrl-j: jump; ctrl-o: open entry in web browser.
-
   w 		toggle mpv window. don't close the window because that will quit
   		the song as well instead run ytmp w again to close it.
-
 
   v 		view queue in fzf
   vv 		view queue with fzf preview of details about the song
 
+  l [#|s] 	play the song that was played before this one or # before this one or
+		pass s to select from the history file with fzf; the format of the file
+		is <id> <times played> <last played> <'dl' (if downloaded)> <name>
+		* fzf bindings: ctrl-j: jump; ctrl-o: open entry in web browser.
+
   ls [# [#]]	show a numbered list of the queue. optionally accepts two args - one for focusing on a certain
   		# on the queue and another for how much of the surrounding queue to print. if no second arg,
-		default is 2. accepts args like 'm'.
+		default is 2.
 		ex: ytmp ls p 5 (to print the 5 entries above and below currently playing)
 
   m [[c] [r] [[[p|l|m[+|-#]]|[#]][,][[p|l|m[+|-#]]|[#]]] ... ] [[c] x [x] # [s [#]]
-  		move, copy, remove entries. l means last, p means currently playing, m means a position mark
-		set with passing s #. set mark by passing s # and see current mark with just s.
-		pass x # to move # to the position of the queue selected in the fzf window
+  		move, copy, remove entries. there are three variables containing three positions:
+			l = last
+			p = currently playing
+			m = a position mark
+
+		- set mark by passing s # and see current mark with just s.
+
+		- pass r to remove, c to copy as the first arg.
+
+		- pass x # to move # to the position of the queue selected in the fzf window
 		that will pop up or send a following 'x' (and a position) to move the selection made
 		in fzf to the position passed from cli; preceed (first, if there's two) x with 'c' to copy.
-		pass r to remove. for c|m|r - can specify a range and multiple args by passing start,end
+
+		- for c|m|r - can specify a range and multiple args by passing from,to
 		(separated by comma). you can use p|l|m for all of 'm c|s|x|r'. further, the <end> or the
 		<destination> can be +|-# which means the program will add/subtract that number from the
-		<start> or <target> to come up with the <destination>.
-		examples: ytmp m 10 2; ytmp m s 126; ytmp m m +5; ytmp m p+3 l-1; ytmp [c] x [x] p-2;
+		<from> or <target> to come up with the <destination>.
+
+		* examples: ytmp m 10 2; ytmp m s 126; ytmp m m +5; ytmp m p+3 l-1; ytmp [c] x [x] p-2;
 		ytmp m r p+2,l-15 l-5 10; ytmp m [c] p,+5 10 l 3 5 6 +2; ytmp m [c] 20,24 10 37,33 5 6 +2
 		syntax for ytmp m|m c|m r is [<target>|<from>,<to>] <destination> ...
 
 		* if the first number in a range is greater than the second then move range
-			bottom up so the order is reversed.
-
-		* when it is said that an option "accepts args like 'm'", it is meant that the program
-			will accept anything like 'p+#' or if ranges are also accepted then something like
-			'm,+2' as well. the above 'bottom up' rule does not hold in such cases and
-			you'll get errors if used for any option than 'm' and '-m'
+			bottom up so the order is reversed. ex: ytmp m 10,5 3 => 3,10,9,8...
 
   c ...		alternative to m c
   r ...		alternative to m r
@@ -236,19 +237,20 @@ enter fzf for search.
   -m [c] [r] [# #,# ... <dest>]
   		batch move/copy (with c arg)/remove (with r arg)
 
-		if entry numbers are passed as args - move/copy all entries to the position of the last arg
+		- if entry numbers are passed as args - move/copy all entries to the position of the last arg
 		except when 'r' is passed in which case just remove the args
 		accepts the same kind of args as 'm'
 
-		if no args are passed - make selections in an fzf window that will pop up then move/copy
+		- if no args are passed - make selections in an fzf window that will pop up then move/copy
 		those selections to after the selection made in a new fzf window that will pop up
 		except when 'r' is passed in which case just remove the selections
+
 		* fzf bindings: tab: toggle selection; shift-tab: deselect-all; ctrl-j:jump
 
 		* entries are moved in the order they are selected or the order of the args sent
 
 		* if the first number in a range is greater than the second then move range
-			bottom up so the order is reversed.
+			bottom up so the order is reversed. ex: ytmp -m 10,5 3 => 3,10,9,8...
 
   -c ...	alternative to -m c
   -R ...	alternative to -m r
@@ -256,9 +258,10 @@ enter fzf for search.
   E 		open the queue in nvim and source rc from "$XDG_CONFIG_HOME/nvim/ytmp.vim". nvim is started
 		with "--noplugin +/'***'" as well.
 
-  -sd <#> [-b] 	get listen history and other details about entry (accepts args like 'm') and its youtube
+  -op <#> ...	open entry in web browser
+  -sd <#> [-b] 	get listen history and other details about entry and its youtube
   			description unless '-b' follows # in which case just print the listen history.
-  -dl 		download song # (accepts args like 'm'). does not respect \$max_len_for_dl.
+  -dl <#> ...	download song #. does not respect \$max_len_for_dl.
   -shuf 	runs \`shuf\` on the queue file and overwrites it. the original queue can be found in
   		"$cache_dir/queue_noshuf".
 
@@ -320,11 +323,11 @@ enter fzf for search.
 
   N [-r] <search|entry> ...
   		accepts args acceptable for 'P' and 'e'. plays the songs in the order the args are sent
-		one after another. if the first arg is '-r' then once all the args have been played play
-		the next thing after what was playing before 'N' was run.
-		example: ytmp e <search1> <2> <search2> <p+5> will play the fuzzy match
-		for search1 then entry 2 then fuzzy match for search2 then the entry 5 ahead of what's
-		currently playing.
+		one after another. starts playing after current song ends if there is a song playing.
+		if the first arg is '-r' then once all the args have been played play
+		the next thing after what was playing before 'N' was run (useful for '-d' trailings).
+		example: ytmp '<search 1>' <p+5> <search2> <80> p will play the fuzzy match
+		for 'search 1' then 5 ahead of that match then the match for search2 then entry 74 then entry 73
 		* if a 'p' or 'n' is sent (without +|-#), it will be interpreted as ytmp n|p.
 
   -n 		get notified when mpv exits (i.e. song finishes) except when it quits because the
@@ -342,9 +345,17 @@ enter fzf for search.
   h|help|-h|--help
   		show this help
 
-  --------------------------------------------------------
+  * any option that takes an entry for a an arg accepts args like 'm' meaning it will accept
+		anything like 'p+4' or if ranges are also accepted then something like 'm,+2' as well.
+    these options accept such args: e, -af, ls, m, -m, -sd, -op, -dl, -d, N
+
+  * a '...' indicates option accepts multiple args
+
+  * <search> with spaces don't have to be quoted (except for'N')
+
+  ------------------------------------------------------
   fzf bindings when making search (for ytmp [z|x|s|sp]):
-  --------------------------------------------------------
+  ------------------------------------------------------
 
   	ctrl-r		replace input field with entry
   	ctrl-g		search query and selection
@@ -364,9 +375,9 @@ enter fzf for search.
 	ctrl-z		search query with ytmp z
 	alt-z		search query and selection with ytmp z
 
-  --------------------------------------------------------
+  -----------------------------------------------------------
   fzf bindings for selecting songs(x|s|ps) and playlists(sp):
-  --------------------------------------------------------
+  -----------------------------------------------------------
 
 	tab		toggle selection
 	shift-tab	deselect all
@@ -379,9 +390,9 @@ enter fzf for search.
 			songs in the playlist to add with
 			<tab> and press <enter> to add them
 
-  --------------------------------------------------------
+  --------------------------------------
   fzf bindings for viewing queue (v|vv):
-  --------------------------------------------------------
+  --------------------------------------
 
 	home		first and reload
 	end		last and reload
@@ -432,9 +443,9 @@ enter fzf for search.
 
   * readline binds are also available in all fzf instances
 
-  --------------------------------------------------------
+  -------------------------------------------------------------------------------
   nvim key bindings:
-  --------------------------------------------------------
+  -------------------------------------------------------------------------------
 
 	leader = 	'\'
 	leader-v 	source $XDG_CONFIG_HOME/nvim/init.vim
@@ -474,16 +485,16 @@ enter fzf for search.
 	leader-w 	ytmp w
 	leader-y 	:silent !ytmp
 
-  --------------------------------------------------------
+  -------------------------------------------------------------------------------
 
 Other features:
   - by default ytmp downloads songs after you have listened to them $max_stream_amount times, if you
   	don't want this feature set \$download_songs to 'n' in $conf. if you want to download every song
 	and never stream them set \$max_stream_amount to '1'. the downloads can be found in $songs_dir.
-  - any line in the queue that's not <id (a word of 11 or 12 chars> <name> is ignored by the program
+  - any line in the queue that's not <id|checksum (a word of 11 or 12 chars)> <name> is ignored by the program
 	so such lines can be considered a comment but for robustness in case your comment happens to
 	begin with an 11 or 12 letter word, it's best to begin it with a comment character and space like '# '.
-  	further, tag entries by adding '<tag>' to the end of the entry (including the '<>'. add as many
+	further, tag entries by adding '<tag>' to the end of the entry (including the '<>'). add as many
 	as you like but put a space after the title and first tag. the program only looks for '<' and
 	ignores the rest of the entry so the closing '>' is not necessary.
   - one can communicate with mpv through the ipc socket the script opens at $mpvsocket.
@@ -497,11 +508,11 @@ You might be interested to know:
   - if you want something to blame the slowness of adding songs/playlists:
   	it is because yt-dlp is slow to retrieve things.
   - the editor config is made for nvim; not all binds are tested to be working in vim
+  - get the name of what's currently playing: \`sed "s/^\(.\{11,12\}\) \($playing_ind\)\(.*\)\($closing_playing_ind\)\( *$tag_char.*\)\?$/\3/" "$queue" \` or \`echo '{ "command": ["get_property_string", "media-title" ] }' | socat - "$mpvsocket" | cut -d'"' -f4 | sed -E -e 's/^\([^ ]\{11\}\) //' -e 's/\.webm$//'\`
   - songs are streamed/downloaded with the 'bestaudio' option
   - song/thumbnail downloads are named as "<id> <title>.<ext>"
   - mpv is started with these options: --x11-name='ytmp_mpv' --no-terminal --vid=no --input-ipc-server=$mpvsocket
   	--ytdl-format='bestaudio'
-  - <search> with spaces don't have to be quoted (except for'N')
   - when using the 'P' option, the word 'remastered' is not matched
   - when allowed to multi-select in fzf, if no selections are made and enter is pressed, the entry under
   	the cursor is sent; if selections are made and enter is pressed, only the selections are passed
