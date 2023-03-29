@@ -11,16 +11,16 @@ demo: https://www.reddit.com/r/unixporn/comments/11mxwb0/oc_i_wrote_a_cli_and_ke
   - Search and add youtube playlists to the queue (or only select songs of playlists)
   - Select from past searches in fzf to reduce typing
   - Download songs after they have been played a chosen amount of times (and play the download in the future)
-  - Fzf preview of song/playlist details
+  - FZF preview of song/playlist details
   - Manage the queue from fzf, vim, cli
   - Keep track of listen history/amount
   - Run commands on song start
   - Specify a queue order to iterate through without having to shift entries in the queue file (see usage for -d)
-  - Communicate with mpv through its ipc server
+  - Communicate with mpv through its ipc socket
   - Everything is a plain text file
 
 # setup
-## DEPS: fzf, yt-dlp, mpv, socat, gnu coreutils, dash compatible shell, (for playlist search - pipe-viewer(https://github.com/trizen/pipe-viewer/)) -- only tested on a GNU/Linux system
+## DEPS: fzf, yt-dlp, mpv, socat, gnu coreutils, dash/posix compatible shell, (for playlist search - pipe-viewer(https://github.com/trizen/pipe-viewer/)) -- only tested on a GNU/Linux system
 ## NOT A DEP: accounts of any sort
 `git clone --depth 1 'https://github.com/unclereeemus/ytmp/'; cd ytmp; chmod +x ytmp run_on_next`
 
@@ -45,7 +45,8 @@ on first installing ytmp, there won't be any history to select from when you ent
 
 `eww -c ./ open/close musicplayer` or `mv {eww.scss,eww.yuck,mus} ~/.config/eww; eww open/close musicplayer`
 
-it should (mostly) look like this (bottom left - music widget only): https://github.com/Gwynsav/messydots/blob/main/basicshowcase.png
+the config is taken from (bottom left, music widget only) https://github.com/Gwynsav/messydots/blob/main/basicshowcase.png
+but this variation looks more like a tv with controls and volume sliders (system, mpv) and progress bar at the bottom of the thumbnail
 
 the thumbnail is sourced from /tmp/muscover.webp (don't forget to set 'download_thumbnails=y' in the conf)
 
@@ -65,11 +66,9 @@ the thumbnail is sourced from /tmp/muscover.webp (don't forget to set 'download_
 
 **mightfinduseful** a script to play music outside of ytmp either with local files, youtube search, or the ytmp queue file. also dynamically names the mpvsocket so you don't overwrite an old one.
 
-**mpv_socket_selector** prints a dmenu of active mpv sockets and puts the selected one in /tmp/active_mpvsocket (options: n(ext), p(rev), s(elect))
+**mpv_socket_commands** wrapper for communicating with an mpv socket (see -h)
 
-**mpv_socket_commands** sends commands to the mpv socket in /tmp/active_mpvsocket or another specfied with st option (see -h)
-
-**eww.scss/eww.yuck** contain the eww (https://github.com/elkowar/eww) music widget which center around playing music with mpv and controlling it with various buttons/binds (not just for ytmp); allows for easy manipulation of volume levels or changing the socket one wishes to control or learning various properties (which could all be done from the cli of course but it's provided as a gui for this project.) other than relying on `mus`, it also relies on `mpv_socket_selector` and `mpv_socket_commands`.
+**eww.scss/eww.yuck** contain the eww (https://github.com/elkowar/eww) music widget which center around playing music with mpv and controlling it with various buttons/binds (not just for ytmp); allows for easy manipulation of volume levels or changing the socket one wishes to control or learning various properties. other than relying on `mus`, it also relies on `ytmpsuite` and `mpv_socket_commands`.
 
 **mus** is used by the eww config for various information. eww looks for it the same dir as eww.scss and eww.yuck.
 
@@ -78,9 +77,9 @@ the thumbnail is sourced from /tmp/muscover.webp (don't forget to set 'download_
 
 - play dmenu selection: `cat "/home/$USER/Music/ytmp/queue" | dmenu -l 15 | cut -d' ' -f1 | xargs -I ,, ytmp P -id ,,`
 
-- you don't need to use ytmp to make playlists for it. to create a queue file from a youtube playlist you can do `yt-dlp --print id --print title '<playlist_url>' | paste -s -d ' \n' > file` or to create a queue file from search results do `xargs -d '\n' -a <file-with-newline-sperated-searches> -I ,, yt-dlp --print id --print title ytsearch:",," | paste -s -d ' \n' > file` (to read from stdin instead of a file use `printf '%s\n' '<search1>' '<search2>' '<search3>' | xargs [without -a option]...`) or to search for playlists from the terminal (requires pipe-viewer): `search='YOUR_SEARCH'; pipe-viewer --no-interactive -sp --custom-playlist-layout='*VIDEOS*VIDS *TITLE* *URL*' "$search" | fzf --bind='ctrl-a:execute(echo {} | awk "{print $NF}" | xargs -0 -I ",," pipe-viewer --custom-layout="*AUTHOR* *TIME* *TITLE*" --no-interactive ",," | fzf)' | awk '{print $NF}' | xargs -0 -I ',,' yt-dlp --print id --print title ',,' | paste -s -d ' \n' > file` (have a look at `ytmpsuite sp` for a more featureful version with previews and individual song select or `ytmpsuite pvpl` to automate playlist search, add, and add comments)
+- you don't need to use ytmp to make playlists for it. to create a queue file from a youtube playlist you can do `yt-dlp --print id --print title '<playlist_url>' | paste -s -d ' \n' > file` or to create a queue file from search results do `xargs -d '\n' -a <file-with-newline-sperated-searches> -I ,, yt-dlp --print id --print title ytsearch:",," | paste -s -d ' \n' > file` (to read from stdin instead of a file use `printf '%s\n' '<search1>' '<search2>' '<search3>' | xargs [without -a option]...`) or to search for playlists from the terminal (requires pipe-viewer): `search='YOUR_SEARCH'; pipe-viewer --no-interactive -sp --custom-playlist-layout='*VIDEOS*VIDS *TITLE* *URL*' "$search" | fzf --bind='ctrl-a:execute(echo {} | awk "{print $NF}" | xargs -0 -I ",," pipe-viewer --custom-layout="*AUTHOR* *TIME* *TITLE*" --no-interactive ",," | fzf)' | awk '{print $NF}' | xargs -0 -I ',,' yt-dlp --print id --print title ',,' | paste -s -d ' \n' > file` (have a look at `ytmpsuite sp` for a more featureful version with previews and individual song select or `ytmpsuite pvpl` to automate playlist search and add or `ytmpsuite scrape` to scrape lists from rym, aoty, discogs)
 
-- convert spotify playlists to something ytmp can use: export the playlist to csv with https://github.com/watsonbox/exportify then run `cut -d'"' --output-delimiter=' ' -f4,8 PLAYLIST.CSV | sed 1d | sed -E -e 's/\(?.*[Rr]emaster(ed)?.*//g' | tr -d '()[]' | xargs -d '\n' -I ',,' yt-dlp --print id --print title ytsearch1:",," | paste -s -d ' \n' > file`
+- convert spotify playlists to something ytmp can use: export the playlist to csv with https://github.com/watsonbox/exportify then run `cut -d'"' --output-delimiter=' ' -f4,8 PLAYLIST.CSV | sed 1d | tr -d '()[]' | xargs -d '\n' -I ',,' yt-dlp --print id --print title ytsearch1:",," | paste -s -d ' \n' > file`
 
 - play queue backwards: `while (ytmp -n); do ytmp p; done`
 
@@ -98,7 +97,7 @@ the thumbnail is sourced from /tmp/muscover.webp (don't forget to set 'download_
 
 # usage
 ```
-Usage: ytmp [-i #] [a|z|x|s|ps|sp] [-f|-fc] [[-t]|[--tag <tags>]] [[--startwith] <search>]/e #
+Usage: ytmp [-i #] [a|z|x|s|ps|sp] [-f|-fc] [[-t]|[--tag <'alt'|tags>]] [[--startwith] <search>]/e #
          OR v/ls [# [#]]/m [[c] [r] [# ... #]] [[c] x [x] #] [s [#]]/-m [[c] [r] ...]/E
          OR -l/-p/-ff|-bb [#]/-vl [[+|-]#]/-dur OR n/p/pl/pf/mln/mfn/l [#|s]/P <search>
 	 OR N [-r] <search|entry>/-r [#,#]/-d [[[+]#[,#] [L]] #...[k]]]
@@ -120,13 +119,13 @@ enter fzf for search.
 
   s [<# of results>] [<search>]
   		search with the jargon. view search results and select (can select multiple).
-		can specify amount of search results to return with the first arguement (no flag)
-		- defaults to 5.
+		can specify count of search results to return with the first arguement (no flag)
+		- defaults to \$def_res_count($def_res_count).
 
   x [<# of results>] [<search>]
   		search without the jargon. view search results and select (can select multiple).
-		can specify amount of search results to return with the first arguement (no flag)
-		- defaults to 5.
+		can specify count of search results to return with the first arguement (no flag)
+		- defaults to \$def_res_count($def_res_count).
 
   sp [<search>] search for playlists (requires https://github.com/trizen/pipe-viewer/)
 
@@ -139,12 +138,13 @@ enter fzf for search.
 	        add urls (direct links/playlists), paths, or directory. send absolute paths.
 		does not check if file is a media file or not before adding.
 
-  * the above options take the following flags: '[-f|-fc] [[-t]|--tag <tag ...>] [--startwith search]'
+  * the above options take the following flags: '[-f|-fc] [[-t]|--tag <'alt'|tag ...>] [--startwith search]'
 		-f: force add entry meaning if the song is already found in the queue delete the entry that already exists
-		      in the queue and add it again (insuring any new tags are added as well).
+		      in the queue and add it again (ensuring any new tags are added as well).
 		-fc: don't bother deleting the old entry, just add the new entry.
 		-t: append \$tags to entry.
-		--tag <tag ...>: define \$tags from the cli (no need to pass '-t' before)
+		--tag <'alt'|tag ...>: define \$tags to append (no need to pass '-t' before)
+			if 'alt' is passed use \$alt_tags instead of \$tags
 		--startwith: start fzf with the search string (not available for 'ps' and 'a')
 
     the default tag is "$tags".
@@ -163,7 +163,7 @@ enter fzf for search.
     when it's [no arg], just pass the flags (like ex 2)
 
     ex: ytmp x --tag '<tag: 1> <tag: 2>' 10 search
-        ytmp --tag tags --startwith search
+        ytmp --tag alt --startwith search
         ytmp -f -t search
         ytmp -i 2 s search
         ytmp -i p sp -t search
@@ -171,8 +171,8 @@ enter fzf for search.
   -af [#] ...	add entries to $favorites_file. if no arg, print $favorites_file.
 
   e 		play entry #
-  n 		play next on queue
-  p 		play prev on queue
+  n 		play next song
+  p 		play prev song
   pf 		play first entry
   pl 		play last entry
   mfn 		move first entry to after currently playing
@@ -184,7 +184,7 @@ enter fzf for search.
   -ff [<secs>]	seek forward <seconds>; if no arg then use \$def_seek_secs($def_seek_secs)
   -bb [<secs>]	seek backward <seconds>; if no arg then use \$def_seek_secs($def_seek_secs)
   -dur		get the position and duration of song
-  -vl <[+|-]#>	set volume. can be an absolute number or <+|-># to current volume. if no arg, print volume.
+  -vl [[+|-]#]	set volume. can be an absolute number or <+|-># to current volume. if no arg, print volume.
   			(as in -vl +30, -vl -30, -vl 80)
   -p 		toggle playback
   -l 		toggle loop
@@ -258,16 +258,16 @@ enter fzf for search.
   E 		open the queue in nvim and source rc from "$XDG_CONFIG_HOME/nvim/ytmp.vim". nvim is started
 		with "--noplugin +/'***'" as well.
 
-  -op <#> ...	open entry in web browser
   -sd <#> [-b] 	get listen history and other details about entry and its youtube
   			description unless '-b' follows # in which case just print the listen history.
   -dl <#> ...	download song #. does not respect \$max_len_for_dl.
+  -op <#> ...	open entry in web browser
   -shuf 	runs \`shuf\` on the queue file and overwrites it. the original queue can be found in
   		"$cache_dir/queue_noshuf".
 
   -vd 		prints "$qdiscards_file" which contains a list of songs that were selected to
-  		be added to the queue in the last search but were already found in the queue.
-		it's removed with every search.
+  		be added to the queue in the last search/'a' but were already found in the queue.
+		it's removed with every search/'a'.
 
   -rd [c] 	copies or moves songs listed in $cache_dir/ytmpqdiscards; can be copied (when given c option)
   		to or moved (when no options are given) from their current position to the position they
@@ -326,8 +326,9 @@ enter fzf for search.
 		one after another. starts playing after current song ends if there is a song playing.
 		if the first arg is '-r' then once all the args have been played play
 		the next thing after what was playing before 'N' was run (useful for '-d' trailings).
-		example: ytmp '<search 1>' <p+5> <search2> <80> p will play the fuzzy match
+		example: ytmp N -r '<search 1>' <p+5> <search2> <80> p will play the fuzzy match
 		for 'search 1' then 5 ahead of that match then the match for search2 then entry 74 then entry 73
+		and then entry 6 (assuming entry 5 was playing before 'N' was run)
 		* if a 'p' or 'n' is sent (without +|-#), it will be interpreted as ytmp n|p.
 
   -n 		get notified when mpv exits (i.e. song finishes) except when it quits because the
@@ -389,6 +390,7 @@ enter fzf for search.
 	ctrl-x		see songs in the playlist; one can select
 			songs in the playlist to add with
 			<tab> and press <enter> to add them
+			the above binds are also valid
 
   --------------------------------------
   fzf bindings for viewing queue (v|vv):
@@ -516,7 +518,7 @@ You might be interested to know:
   - when using the 'P' option, the word 'remastered' is not matched
   - when allowed to multi-select in fzf, if no selections are made and enter is pressed, the entry under
   	the cursor is sent; if selections are made and enter is pressed, only the selections are passed
-  - entries for local files are created with \`cksum --untagged --algorithm=blake2b -l 48 <file> | sed 's@\b  @ @'\`
+  - entries for local files are created with \`cksum --untagged --algorithm=blake2b -l 48 <file> | sed 's@  @ @'\`
   - thumbnails are not automatically deleted. if \$download_thumbnails option is set to 1 then thumbnails are
 	downloaded and not removed regardless of whether the song is downloaded or not
   - move functions are made last to first this is to insure that if multiple entries are competing for the same
