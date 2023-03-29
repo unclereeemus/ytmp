@@ -61,7 +61,7 @@ prevsock () {
 case "$1" in
 	"g") printf '{ "command": ["get_property", "%s"] }\n' "$2" | socat - "$socket" ;;
 	"gs") printf '{ "command": ["get_property_string", "%s"] }\n' "$2" | socat - "$socket" ;;
-	"s") printf '{ "command": ["set_property", "%s", "%s"] }\n' "$2" "$3" | socat - "$socket" ;;
+	"s") printf '{ "command": ["set_property", "%s", %s] }\n' "$2" "$3" | socat - "$socket" ;;
 	"c") printf '{ "command": ["%s", "%s"] }\n' "$2" "$3" | socat - "$socket" ;;
 	"cc") printf '{ "command": ["%s", "%s", "%s"] }\n' "$2" "$3" "$4" | socat - "$socket" ;;
 	"e") shift 1; echo "$( echo "$@" | sed 's/ st .*//' )" | socat - "$socket" ;;
