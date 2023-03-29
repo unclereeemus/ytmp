@@ -156,7 +156,7 @@ enter fzf for search.
 	        add urls (direct links/playlists), paths, or directory. send absolute paths.
 		does not check if file is a media file or not before adding.
 
-  * the above options take the following flags: '[-f|-fc] [[-t]|--tag <tag ...>] [--startwith search]'
+  * the above options take the following flags: '[-f|-fc] [[-t]|--tag <'alt'|tag ...>] [--startwith search]'
 		-f: force add entry meaning if the song is already found in the queue delete the entry that already exists
 		      in the queue and add it again (ensuring any new tags are added as well).
 		-fc: don't bother deleting the old entry, just add the new entry.
@@ -181,7 +181,7 @@ enter fzf for search.
     when it's [no arg], just pass the flags (like ex 2)
 
     ex: ytmp x --tag '<tag: 1> <tag: 2>' 10 search
-        ytmp --tag tags --startwith search
+        ytmp --tag alt --startwith search
         ytmp -f -t search
         ytmp -i 2 s search
         ytmp -i p sp -t search
@@ -536,7 +536,7 @@ You might be interested to know:
   - when using the 'P' option, the word 'remastered' is not matched
   - when allowed to multi-select in fzf, if no selections are made and enter is pressed, the entry under
   	the cursor is sent; if selections are made and enter is pressed, only the selections are passed
-  - entries for local files are created with \`cksum --untagged --algorithm=blake2b -l 48 <file> | sed 's@\b  @ @'\`
+  - entries for local files are created with \`cksum --untagged --algorithm=blake2b -l 48 <file> | sed 's@  @ @'\`
   - thumbnails are not automatically deleted. if \$download_thumbnails option is set to 1 then thumbnails are
 	downloaded and not removed regardless of whether the song is downloaded or not
   - move functions are made last to first this is to insure that if multiple entries are competing for the same
@@ -641,11 +641,11 @@ add () {
 			done
 		elif [ -d "$f" ]; then
 			find "$f" | sed 1d | while read -r f; do
-				entry="$(cksum --untagged --algorithm=blake2b -l 48 "$f" | sed 's@\b  @ @')"
+				entry="$(cksum --untagged --algorithm=blake2b -l 48 "$f" | sed 's@  @ @')"
 				addToQueue "$entry"
 			done
 		elif [ -e "$f" ]; then
-			entry="$(cksum --untagged --algorithm=blake2b -l 48 "$f" | sed 's@\b  @ @')"
+			entry="$(cksum --untagged --algorithm=blake2b -l 48 "$f" | sed 's@  @ @')"
 			addToQueue "$entry"
 		else
 			echo "'$f' is not valid; provide a url, path, or directory."
