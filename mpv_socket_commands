@@ -4,17 +4,16 @@
 notify_script="/home/$USER/.config/eww/mus"
 
 kill () {
-	rm /tmp/current_mpvsockets
+	rm -f /tmp/current_mpvsockets
 	for i in `ls /tmp/mpvsocket*`; do
 		if [ -n "$( echo '{ "command": ["get_property", "pid" ] }' | socat - "$i" )" ]; then
 			echo "$i" >> /tmp/current_mpvsockets
 			echo "$i added"
 		else
-			rm "$i"
+			rm -f "$i"
 			echo "$i removed"
 		fi
 	done
-	fi
 }
 
 sendtoall () {
@@ -22,11 +21,11 @@ sendtoall () {
 	if [ "$1" = "ac" ]; then
 		oldsocket="`cat /tmp/active_mpvsocket`"
 		for s in $socket; do
-			sed -i "\~$s~d" /tmp/current_mpvsockets
+			echo "$s"
+			sed -i "\|$s|d" /tmp/current_mpvsockets
 		done
 	fi
 	for i in `cat /tmp/current_mpvsockets`; do
-		# echo "$i" | tee /tmp/active_mpvsocket
 		echo "$i" > /tmp/active_mpvsocket
 		mpv_socket_commands $2 $3 $4 $5
 	done
@@ -43,23 +42,45 @@ notifyinfo () {
 	echo $socket > /tmp/active_mpvsocket
 }
 
+nextsock () {
+	line=$( grep -Fxn "$( cat /tmp/active_mpvsocket )" '/tmp/current_mpvsockets' | cut -d':' -f1 )
+	line=$(( line+1 ))
+	[ "$line" -gt "$( grep -c '' /tmp/current_mpvsockets )" ] && line='1'
+	sed -n "${line}p" /tmp/current_mpvsockets > /tmp/active_mpvsocket
+	notify-send `cat /tmp/active_mpvsocket`
+}
+
+prevsock () {
+	line=$( grep -Fxn "$( cat /tmp/active_mpvsocket )" '/tmp/current_mpvsockets' | cut -d':' -f1 )
+	line=$(( line-1 ))
+	[ "$line" -lt "1" ] && line="$( grep -c '' /tmp/current_mpvsockets )"
+	sed -n "${line}p" /tmp/current_mpvsockets > /tmp/active_mpvsocket
+	notify-send `cat /tmp/active_mpvsocket`
+}
+
 case "$1" in
-	"g") echo "{ \"command\": [\"get_property\", \"${2}\"] }" | socat - "$socket" ;;
-	"gs") echo "{ \"command\": [\"get_property_string\", \"${2}\"] }" | socat - "$socket" ;;
-	"s") echo "{ \"command\": [\"set_property\", \"${2}\", ${3}] }" | socat - "$socket" ;;
-	"c") echo "{ \"command\": [\"${2}\", \"${3}\"] }" | socat - "$socket" ;;
-	"cc") echo "{ \"command\": [\"${2}\", \"${3}\", \"${4}\"] }" | socat - "$socket" ;;
+	"g") printf '{ "command": ["get_property", "%s"] }\n' "$2" | socat - "$socket" ;;
+	"gs") printf '{ "command": ["get_property_string", "%s"] }\n' "$2" | socat - "$socket" ;;
+	"s") printf '{ "command": ["set_property", "%s", "%s"] }\n' "$2" "$3" | socat - "$socket" ;;
+	"c") printf '{ "command": ["%s", "%s"] }\n' "$2" "$3" | socat - "$socket" ;;
+	"cc") printf '{ "command": ["%s", "%s", "%s"] }\n' "$2" "$3" "$4" | socat - "$socket" ;;
 	"e") shift 1; echo "$( echo "$@" | sed 's/ st .*//' )" | socat - "$socket" ;;
 	"a") sendtoall $* ;;
 	"ac") sendtoall $* ;;
+	"-n") kill >/dev/null 2>&1; nextsock ;;
+	"-p") kill >/dev/null 2>&1; prevsock ;;
+	"-s") mpv_socket_commands a g media-title | sed -n '/data/,$p' | jq -r .data | grep -n '' | dmenu -i -l 10 | cut -d':' -f1 | xargs -I '{}' sed -n '{}p' /tmp/current_mpvsockets > /tmp/active_mpvsocket ;;
+	"-sp") cat /tmp/current_mpvsockets | dmenu -i -l 5 > /tmp/active_mpvsocket ;;
 	"n") notifyinfo ;;
 	"k") kill ;;
-	*) echo "g - get_property; gs - get_property_string; s - set_property; c - command; cc - like c except accepts 1 more arg; e - echo;
+	"ls") kill; ls /tmp/mpvsocket* ;;
+	*) echo "-n - next socket; -p - previous socket; -s - select socket by media-title; -sp - select socket by path
+		g - get_property; gs - get_property_string; s - set_property; c - command; cc - like c except accepts 1 more arg; e - echo;
 		a - do something on all sockets. example: mpv_socket_commands a [g/s/c/cc/e] <property> <value>
-		ac - do something on all but current socket.
-		n - send a notification of containing info of all socket's loop state, position, and name.
+		ac - do something on all but current socket (or more sockets specified with st.)
+		n - send a notification containing info of all socket's loop state, position, and name.
 		k - update /tmp/current_mpvsockets - remove unused sockets.
 		to act on a socket that is not the current active one, pass st <socket> as last arguments. further, one can
-		exclude multiple sockets when using the 'ac' option by adding all the desriable sockets after the st agruement.
+		exclude multiple sockets when using the 'ac' option by passing all the undesriable sockets after the st agruement.
 		sockets must be named as /tmp/mpvsocket<name> to be detected by the script." ;;
 esac
