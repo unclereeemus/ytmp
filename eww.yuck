@@ -20,7 +20,7 @@
 
 		(box :class "mus-prog" :orientation "h" :space-evenly "false"
 			(scale	:class "musvol-bar" :orientation "h" :flipped false :min 0 :max 100 :onchange "./mus volch {}" :value musvol)
-			(button :class "musvol-icon" :tooltip "${active_mpv_socket}" :onclick "$HOME/.local/bin/wip/mpv_socket_selector n" :onmiddleclick "mpv_socket_selector s" :onrightclick "$HOME/.local/bin/wip/mpv_socket_selector p" "")
+			(button :class "musvol-icon" :tooltip "${active_mpv_socket}" :onclick "$HOME/.local/bin/wip/mpv_socket_commands -n" :onmiddleclick "mpv_socket_commands -s" :onrightclick "$HOME/.local/bin/wip/mpv_socket_commands -p" "")
 
 
 			))))
@@ -40,10 +40,11 @@
 (defpoll ysgT     :interval "1s" "ytmpsuite gT | tail -1")
 (defpoll ysgt     :interval "1s" "ytmpsuite gt | tail -1")
 
+; fiddle with below values if window is not showing
 (defwindow musicplayer
-	:geometry (geometry :x "0" :y "906" :anchor "center"
+	:geometry (geometry :x "100" :y "906" :anchor "center"
 			    :width "55px" :height "100px")
-	:windowtype "dock" :stacking "bg" :wm-ignore true
+	:windowtype "normal" :stacking "bg" :wm-ignore false
 	; :geometry (geometry :x "-840px" :y "413px" :anchor "center"
 	; 		    :width "75px" :height "100px")
 	; :windowtype "desktop" :stacking "bg" :wm-ignore false
