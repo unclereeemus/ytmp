@@ -18,6 +18,8 @@ linetog () {
 case "$1" in
 	k) mpv_socket_commands e quit st /tmp/mpvsocketytmp ;;
 	0) mpv_socket_commands cc seek 0 absolute st /tmp/mpvsocketytmp ;;
+	# play a random song once
+	r) ytmp e $(seq $(grep -c '' "$queue") | shuf -n1) ;;
 
 	# if `ytmp -r` (which uses `shuf`) isn't random enough
 	-r)
