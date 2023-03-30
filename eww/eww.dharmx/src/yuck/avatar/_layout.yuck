@@ -8,7 +8,7 @@
 ;             :class "avatar-headers-label"
 ;             :halign "start"
 ;             :hexpand true)
-      (label :text "${time.day_num} ${time.month}, ${time.year}"
+      (label :text "${time.hour}:${time.min}:${time.sec} ${time.day} ${time.day_num} ${time.month}, ${time.year}"
              :class "avatar-headers-label"
              :halign "end"
              :hexpand true)
