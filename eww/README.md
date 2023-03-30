@@ -13,7 +13,7 @@ requirements:
 - but has nice straight forward single bind buttons
 
 - the sliders under the progress bar are: mpv volume, $vol in $run_on_next, and system volume
-- the buttons below the sliders: ytmp -l, ytmp -d, ytmp -r, ytmpsuite -tao, ytmpsuite t1, ytmpsuite t2
+- the buttons below the sliders: ytmp -l, ytmp -d, ytmp -r, ytmpsuite tao, ytmpsuite t1, ytmpsuite t2
 
 # eww.gwynsav -- https://github.com/Gwynsav/messydots/
 `chmod +x mus`
