@@ -1,0 +1,20 @@
+#!/bin/sh
+# requires eww config to be in ~/.config/eww
+# if the conf is elsewhere do eww -c <dir>
+
+FILE="$HOME/.cache/eww_launch.xyz"
+m_loc="$(xdotool getmouselocation)"
+
+if [ ! -e "$FILE" ]; then
+	# eww open avatar
+	# eww open musicplayer
+	xdotool getmouselocation --shell > "$FILE"
+	# moves mouse to the center of the screen
+	xdotool mousemove 958 561
+else
+	# eww close avatar
+	# eww close musicplayer
+	# restores mouse location
+     	xdotool mousemove "$( sed -n '1p' "$FILE" | cut -d'=' -f2 )" "$( sed -n '2p' "$FILE" | cut -d'=' -f2 )"
+	rm "$FILE"
+fi
