@@ -2,7 +2,7 @@
 (defpoll mic_level :interval "1s" "mpv_socket_commands g volume st /tmp/mpvsocketytmp | jq -r .data")
 (defpoll start_level :interval "1s" "ytmpsuite pvc")
 
-(defpoll time :interval "12h" `date +'{"hour":"%H","min":"%M","sec":"%S","pretty":"%a, %e %b","day":"%A","month":"%B","dom":"%e","year":"%Y","day_num":"%d","month_num":"%m","year_num":"%y"}'`)
+(defpoll time :interval "1s" `date +'{"hour":"%H","min":"%M","sec":"%S","pretty":"%a, %e %b","day":"%a","month":"%B","dom":"%e","year":"%Y","day_num":"%d","month_num":"%m","year_num":"%y"}'`)
 
 (defpoll daemon_stat :interval "1s" "./src/scripts/vars -gd")
 (defpoll random_stat :interval "1s" "./src/scripts/vars -gr")
