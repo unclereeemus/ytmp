@@ -1,8 +1,0 @@
-(include "./src/yuck/avatar/lib/_mpd.yuck")
-(include "./src/yuck/avatar/lib/_pctl.yuck")
-(include "./src/yuck/avatar/lib/_small.yuck")
-(include "./src/yuck/avatar/lib/_quick.yuck")
-; (include "./src/yuck/avatar/lib/_init_bolt.yuck")
-(include "./src/yuck/avatar/lib/_bolt_up_date.yuck")
-
-; vim:filetype=yuck
