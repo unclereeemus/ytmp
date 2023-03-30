@@ -30,10 +30,12 @@ requirements:
 
 - optionally `chmod +x ewwvarupd` to immediately update varibles(name, progress...) in eww when switching a socket
 
-# NOTE: these configs aren't cleaned up so the variable names aren't accurately descriptive all the time
+## NOTE: these configs aren't cleaned up so the variable names aren't accurately descriptive all the time
 
 # opening the widgets
 move them to ~/.config/eww so eww can use them without you having to specify a dir with -c
 or do `eww -c eww.dharmx open avatar`
 or do `eww -c eww.gwynsav open musicplayer`
 optionally start the daemon beforehand with `eww daemon`
+
+if you want to make a mouse/keyboard bind to toggle eww, uncomment the widget to open in ./launcheww and run it
