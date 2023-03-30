@@ -40,16 +40,6 @@ the mpv ipc socket is opened at /tmp/mpvsocketytmp
 
 on first installing ytmp, there won't be any history to select from when you enter ytmp so either pass arguements from the cli with `ytmp [z] <search>` or to search what's on the fzf input field press ctrl-x or to background search press ctrl-s / ctrl-z (difference explained in `ytmp h`)
 
-## eww
-`chmod +x mus`
-
-`eww -c ./ open/close musicplayer` or `mv {eww.scss,eww.yuck,mus} ~/.config/eww; eww open/close musicplayer`
-
-the config is taken from (bottom left, music widget only) https://github.com/Gwynsav/messydots/blob/main/basicshowcase.png
-but this variation looks more like a tv with controls and volume sliders (system, mpv) and progress bar at the bottom of the thumbnail
-
-the thumbnail is sourced from /tmp/muscover.webp (don't forget to set 'download_thumbnails=y' in the conf)
-
 # scripts
 
 **ytmp** main script; none of the other scripts need to be set up to get it working.
@@ -68,9 +58,7 @@ the thumbnail is sourced from /tmp/muscover.webp (don't forget to set 'download_
 
 **mpv_socket_commands** wrapper for communicating with an mpv socket (see -h)
 
-**eww.scss/eww.yuck** contain the eww (https://github.com/elkowar/eww) music widget which center around playing music with mpv and controlling it with various buttons/binds (not just for ytmp); allows for easy manipulation of volume levels or changing the socket one wishes to control or learning various properties. other than relying on `mus`, it also relies on `ytmpsuite` and `mpv_socket_commands`.
-
-**mus** is used by the eww config for various information. eww looks for it the same dir as eww.scss and eww.yuck.
+**eww/** contain two eww (https://github.com/elkowar/eww) music widgets. see the readme in it to learn more.
 
 # tips
 - a dmenu wrapper: `cmd="$( printf ' ' | dmenu -p 'which ytmp cmd to run? ' )" && if ( printf "$cmd" | grep -Eq '^( |x.*|s.*|z|l s|v|vv|E|sp.*)+$' ); then setsid -f $TERMINAL -e ytmp $cmd >/dev/null 2>&1; else ytmp $cmd; fi`
