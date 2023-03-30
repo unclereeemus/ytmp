@@ -1,0 +1,7 @@
+(include "./src/yuck/_env.yuck")
+(include "./src/yuck/_lib.yuck")
+
+(include "./src/yuck/bolt/_init.yuck")
+(include "./src/yuck/avatar/_init.yuck")
+
+; vim:filetype=yuck
