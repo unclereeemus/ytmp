@@ -12,7 +12,8 @@ requirements:
 - only used for ytmp stuff
 - but has nice straight forward single bind buttons
 
-- the sliders under the progress bar are: mpv volume, $vol in $run_on_next, and system volume
+- the buttons under the progress bar are: random song, quit song, ytmp vv
+- the sliders are: mpv volume, $vol in $run_on_next, and system volume
 - the buttons below the sliders: ytmp -l, ytmp -d, ytmp -r, ytmpsuite tao, ytmpsuite t1, ytmpsuite t2
 
 # eww.gwynsav -- https://github.com/Gwynsav/messydots/
