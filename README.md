@@ -58,7 +58,7 @@ on first installing ytmp, there won't be any history to select from when you ent
 
 **mpv_socket_commands** wrapper for communicating with an mpv socket (see -h)
 
-**eww/** contain two eww (https://github.com/elkowar/eww) music widgets. see the readme in it to learn more.
+**eww/** contain two eww (https://github.com/elkowar/eww) music widgets. see the readme in it to learn more and see pictures.
 
 # tips
 - a dmenu wrapper: `cmd="$( printf ' ' | dmenu -p 'which ytmp cmd to run? ' )" && if ( printf "$cmd" | grep -Eq '^( |x.*|s.*|z|l s|v|vv|E|sp.*)+$' ); then setsid -f $TERMINAL -e ytmp $cmd >/dev/null 2>&1; else ytmp $cmd; fi`
@@ -81,6 +81,7 @@ on first installing ytmp, there won't be any history to select from when you ent
 
 # credit
 - this is a fork of the now deleted repo ifeelalright1970/ytmp with additional features and bug fixes
+- https://github.com/dharmx/vile for eww config
 - https://github.com/Gwynsav/messydots for eww config
 
 # usage
