@@ -102,6 +102,10 @@
     (box :class "avatar-mpd-footer"
          :space-evenly false
       (button :class "avatar-mpd-footer-button"
+	     :onclick "ytmpsuite r"
+             :hexpand false
+             :halign "start" '󰒝')
+      (button :class "avatar-mpd-footer-button"
 	     :onclick "mpv_socket_commands e quit st /tmp/mpvsocketytmp"
              :hexpand false
              :halign "start" '󰗼')
