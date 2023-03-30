@@ -1,6 +1,7 @@
 there's a picture for how these look in their folders
 
 requirements:
+- install `jq`
 - do `chmod +x mpv_socket_commands ytmpsuite` and move them to your $PATH
 - you might need to have certain fonts installed, check the repos below;
 	i am using nerdfonts(https://www.nerdfonts.com/) for the icons
