@@ -12,7 +12,7 @@ requirements:
 - only used for ytmp stuff
 - but has nice straight forward single bind buttons
 
-- the buttons under the progress bar are: random song, quit song, ytmp vv
+- the buttons under the progress bar are: play a random song once, quit song, ytmp vv
 - the sliders are: mpv volume, $vol in $run_on_next, and system volume
 - the buttons below the sliders: ytmp -l, ytmp -d, ytmp -r, ytmpsuite tao, ytmpsuite t1, ytmpsuite t2
 
