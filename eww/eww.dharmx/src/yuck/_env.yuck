@@ -1,0 +1,23 @@
+(defpoll volume_level :interval "1s" "amixer -c 0 sget Master | sed '5\!d' | cut -d' ' -f6 | grep -o '[1-9]*'")
+(defpoll mic_level :interval "1s" "mpv_socket_commands g volume st /tmp/mpvsocketytmp | jq -r .data")
+(defpoll start_level :interval "1s" "ytmpsuite pvc")
+
+(defpoll time :interval "12h" `date +'{"hour":"%H","min":"%M","sec":"%S","pretty":"%a, %e %b","day":"%A","month":"%B","dom":"%e","year":"%Y","day_num":"%d","month_num":"%m","year_num":"%y"}'`)
+
+(defpoll daemon_stat :interval "1s" "./src/scripts/vars -gd")
+(defpoll random_stat :interval "1s" "./src/scripts/vars -gr")
+(defpoll album :interval "1s" "./src/scripts/vars -prev")
+(defpoll title :interval "1s" "./src/scripts/vars -title")
+(defpoll artist :interval "1s" "./src/scripts/vars -next")
+(defpoll duration :interval "1s" "ytmp -dur")
+(defpoll pause_stat :interval "1s" "./src/scripts/vars -gp")
+(defpoll repeat_stat :interval "1s" "mpv_socket_commands g loop st /tmp/mpvsocketytmp | jq -r .data")
+(defpoll yst1_stat :interval "1s" "ytmpsuite gt1 | head -1")
+(defpoll yst2_stat :interval "1s" "ytmpsuite gt2 | head -1")
+
+(defvar song_cover '/tmp/muscover.webp')
+
+(defpoll mpd_progress :interval "1s" "mpv_socket_commands g percent-pos st /tmp/mpvsocketytmp | jq -r .data")
+(defvar mpd_current "󰝚")
+
+; vim:filetype=yuck

@@ -1,0 +1,51 @@
+(defwidget musicplayer []
+	(box :class "musicbox" :orientation "h" :halign "end" :space-evenly "false"
+		(box :class "music-bg" :orientation "v" :space-evenly "false"
+			(button	:class "albumart" :onclick "setsid -f $TERMINAL -e ytmp w" :vexpand "false" :hexpand "false" :style "background-image: url('${art}');")
+			(box :class "music-info" :orientation "v" :space-evenly "false"
+				(button :class "title" :onrightclick "./mus w" :onmiddleclick "setsid -f $TERMINAL -e ytmpsuite fq && ytmp -kr; ytmp -kd" :onclick "setsid -f $TERMINAL -e ytmp vv" mus-title))
+			(box :class "music-ctrl" :orientation "h" :halign "center" :space-evenly "false" :spacing 20
+				(button :onrightclick "ytmp p" :onclick "./mus seek b" :onmiddleclick "setsid -f ytmp -r" "")
+				(button :tooltip "exit; t: ${ysgt}; ev" :onclick "mpv_socket_commands e quit st /tmp/mpvsocketytmp" :onmiddleclick "ytmpsuite t" :onrightclick "mpv_socket_commands s volume $( grep '^vol=.*' /home/$USER/Music/ytmp/run_on_next | sed 's/vol=//' )" "󰈆")
+				(button :onclick "./mus pauseplay" :onmiddleclick "mpv_socket_commands s volume 100" :onrightclick "/home/$USER/Music/ytmp/run_on_next" mus-tog)
+				(button :tooltip "loop; T: ${ysgT}; sv" :onclick "./mus loopstate toggle" :onmiddleclick "ytmpsuite T" :onrightclick "ytmpsuite ld" loopstate)
+				(button :onrightclick "ytmp n" :onclick "./mus seek f" :onmiddleclick "setsid -f ytmp -d" ""))
+			(box :class "mus-prog" :orientation "h" :space-evenly "false"
+				(scale :class "musprog-bar" :orientation "h" :min 0 :max 101 :onchange "mpv_socket_commands cc seek {} absolute-percent" :value mus-prog)
+				(label :class "musprog-info" :text "${mus-prog-display}"))
+
+			(box :class "sys-vol" :orientation "h" :space-evenly "false"
+				(button :class "sysvol-icon" :tooltip "Volume: ${sysvol}%" :onclick "amixer -c 0 sset Master toggle" :onmiddleclick "amixer -c 0 sset Master 10%" :onrightclick "setsid -f $TERMINAL ytmp E" "${sysico}")
+				(scale	:class "sysvol-bar" :orientation "h" :min 0 :max 101 :onrightclick "amixer -c 0 sset Master toggle" :onchange "amixer -c 0 sset Master {}%" :value sysvol))
+
+		(box :class "mus-prog" :orientation "h" :space-evenly "false"
+			(scale	:class "musvol-bar" :orientation "h" :flipped false :min 0 :max 100 :onchange "./mus volch {}" :value musvol)
+			(button :class "musvol-icon" :tooltip "${active_mpv_socket}" :onclick "$HOME/.local/bin/wip/mpv_socket_commands -n; ./ewwvarupd" :onmiddleclick "mpv_socket_commands -s; ./ewwvarupd" :onrightclick "$HOME/.local/bin/wip/mpv_socket_commands -p; ./ewwvarupd" "")
+
+
+			))))
+
+(defpoll sysvol :interval "500ms" "amixer -c 0 sget Master | sed '5!d' | cut -d' ' -f6 | grep -o '[1-9]*'")
+(defpoll sysico :interval "100ms" "./mus mutestate")
+
+; (defvar art	    "/tmp/muscover.png")
+(defvar art	    "/tmp/muscover.webp")
+(defpoll musvol     :interval "500ms" "./mus vol")
+(defpoll mus-tog    :interval "500ms" "./mus statusicon")
+(defpoll loopstate    :interval "500ms" "./mus loopstate")
+(defpoll mus-title  :interval "500ms"    "./mus title | head -c 28")
+(defpoll mus-prog   :interval "3s"    "./mus prog")
+(defpoll mus-prog-display   :interval "1s"    "./mus dur")
+(defpoll active_mpv_socket     :interval "1s" "cat /tmp/active_mpvsocket")
+(defpoll ysgT     :interval "1s" "ytmpsuite gT | tail -1")
+(defpoll ysgt     :interval "1s" "ytmpsuite gt | tail -1")
+
+; fiddle with below values if window is not showing
+(defwindow musicplayer
+	:geometry (geometry :x "100" :y "906" :anchor "center"
+			    :width "55px" :height "100px")
+	:windowtype "normal" :stacking "bg" :wm-ignore false
+	; :geometry (geometry :x "-840px" :y "413px" :anchor "center"
+	; 		    :width "75px" :height "100px")
+	; :windowtype "desktop" :stacking "bg" :wm-ignore false
+(musicplayer))

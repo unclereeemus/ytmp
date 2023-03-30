@@ -1,0 +1,4 @@
+(include "./src/yuck/avatar/lib/_mpd.yuck")
+(include "./src/yuck/avatar/lib/_quick.yuck")
+
+; vim:filetype=yuck

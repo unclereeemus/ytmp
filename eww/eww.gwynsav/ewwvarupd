@@ -1,0 +1,10 @@
+#!/bin/dash
+mus=/home/$USER/.config/eww/mus
+eww update musvol="$( $mus vol )" &
+eww update mus-tog="$( $mus statusicon )" &
+eww update loopstate="$( $mus loopstate )" &
+eww update mus-title="$( $mus title )" &
+eww update mus-prog="$( $mus prog )" &
+eww update mus-prog-display="$( $mus dur )" &
+eww update sysico="$( $mus mutestate )" &
+eww update sysvol="$( amixer -c 0 sget Master | sed '5!d' | cut -d' ' -f6 | grep -o '[1-9]*' )" &
