@@ -13,7 +13,8 @@ requirements:
 - but has nice straight forward single bind buttons
 
 - the buttons under the progress bar are: play a random song once, quit song, ytmp vv
-= click the queue name open `ytmpsuite fq` and click the name of what's currently playing to open `ytmp E`
+= click on what's currently playing to open `ytmpsuite fq`, click on entry before it to run `ytmpsuite oq`, 
+	and the entry after to run `ytmp E`
 - the sliders are: mpv volume, $vol in $run_on_next, and system volume
 - the buttons below the sliders: ytmp -l, ytmp -d, ytmp -r, ytmpsuite tao, ytmpsuite t1, ytmpsuite t2
 
