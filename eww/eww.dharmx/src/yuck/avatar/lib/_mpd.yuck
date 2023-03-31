@@ -44,22 +44,25 @@
          :class "avatar-title-artist-box"
          :space-evenly false
          :halign "start"
-      (label :class "avatar-mpd-album ${album == "" ? "avatar-mpd-album-null" : ""}"
-               ; :style "color: ${mpd_sub.dark}"
+      (button :class "avatar-mpd-album ${album == "" ? "avatar-mpd-album-null" : ""}"
 	       :xalign 0.0
-               :text album
-               :limit-width 30)
+	       :halign "start"
+               ; :style "color: ${mpd_sub.dark}"
+	       :onclick "ytmpsuite oq"
+               :limit-width 30 album)
       (button :class "avatar-mpd-title"
              :halign "start"
-	     :onclick "setsid -f $TERMINAL ytmp E"
+	     :onclick "setsid -f $TERMINAL ytmpsuite fq"
              ; :text title
              :wrap true
              :xalign 0.0
              :limit-width 30 title)
-      (label :class "avatar-mpd-artist"
-             :text artist
+      (button :class "avatar-mpd-artist"
+	     :onclick "setsid -f $TERMINAL ytmp E"
              :halign "start"
-             :limit-width 30))
+             :limit-width 30
+	     artist
+	     ))
 
     (box :class "avatar-mpd-controls"
          :space-evenly false
@@ -114,11 +117,12 @@
 	     :onclick "setsid -f $TERMINAL ytmp vv"
              :hexpand true
              :halign "start" current)
-      (button :class "avatar-mpd-album"
-             :hexpand true
-	     :onclick "setsid -f $TERMINAL ytmpsuite fq"
-             :halign "start"
-	     queue)
+;      (button :class "avatar-mpd-album"
+;             :hexpand true
+;	     :onclick "setsid -f $TERMINAL ytmpsuite fq"
+;	     :onrightclick "ytmpsuite oq"
+;             :halign "start"
+;	     queue)
       (label :class "avatar-mpd-label-duration"
              :text duration
              :halign "end")
@@ -138,4 +142,4 @@
       (button :onclick xfadecmd :class "ava-mpdx-btn ava-mpdx-btn-xfade ${xfadec}" xfadelbl))))
 
 ; vim:filetype=yuck
-(defpoll queue :interval "1s" `sed -En 's;queue=".*/(.*)";\\1;p' /home/$USER/Music/ytmp/conf`)
+; (defpoll queue :interval "1s" `sed -En 's;queue=".*/(.*)";\\1;p' /home/$USER/Music/ytmp/conf`)
