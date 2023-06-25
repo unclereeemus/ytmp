@@ -60,6 +60,8 @@ on first installing ytmp, there won't be any history to select from when you ent
 
 **eww/** contain two eww (https://github.com/elkowar/eww) music widgets. see the readme in it to learn more and see pictures.
 
+**termux/** this program ported to termux with some new features missing from the linux version
+
 # tips
 - a dmenu wrapper: `cmd="$( printf ' ' | dmenu -p 'which ytmp cmd to run? ' )" && if ( printf "$cmd" | grep -Eq '^( |x.*|s.*|z|l s|v|vv|E|sp.*)+$' ); then setsid -f $TERMINAL -e ytmp $cmd >/dev/null 2>&1; else ytmp $cmd; fi`
 
