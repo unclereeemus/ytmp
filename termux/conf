@@ -1,0 +1,104 @@
+#!/bin/sh
+# this file is looked for in /home/$USER/Music/ytmp/ by default and it is prioritized over source settings. change the path to something else in source if necessary.
+
+#mpvopts='--volume=100'
+
+# A value of y means yes/true and n means no/false
+
+# if to always turn on the daemon (play one song after another)
+# on playing a song and it's not already on
+daemonize='n'
+
+# thumbnails are downloaded to $thumb_dir but the thumbnail of
+# what's currently playing is linked to $thumbnail_ln
+# (they are never deleted)
+download_thumbnails='n'
+# where to link the thumbnail of currently playing
+thumbnail_ln='/tmp/muscover.webp'
+
+# there's only three notifications:
+# on song play, when a song is being downloaded for exceeding $max_stream_amount
+# and when queue reaches the end it's not being cycled
+notifications='n'
+
+# whether to start playing from the top when queue reaches the end
+cycle_queue='n'
+# whether to confirm removal of '-m r' selections
+confirm_removal='n'
+
+# if to download songs after they are played more than $max_stream_amount
+download_songs='n'
+# maximum amount of times to stream a song before downloading it
+max_stream_amount='3'
+# the maximum length a song can be in seconds if it's to be downloaded
+max_len_for_dl='600'
+
+# what chars to use to surround what's currently playing
+# if a meta BRE char like *$[ then escape them like \*\$\[
+playing_ind='\*\*\*'
+closing_playing_ind='\*\*\*'
+
+# the char with which an entry can end so that what comes after can be
+# ignored by the program so that it can be used as a tagging system.
+# make sure to pick something that's unlikely to appear
+# in a song title because otherwise there won't be any way of
+# knowing where the title ends and where the tag starts
+# setting it to '\[', '(', or '/' is unadvised
+tag_char='<'
+closing_tag_char='>'
+
+# which tags to add to song entries when adding them. anything that
+# yt-dlp --print accepts is good. if any field is not available, it is
+# the respective tag is not added.
+tags='<Length: %(duration_string)s><Album: %(album)s><T#%(track_number)s><Artist(s): %(artist)s><Genre: %(genre)s><Channel: %(channel)s><Album type: %(album_type)s><Playlist: %(playlist_title)s>'
+
+# an alternative tag which will be used when passing '--tag alt'
+alt_tags='<Length: %(duration_string)s><Album: %(album)s><T#%(track_number)s><Artist(s): %(artist)s><Playlist: %(playlist_title)s>'
+
+# whether to always add $tags to songs
+tagadd='n'
+
+# how many secs to seek if no arg is provided for -ff|-bb
+def_seek_secs='3'
+
+# how many results to return for x|s when a count is not specified
+def_res_count='5'
+
+# whether to move songs when they are already in the queue
+# to the end of the queue
+move_dup='n'
+# whether to add songs despite them already being in the queue
+add_dup='n'
+
+# line seperator for preview windows / stdout msgs
+lsp='--------------------------------\n'
+
+# fzf colors; 'P' is substitute for '+'
+fzf_gutter='black'
+fzf_hlP='bold:bright-red'
+fzf_hl='bright-red'
+fzf_label='italic:white'
+fzf_marker='cyan'
+fzf_pointer='cyan'
+fzf_bgP='black'
+fzf_label='white'
+fzf_info='white:dim'
+fzf_label='white:dim'
+fzf_spinner='white:dim'
+
+prefix="/data/data/com.termux/files/home/storage/shared/Music/ytmp"
+
+dl_dir="$prefix/downloads"
+songs_dir="$dl_dir/songs"
+thumb_dir="$dl_dir/thumbnails"
+played_urls="$prefix/played_urls"
+search_history="$prefix/search_history"
+
+# used by '-af' which copies entries to this file
+favorites_file="$prefix/favorites"
+
+queue="/data/data/com.termux/files/home/storage/shared/Music/ytmp/queue"
+
+# this is run everytime a song is played so if you want certain
+# mpv settings to remain consistent (volume, loop, seek, etc) then put them in this file
+run_on_next="$prefix/run_on_next"
