@@ -872,7 +872,7 @@ play () {
 	! echo "$mpvvol" | grep -Exq '[0-9]+' && mpvvol=100
 	# if the length of id (first field) is 12 then it is a checksum of a local file and not a youtube id so play it and exit
 	clear
-	setsid -f sh ytmpnotif >/dev/null 2>&1
+	setsid -f ytmpnotif >/dev/null 2>&1
 	if [ "$(printf '%s' "$id" | wc -m)" = '12' ]; then
 		mpv --volume="$mpvvol" --msg-level=ipc=no,cplayer=no,ffmpeg=no,input=no --term-status-msg="$mpvwintitle\n\${time-pos} / \${duration} [\${volume}v]\${?loop==inf: loop}\${?mute==yes: muted}\${?pause==yes: paused}\${!ab-loop-a==no: \${ab-loop-a}}\${!ab-loop-b==no:•\${ab-loop-b}}" --x11-name='ytmp_mpv' --vid=no --input-ipc-server="$mpvsocket" "$(sed -n -e "s/$playing_regex/\3/p" "$queue")"
 	elif (ls "$songs_dir"/*"${id}"* >/dev/null 2>&1); then
