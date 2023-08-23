@@ -1,11 +1,13 @@
 #!/bin/sh
+[ "$1" = '-t' ] && target="$2" && shift 2 || target=ytmp
+[ "$1" = c ] && setsid -f termux-notification-remove "${target}but" >/dev/null 2>&1 && setsid -f termux-notification-remove "${target}med" >/dev/null 2>&1 && exit
 
 altbindfile='/data/data/com.termux/files/home/storage/shared/Music/ytmp/.cache/altbindfile'
 
 #stat -c '%W' "$altbindfile"
 
 case "$1" in
-	b1) [ -e "$altbindfile" ] && rm -f "$altbindfile" && set -- press 4 || set -- press / ;;
+	b1) [ -e "$altbindfile" ] && rm -f "$altbindfile" && set -- press '4/' || set -- press / ;; #shell /data/data/com.termux/files/home/bin/termux-url-opener termux ;;
 	b2) [ -e "$altbindfile" ] && rm -f "$altbindfile" && set -- press 7 || set -- press - ;;
 	b3) [ -e "$altbindfile" ] && rm -f "$altbindfile" && set -- press 0 || set -- press 5 ;;
 	m1) [ -e "$altbindfile" ] && rm -f "$altbindfile" || touch "$altbindfile" ;;
@@ -18,81 +20,48 @@ esac
 
 case "$1" in
 	prev|next)
-		[ "$1" = prev ] && ytmpcmd=p && fzfcmd=P
-		[ "$1" = next ] && ytmpcmd=n && fzfcmd=N
-		pgrep -fa 'ytmp_mpv' >/dev/null 2>&1 && tmux send-keys -t ytmp q
+		[ "$1" = prev ] && ytmpcmd=p && nvimcmd='>' && fzfcmd=P
+		[ "$1" = next ] && ytmpcmd=n && nvimcmd='>' && fzfcmd=N
+		pgrep -fa 'ytmp_mpv' >/dev/null 2>&1 && tmux send-keys -t "$target" q
 		while pgrep -fa 'ytmp_mpv' >/dev/null 2>&1; do sleep .1; done
 		if pgrep -f '/data/data/com.termux/files/usr/bin/ytmp -(d|r)+' >/dev/null 2>&1; then 
-			tmux send-keys -t ytmp q
+			tmux send-keys -t "$target" q
+		elif pgrep -f 'ytmp E$' >/dev/null 2>&1; then 
+			tmux send-keys -t "$target" $nvimcmd
 		elif pgrep -f 'ytmp v$' >/dev/null 2>&1; then 
-			tmux send-keys -t ytmp $fzfcmd
+			tmux send-keys -t "$target" $fzfcmd
 		else
-			tmux send-keys -t ytmp "ytmp $ytmpcmd" Enter
+			tmux send-keys -t "$target" "ytmp $ytmpcmd" Enter
 		fi
 		;;
-	#playpause) tmux send-keys -t ytmp Space ;;
-	pz) sleep "$2"; ! tmux capture-pane -p -t ytmp | grep -q 'paused' && tmux send-keys -t ytmp Space; return ;;
-	savequit) tmux send-keys -t ytmp Q ;;
-	#loop) tmux send-keys -t ytmp L ;;
-	press) tmux send-keys -t ytmp "$2" ;;
-	#vd) tmux send-keys -l -t ytmp '/' ;;
-	#vu) tmux send-keys -l -t ytmp '-' ;;
+	#playpause) tmux send-keys -t "$target" Space ;;
+	pz) sleep "$2"; ! tmux capture-pane -p -t "$target" | grep -q 'paused' && tmux send-keys -t "$target" Space; return ;;
+	savequit) tmux send-keys -t "$target" Q ;;
+	#loop) tmux send-keys -t "$target" L ;;
+	shell) shift; sh "$@" ;;
+	press) tmux send-keys -t "$target" "$2" ;;
+	#vd) tmux send-keys -l -t "$target" '/' ;;
+	#vu) tmux send-keys -l -t "$target" '-' ;;
 esac
 
 [ -n "$1" ] && sleep .1
 
-while ! tmux capture-pane -p -t ytmp | grep -q '..:..:.. / ..:..:..'; do pgrep -fa 'ytmp_mpv' >/dev/null 2>&1 && sleep .2 || (termux-notification-remove ytmpbut; termux-notification-remove ytmpmed; exit); done
-
-cpane="$(tmux capture-pane -p -t ytmp | grep -xv \n)"
+while ! tmux capture-pane -p -t "$target" | grep -q '..:..:.. / ..:..:..'; do pgrep -fa 'ytmp_mpv' >/dev/null 2>&1 && sleep .2 || (termux-notification-remove ytmpbut; termux-notification-remove ytmpmed; exit); done
 
 #echo "$cpane" | tail -2 | head -1 | grep -q '..:..:.. / ..:..:..' && cpane="$(echo "$cpane" | tail -3 | head -1)\n$(echo "$cpane" | sed 1d | tr -d \n)"
 
-title="$(echo "$cpane" | tail -2 | head -1)"
+#pgrep -fa 'ytmp E' >/dev/null 2>&1 && cpane="$(tmux capture-pane -p -t "$target" | sed -e '$d' -e '/^[0-9]+$/d' | cut -d' ' -f2- | grep -xv \n)" || cpane="$(tmux capture-pane -p -t "$target" | grep -xv \n)"
+#title="$(echo "$cpane" | tail -2 | head -1)"
+#content="$(echo "$cpane" | tail -2 | sed -En '2s/^.{11}//p')"
 
-content="$(echo "$cpane" | tail -2 | sed -En '2s/^.{11}//p')"
+cpane="$(tmux capture-pane -p -t "$target" | grep -B1 '..:..:.. / ..:..:..')"
+
+title="$(echo "$cpane" | head -1)"
+content="$(echo "$cpane" | tail -1 | sed -En 's/^.{11}//p')"
 
 echo "$title" | grep -q '..:..:.. / ..:..:..' && title="$(echo "$cpane" | tail -3 | head -1)" && content="$(echo "$cpane" | tail -2 | tr -d '\n')"
 
-[ -z "$1" ] && rm -f "$altbindfile" && termux-notification --group ytmp --type media --priority mid --ongoing --alert-once --id 'ytmpmed' --media-pause 'ytmpnotif m2' --media-previous 'ytmpnotif m1' --media-play 'ytmpnotif m3' --media-next 'ytmpnotif m4' #--button1 '-4v' --button1-action 'tmux send-keys -t ytmp 5' #--action 'ytmpnotif playpause'
+[ -z "$1" ] && rm -f "$altbindfile" && termux-notification --group "$target" --type media --priority mid --ongoing --alert-once --id "${target}med" --media-pause "ytmpnotif -t $target m2" --media-previous "ytmpnotif -t $target m1" --media-play "ytmpnotif -t $target m3" --media-next "ytmpnotif -t $target m4" #--button1 "-4v" --button1-action "tmux send-keys -t "$target" 5" #--action "ytmpnotif -t $target playpause"
 
-termux-notification --group ytmp --priority high --ongoing --alert-once --id 'ytmpbut' -t "$title" -c "$content" --button1 '-v/40v' --button1-action 'ytmpnotif b1' --button2 '+v/70v' --button2-action 'ytmpnotif b2' --button3 '50v/100v' --button3-action 'ytmpnotif b3' #--action 'tmux send-keys -t ytmp 0'
-
-#termux-notification --group ytmp --priority high --ongoing --alert-once --id 'ytmpbut' -t "$title" -c "$content" --button1 '-4v' --button1-action 'ytmpnotif press /' --button2 '+4v' --button2-action 'ytmpnotif press -' --button3 '50v' --button3-action 'tmux send-keys -t ytmp 5' #--action 'tmux send-keys -t ytmp 0'
-
-#--button1 '-4v' --button1-action 'ytmpnotif vd' --button2 '+4v' --button2-action 'ytmpnotif vu' --button3 'next' --button3-action 'ytmpnotif next' 
-
-#termux-notification --image-path '/data/data/com.termux/files/home/storage/shared/Download/wallhaven-rrq5jw~2.png' --priority min --ongoing --alert-once --id 'ytmp' -t ytmp -c "$title" --icon music_note --action 'ytmpnotif playpause' --button1 '-4v' --button1-action 'ytmpnotif vd' --button2 '+4v' --button2-action 'ytmpnotif vu' --button3 'next' --button3-action 'ytmpnotif next'
-
-#termux-notification --priority min --ongoing --alert-once --id 'ytmp' -t ytmp -c "$title" --icon music_note --action 'ytmpnotif playpause' --button1 'quit' --button1-action 'ytmpnotif quit' --button2 'prev' --button2-action 'ytmpnotif prev' --button3 'next' --button3-action 'ytmpnotif next'
-
-#termux-notification --alert-once --id 'ytmp' -t ytmp -c "$title" --icon music_note --action 'tmux send-keys -t ytmp Space' --on-delete 'tmux send-keys -t ytmp Q' --button2 'prev' --button2-action 'tmux send-keys -t ytmp qytmp p Enter' --button3 'next' --button3-action 'tmux send-keys -t ytmp qytmp n Enter' --button1 'loop' --button1-action 'tmux send-keys -t ytmp L'
-
-#echo "$title"
-#termux-notification --alert-once --id''ytmp' -t ytmp --icon music_note --action 'tmux send-keys -t ytmp Space' --on-delete 'tmux send-keys -t ytmp Q' --button2 'prev' --button2-action 'tmux send-keys -t ytmp qytmp p Enter' --button3 'next' --button3-action 'tmux send-keys -t ytmp qytmp n Enter' --button1 'loop' --button1-action 'tmux send-keys -t ytmp L'
-#
-#termux-notification --alert-once --id''ytmp' -t ytmp --icon music_note --action 'tmux send-keys -t ytmp Space' --button2 'prev' --button2-action 'tmux send-keys -t ytmp qytmp p Enter' --button3 'next' --button3-action 'tmux send-keys -t ytmp qytmp n Enter' --button1 'quit' --button1-action 'tmux send-keys -t ytmp Q'
-#
-#prefix="/data/data/com.termux/files/home/storage/shared/Music/ytmp"
-#conf="$prefix/conf"
-#[ -e "$conf" ] && . "$conf"
-#
-##playing_ind='\*\*\*'
-##closing_playing_ind='\*\*\*'
-##tag_char='<'
-#
-#[ -z "$playing_ind" ] && playing_ind='\*\*\*'
-#[ -z "$closing_playing_ind" ] && closing_playing_ind='\*\*\*'
-#[ -z "$tag_char" ] && tag_char='<'
-#
-#playing_regex="^\([^ ]\{11,12\}\) \($playing_ind\)\(.*\)\($closing_playing_ind\)\( *$tag_char.*\)\?$"
-
-#title="$(sed -n -e "s/$playing_regex/\3/p" "$queue" | sed -E -e 's/(.{45})(.*)/\1/' -e "s/\"/'/g")"
-#
-#
-#paneoutfile='/data/data/com.termux/files/home/storage/shared/Music/ytmp/.cache/tmuxcappane'
-#
-#tmux capture-pane -p -t ytmp > "$paneoutfile"
-#
-#title="$(grep -xv \n "$paneoutfile" | tail -2 | head -1)"
-#
-#content="$(grep -xv \n "$paneoutfile" | tail -2 | sed -En '2s/^.{11}//p')"
+#[ "$target" = ytmp ] && 
+termux-notification --group "$target" --priority high --ongoing --alert-once --id "${target}but" -t "$title" -c "$content" --button1 "-v/36v" --button1-action "ytmpnotif -t $target b1" --button2 "+v/70v" --button2-action "ytmpnotif -t $target b2" --button3 "50v/100v" --button3-action "ytmpnotif -t $target b3" #--action "tmux send-keys -t "$target" 0"
