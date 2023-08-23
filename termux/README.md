@@ -8,15 +8,36 @@ notifications: *requires tmux* open a tmux session named ytmp and only use ytmp 
 
 new features:
 
-specify volume with -v like 'ytmp -v 30 -d ...' 'ytmp -v 30 e ...' *AND* /'ytmp v -v 30' (not typo; 'v' requires -v as an arg)
+must come before commands:
+-v mpv-volume -q|e|v|-d|...
+-q t|queue -v|e|v|-d|E|...; t is understood as $tempq
 
-reading from stdin is now also possible; how it works i cannot find a suitable way to explain.
+changes to 'v' (only option now; no vv):
+%: show prev win
+enter: copy entry/selections to the temporary queue and start the daemon
+|: copy entry/selections to the temporary queue
+pgup: first (no reload)
+pgdn: last (no reload)
+tab: select+clear-query
+!: select
+#: -te
 
-`ytmp v` '|' binding: play selections; '#': tag entry
+other:
+-te [-a] entry: tag entry; if -a is passed, append to already present tags otherwise overwrite them
+-rq remove the temporary queue
+'v' accepts -o to print out selections to stdout
+$charlen is 41 for nvim; 45 for the cli. this is to prevent title overflowing. change in source if necessary.
+
+dont put spaces in your queue file name!
+
+if you do `ytmp -q t v` and you select an entry to play it will not play because the $tempq gets overwritten but moving things around will work
 
 'a': pass c to use clipboard as arg
 
 *generally i have introduced some new jank that only i might have use for but i really encourage you to diff this version with the linux version (ik it's all spaghetti and hard to demystify) to find some of the unmentioned additions and fzf bindings*
+
+you can add this to nvim rc for the notifications to work:
+`nnoremap <Enter> :execute "terminal ytmp e " . line(".")<CR>i`
 
 **setup**
 - setup termux to use storage `termux-setup-storage`
