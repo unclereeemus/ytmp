@@ -1,8 +1,6 @@
 # ytmp
 a shell script for searching, playing, downloading, and keeping track of music from youtube and local files with extensive queue management using fzf, vim, or cli
 
-**i would appreciate if someone created a PR to consolidate the linux version with the termux one or any other code/documentation improvements they might have!**
-
 demo: https://www.reddit.com/r/unixporn/comments/11mxwb0/oc_i_wrote_a_cli_and_keyboard_centric/
 
 **FEATURES:**
