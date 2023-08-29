@@ -1413,8 +1413,10 @@ parseopts () {
 		-i) shift; addToDest "$@" ;;
 		-te) shift; tagEntry "$@" ;;
 		-dl) shift; dlSong "$@" ;;
-		-d) pgrep -f 'ytmp.*(-d|-r)+' | grep -v $$ | xargs kill >/dev/null 2>&1; shift; daemon "$@" ;;
-		-r) pgrep -f 'ytmp.*(-d|-r)+' | grep -v $$ | xargs kill >/dev/null 2>&1; shift; randomDaemon "$@" ;;
+		# -d) pgrep -f 'ytmp.*(-d|-r)+' | grep -v $$ | xargs kill >/dev/null 2>&1; shift; daemon "$@" ;;
+		# -r) pgrep -f 'ytmp.*(-d|-r)+' | grep -v $$ | xargs kill >/dev/null 2>&1; shift; randomDaemon "$@" ;;
+		-d) shift; daemon "$@" ;;
+		-r) shift; randomDaemon "$@" ;;
 		-n) songEnd ;;
 		-N) songEndStrict ;;
 		-p) echo cycle pause | socat - "$mpvsocket" >/dev/null 2>&1 ;;
