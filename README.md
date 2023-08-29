@@ -16,7 +16,7 @@ demo: https://www.reddit.com/r/unixporn/comments/11mxwb0/oc_i_wrote_a_cli_and_ke
   - Keep track of listen history/amount
   - Run commands on song start
   - Specify a queue order to iterate through without having to shift entries in the queue file (see usage for -d)
-  - Tag songs
+  - Tag songs (+ per song volume/start in termux/)
   - Communicate with mpv through its ipc socket
   - Everything is a plain text file
 
@@ -61,7 +61,7 @@ on first installing ytmp, there won't be any history to select from when you ent
 
 **eww/** contain two eww (https://github.com/elkowar/eww) music widgets. see the readme in it to learn more and see pictures.
 
-**termux/** this program ported to termux with some new features not in the linux version (because i am too lazy to maintain two files; if you want to try out the new features/termux version, the script should just work for linux just makes sure to change the $prefix in the script and add the ipc socket option to mpv if you like); notably the -v and -q option allowing one to specify the queue and volume from the cli. also songs selected to be played are moved to a temporary queue and the daemon can be started right from fzf. readme mentions notable changes.
+**termux/** this program ported to termux with some new features not in the linux version (because i am too lazy to maintain two files; if you want to try out the new features/termux version, the script should just work for linux just makes sure to change the $prefix in the script and add the ipc socket option to mpv if you like); notably the -v and -q option allowing one to specify the queue and volume from the cli and -mpv to pass args to mpv. also songs selected to be played are moved to a temporary queue and the daemon can be started right from fzf. readme mentions notable changes.
 
 # tips
 - a dmenu wrapper: `cmd="$( printf ' ' | dmenu -p 'which ytmp cmd to run? ' )" && if ( printf "$cmd" | grep -Eq '^( |x.*|s.*|z|l s|v|vv|E|sp.*)+$' ); then setsid -f $TERMINAL -e ytmp $cmd >/dev/null 2>&1; else ytmp $cmd; fi`
