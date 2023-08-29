@@ -8,12 +8,12 @@ must come before commands:
  - -v <mpv-volume> -q|-mpv|e|v|-d|...
  - -q "t"|<file> -v|-mpv|e|v|-d|E|...; specify queue; t is understood as $tempq
  - -mpv <mpvargs> -q|-v|e|v|-d|...; any number of args to start mpv with (quote them as a single arg to ytmp!)
- - 
- - changes to 'v' (only option now; no vv):
+
+changes to 'v' (only option now; no vv):
  - %: show prev win
  - enter: copy entry/selections to the temporary queue and start the daemon on the queue
  - |: copy entry/selections to the temporary queue
- - [: copy entry/selections to the temporary queue after currently playing
+ - [: copy entry to the temporary queue to after currently playing
  - pgup: first (no reload)
  - pgdn: last (no reload)
  - tab: select+clear-query
@@ -23,20 +23,18 @@ must come before commands:
  - -: move entry down
  - &: -q t -d
 
-i may have changed/added other bindings but i cant remember which ones. a list of the linux and termux binds can be found in below.
+i may have changed/added other bindings but i cant remember which ones. a list of the linux and termux binds can be found in the readme.
 
 other:
- - tag songs with <start: ...><vol: ...> to have the song start at that position (anything mpv --start accepts is good) with that volume. -v takes preceedence over this.
+ - tag songs with <MPV: {any mpv args}> to have the song start with those args. -v takes preceedence over any --volume in this tag.
  - -te [-a] entry: tag entry; if -a is passed, append to already present tags otherwise overwrite them
  - -rq remove the temporary queue
  - -a read from stdin into \$tempq
- - - read from stdin into \$tempq (overwrite)
+ - \- read from stdin into \$tempq (overwrite)
  - 'v' accepts -o to print out selections to stdout
  - \$charlen is 41 for nvim; 45 for the cli. this is to prevent title overflowing. change in source if necessary.
-
-dont put spaces in your queue file name!
-
-if you do \`ytmp -q t v\` and you select an entry to play it will not play because the $tempq gets overwritten but moving things around will work
+ - suppose you started a queue but forgot to pass '-v', you can just put the volume number in "$cache_dir/mpvvol" and ytmp will use that volume level. dont forget to delete it when it's not necessary anymore or ytmp will go on using it in the future where -v is not passed.
+ - -mpv takes preceedence over -v and <MPV:> tag
 
 you can add this to nvim rc for the notifications to work:
 `nnoremap <Enter> :execute "terminal ytmp e " . line(".")<CR>i`
@@ -47,7 +45,7 @@ you can add this to nvim rc for the notifications to work:
 - $prefix is '/data/data/com.termux/files/home/storage/shared/Music/ytmp'
 - make ytmp and ytmpnotif executeable and move to $PATH
 
-'v' termux v linux binds (termux runs every ytmp call with '-q $queue', i removed this in case you wanted to use `uniq`)
+'v' termux v linux binds (termux version runs every ytmp call with '-q $queue' and -v and -mpv args if provided, i removed these in case you wanted to use `uniq`)
 ```
 # TERMUX
 $:execute-silent(ytmp -q t m l p)
