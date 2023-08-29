@@ -1,40 +1,42 @@
-the changes i've made were for my own use as such just about none of them have been noted in the usage but i'll give you a basic rundown below:
-
 this version does not use an ipc socket bc mpv throws errors when trying to open one so the workaround has been to just use mpv interactively
-
-`ytmp v` is now the option with preview window (hidden by default; toggle with %); some fzf bindings for `ytmp v` have been changed. i would recommend just doing a diff to see all the changes.
 
 notifications: *requires tmux* open a tmux session named ytmp and only use ytmp on this window. the notification has a couple of bindings and a meta binding allowing for alternate keys. it essentially displays the mpv status and allows volume control and tmux keypresses to mpv. 
 
 new features:
 
 must come before commands:
--v mpv-volume -q|e|v|-d|...
--q t|queue -v|e|v|-d|E|...; t is understood as $tempq
+ - -v <mpv-volume> -q|-mpv|e|v|-d|...
+ - -q "t"|<file> -v|-mpv|e|v|-d|E|...; specify queue; t is understood as $tempq
+ - -mpv <mpvargs> -q|-v|e|v|-d|...; any number of args to start mpv with (quote them as a single arg to ytmp!)
+ - 
+ - changes to 'v' (only option now; no vv):
+ - %: show prev win
+ - enter: copy entry/selections to the temporary queue and start the daemon on the queue
+ - |: copy entry/selections to the temporary queue
+ - [: copy entry/selections to the temporary queue after currently playing
+ - pgup: first (no reload)
+ - pgdn: last (no reload)
+ - tab: select+clear-query
+ - !: select
+ - #: -te
+ - /: move entry up
+ - -: move entry down
+ - &: -q t -d
 
-changes to 'v' (only option now; no vv):
-%: show prev win
-enter: copy entry/selections to the temporary queue and start the daemon
-|: copy entry/selections to the temporary queue
-pgup: first (no reload)
-pgdn: last (no reload)
-tab: select+clear-query
-!: select
-#: -te
+i may have changed/added other bindings but i cant remember which ones. a list of the linux and termux binds can be found in below.
 
 other:
--te [-a] entry: tag entry; if -a is passed, append to already present tags otherwise overwrite them
--rq remove the temporary queue
-'v' accepts -o to print out selections to stdout
-$charlen is 41 for nvim; 45 for the cli. this is to prevent title overflowing. change in source if necessary.
+ - tag songs with <start: ...><vol: ...> to have the song start at that position (anything mpv --start accepts is good) with that volume. -v takes preceedence over this.
+ - -te [-a] entry: tag entry; if -a is passed, append to already present tags otherwise overwrite them
+ - -rq remove the temporary queue
+ - -a read from stdin into \$tempq
+ - - read from stdin into \$tempq (overwrite)
+ - 'v' accepts -o to print out selections to stdout
+ - \$charlen is 41 for nvim; 45 for the cli. this is to prevent title overflowing. change in source if necessary.
 
 dont put spaces in your queue file name!
 
-if you do `ytmp -q t v` and you select an entry to play it will not play because the $tempq gets overwritten but moving things around will work
-
-'a': pass c to use clipboard as arg
-
-*generally i have introduced some new jank that only i might have use for but i really encourage you to diff this version with the linux version (ik it's all spaghetti and hard to demystify) to find some of the unmentioned additions and fzf bindings*
+if you do \`ytmp -q t v\` and you select an entry to play it will not play because the $tempq gets overwritten but moving things around will work
 
 you can add this to nvim rc for the notifications to work:
 `nnoremap <Enter> :execute "terminal ytmp e " . line(".")<CR>i`
@@ -44,3 +46,117 @@ you can add this to nvim rc for the notifications to work:
 - run ytmp in tmux (to use notifications) `tmux new -n ytmp 'ytmp v; sh'`
 - $prefix is '/data/data/com.termux/files/home/storage/shared/Music/ytmp'
 - make ytmp and ytmpnotif executeable and move to $PATH
+
+'v' termux v linux binds (termux runs every ytmp call with '-q $queue', i removed this in case you wanted to use `uniq`)
+```
+# TERMUX
+$:execute-silent(ytmp -q t m l p)
+=: execute(ytmpnotif c)
+[: execute(printf '%s+1\n' {+n} | bc | xargs -I ,, sed -n ,,p $queue >> $tempq)+execute-silent(ytmp -q t m l p)+clear-selection+clear-query+pos(1)
+]: clear-selection+select+clear-query+pos(1)+next-selected+clear-selection
+&: execute(ytmp -d -t; ytmp v)
+@: execute(printf '%s+1\n' {+n} | bc | tr '\n' ',' | xargs -I ,, ytmp -v $mpvvol -d ,,; ytmp v)+clear-selection
+%: toggle-preview
+#: execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp -te ,, &)
+|: execute(printf '%s+1\n' {+n} | bc | xargs -I ,, sed -n ,,p $queue >> $tempq)+clear-selection+clear-query+pos(1)
+\: clear-selection
+!: toggle+down
+tab: toggle+clear-query+pos(1)
+{: prev-selected
+}: next-selected
+ctrl-alt-j: pos($playing)
+alt-j: pos($mark)
+ctrl-alt-x: execute(ytmp x --startwith {q})+reload($cmd)+last
+ctrl-alt-s: execute(ytmp s --startwith {q})+reload($cmd)+last
+alt-p: execute(ytmp sp --startwith {q})+reload($cmd)+last
+alt-z: execute(ytmp z --startwith {q})+reload($cmd)+last
+alt-s: execute(ytmp --startwith {q})+reload($cmd)+last
+ctrl-alt-f: execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp -af ,,)
+ctrl-g: execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, m)+reload($cmd)
+ctrl-l: execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m l ,,)+reload($cmd)
+ctrl-alt-b: execute(ytmp -m)+reload($cmd)
+alt-space: execute(echo {n}+1 | bc | xargs -I ,, ytmp m x x ,,)+reload($cmd)
+alt-c: execute(echo {n}+1 | bc | xargs -I ,, ytmp m c x x ,,)+reload($cmd)
+alt-bspace: execute(echo {n}+1 | bc | xargs -I ,, ytmp m c x ,,)+reload($cmd)
+ctrl-space: execute(echo {n}+1 | bc | xargs -I ,, ytmp m x ,,)+reload($cmd)
+ctrl-alt-m: execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m s ,,)+reload($cmd)
+alt-up: execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, 0)+reload($cmd)
+alt-down: execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, l)+reload($cmd)
+ctrl-]: execute-silent(ytmp w)
+ctrl-r: replace-query
+home: clear-query+first
+end: clear-query+reload-sync($cmd)+last
+alt-r: reload($cmd)
+ctrl-alt-d: execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp -dl ,,)
+ctrl-z: execute-silent(setsid -f ytmp z {q})
+ctrl-s: execute-silent(setsid -f ytmp {q})
+ctrl-j: down
+ctrl-j:jump,R: execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m r ,,)+reload($cmd)
+/: execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, -2)+reload($cmd)+up
+-: execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, +1)+reload($cmd)+down
+ctrl-k: kill-line
+P: execute(ytmp p)+reload($cmd)
+N: execute(ytmp n)+reload($cmd)
+L: execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, p)+reload($cmd)
+H: execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m r ,,)+reload($cmd)
+ctrl-v: page-down
+alt-v: page-up
+ctrl-alt-p: half-page-up
+ctrl-alt-n: half-page-down
+right-click: execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, p)+reload($cmd)
+ctrl-^: execute-silent(ytmp mln)+reload($cmd)
+ctrl-\: execute(ytmp E)+reload($cmd)
+alt-m: execute(echo {n}+1 | bc | xargs -I ,, ytmp m f ,,)+reload($cmd)
+ctrl-o: execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp openInBrowser -e ,,)
+pgup: first
+pgdn: last
+
+#LINUX
+alt-j:pos($(cat $mark_file))
+ctrl-alt-x: execute(ytmp x --startwith {q})+reload($cmd)+last
+ctrl-alt-s: execute(ytmp s --startwith {q})+reload($cmd)+last
+alt-p: execute(ytmp sp --startwith {q})+reload($cmd)+last
+alt-z: execute(ytmp z --startwith {q})+reload($cmd)+last
+alt-s: execute(ytmp --startwith {q})+reload($cmd)+last
+ctrl-alt-f: execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp -af ,,)
+ctrl-t: execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, m)+reload($cmd)
+ctrl-l: execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m l ,,)+reload($cmd)
+ctrl-alt-b: execute(ytmp -m)+reload($cmd)
+alt-space: execute(echo {n}+1 | bc | xargs -I ,, ytmp m x x ,,)+reload($cmd)
+alt-c: execute(echo {n}+1 | bc | xargs -I ,, ytmp m c x x ,,)+reload($cmd)
+alt-bspace: execute(echo {n}+1 | bc | xargs -I ,, ytmp m c x ,,)+reload($cmd)
+ctrl-space: execute(echo {n}+1 | bc | xargs -I ,, ytmp m x ,,)+reload($cmd)
+ctrl-alt-m: execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m s ,,)+reload($cmd)
+alt-up: execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, 0)+reload($cmd)
+alt-down: execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, l)+reload($cmd)
+ctrl-]: execute-silent(ytmp w)
+ctrl-r: replace-query
+home: reload($cmd)+first
+end: reload($cmd)+last
+alt-r: reload($cmd)
+ctrl-alt-d: execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp -dl ,,)
+ctrl-z: execute-silent(setsid -f ytmp z {q})
+ctrl-s: execute-silent(setsid -f ytmp {q})
+ctrl-j: down
+ctrl-j: jump
+shift-left: execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m r ,,)+reload($cmd)
+shift-up: execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, -2)+reload($cmd)+up
+shift-down: execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, +1)+reload($cmd)+down
+ctrl-k: kill-line
+<: execute-silent(ytmp p)+reload($cmd)
+>: execute-silent(ytmp n)+reload($cmd)
+return: execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp e ,,)+abort
+shift-right: execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp e ,,)+reload($cmd)
+right: execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, p)+reload($cmd)
+left: execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, p-1)+reload($cmd)
+ctrl-v: page-down
+alt-v: page-up
+ctrl-alt-p: half-page-up
+ctrl-alt-n: half-page-down
+left-click: execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp e ,,)+abort
+right-click: execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp m ,, p)+reload($cmd)
+ctrl-^: execute-silent(ytmp mln)+reload($cmd)
+ctrl-\: execute(ytmp E)+reload($cmd)
+alt-m: execute(echo {n}+1 | bc | xargs -I ,, ytmp m f ,,)+reload($cmd)
+ctrl-o: execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp openInBrowser -e ,,)
+```
