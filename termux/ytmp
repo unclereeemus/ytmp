@@ -570,7 +570,7 @@ must come before commands:
 
 changes to 'v' (only option now; no vv):
 %: show prev win
-enter: copy entry/selections to the temporary queue and start the daemon on the queue
+enter: copy entry/selections to the temporary queue (overwrite) and start the daemon on the temp queue
 |: copy entry/selections to the temporary queue
 [: copy entry to the temporary queue to after currently playing
 pgup: first (no reload)
