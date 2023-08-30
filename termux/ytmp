@@ -1042,7 +1042,7 @@ viewQueue () {
 	cmd="sed 's/$field_regex/\2\3/' $queue"
 	[ "$mpvvolarg" != 'y' ] && mpvvol=NONE
 	[ -z "$mpvargs" ] && mpvargs=NONE
-	[ "$2" = '-o' ] && dasho=y && set -- --bind="return:execute(printf '%s\n' {+n} | xargs -I ,, echo ',,+1' | bc > $cache_dir/sels)+abort" || set -- --bind="return:execute(printf '%s+1\n' {+n} | bc | xargs -I ,, sed -n ,,p $queue > $tempq; ytmp -q t -v $mpvvol -mpv '$mpvargs' -d -C; ytmp -q $queue -v $mpvvol v)+clear-query+reload-sync($cmd)+pos(1)"
+	[ "$2" = '-o' ] && dasho=y && set -- --bind="return:execute(printf '%s\n' {+n} | xargs -I ,, echo ',,+1' | bc > $cache_dir/sels)+abort" || set -- --bind="return:execute(printf '%s+1\n' {+n} | bc | xargs -I ,, sed -n ,,p $queue > $tempq; ytmp -q t -v $mpvvol -mpv '$mpvargs' -d -C 1; ytmp -q $queue -v $mpvvol v)+clear-query+reload-sync($cmd)+pos(1)"
 	[ "$arg1" = 'v' ] && set -- "$@" --height 100% --preview="echo {n}+1 | bc | xargs -I ,, ytmp -q $queue songPreview q ,," --preview-window='bottom,30%,hidden' --preview-label='' --bind='focus:transform-preview-label:echo {n}+1 | bc' || set -- "$@" --height 60%
 	playing=$(interpretEntry p)
 	mark=$(interpretEntry m)
