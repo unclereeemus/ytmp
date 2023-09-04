@@ -563,16 +563,25 @@ TERMUX CHANGES
 
 mpv cant open ipc sockets in termux so music is not forked to the background
 
+further, fzf selections are now moved to a temporary queue and played from there instead of just playing from the original queue
+
 must come before commands:
 -v <mpv-volume> -q|-mpv|e|v|-d|...
 -q "t"|<file> -v|-mpv|e|v|-d|E|...; specify queue; t is understood as $tempq
--mpv <mpvargs> -q|-v|e|v|-d|...; any number of args to start mpv with (quote them as a single arg to ytmp!)
+-mpv <mpvargs> -q|-v|e|v|-d|...; any number of args to start mpv with (quote them as a single arg to ytmp and use = to pass args to mpv options!)
 
 changes to 'v' (only option now; no vv):
 %: show prev win
 enter: copy entry/selections to the temporary queue (overwrite) and start the daemon on the temp queue
 |: copy entry/selections to the temporary queue
 [: copy entry to the temporary queue to after currently playing
+]: copy entry to the temporary queue to after currently playing+2
+@: copy entry to the temporary queue to after currently playing+3
+_: copy entry to the temporary queue to after currently playing+4
++: copy entry to the temporary queue to after currently playing+5
+': mark entry as playing but don't actually play it
+": -tmpv
+?: -tmpvr
 pgup: first (no reload)
 pgdn: last (no reload)
 tab: select+clear-query
@@ -580,6 +589,7 @@ tab: select+clear-query
 #: -te
 /: move entry up
 -: move entry down
+R: remove entry
 &: -q t -d
 
 i may have changed/added other bindings but i cant remember which ones. a list of the linux and termux binds can be found in the readme.
@@ -591,10 +601,14 @@ pass "c" to 'a' to add from clipboard
 -rq remove the temporary queue
 -a read from stdin into \$tempq
 - read from stdin into \$tempq (overwrite)
+-tmpv <entry> get prompted to add "<MPV: --start=" tag to entry
+-tmpvr <entry>"<MPV: --start=" from entry
 'v' accepts -o to print out selections to stdout
 \$charlen is 41 for nvim; 45 for the cli. this is to prevent title overflowing. change in source if necessary.
 
 suppose you started a queue but forgot to pass '-v', you can just put the volume number in "$cache_dir/mpvvol" and ytmp will use that volume level. dont forget to delete it when it's not necessary anymore or ytmp will go on using it in the future where -v is not passed.
+
+when passing args to mpv options thru -mpv or MPV tag, pass the args preceeding a = like --start= or --volume=
 
 -mpv takes preceedence over -v and <MPV:> tag
 
@@ -959,7 +973,7 @@ markAsPlaying () {
 	sed -i 's/ $//' "$queue"
 	sed -i -e "s/$playing_regex/\1 \3\5/" "$queue"
 	sed -i "${line}s/${field_regex}/\1 $playing_ind\2$playing_ind\3/" "$queue"
-	play
+	[ "$2" != '-np' ] && play
 }
 
 # exit function on song end. pgrep for process instead of pinging the mpv socket because
@@ -1049,7 +1063,7 @@ viewQueue () {
 	sed "s/$field_regex/\2\3/" "$queue" | fzf -m --info=hidden \
 	--pointer='_' --tiebreak=length,begin,chunk --prompt=': ' --color=gutter:"$fzf_gutter",hl+:"$fzf_hlP",hl:"$fzf_hl",label:"$fzf_label",marker:"$fzf_marker",pointer:"$fzf_pointer",bg+:"$fzf_bgP",label:"$fzf_label",info:"$fzf_info",label:"$fzf_label",spinner:"$fzf_spinner" --border-label-pos=3 --separator='' --padding=2,2,2,2 \
 	"$@" \
-	--layout=reverse --cycle --bind="$:execute-silent(ytmp -q t m l p),=:execute(ytmpnotif c),[:execute(printf '%s+1\n' {+n} | bc | xargs -I ,, sed -n ,,p $queue >> $tempq)+execute-silent(ytmp -q t m l p)+clear-selection+clear-query+pos(1),]:clear-selection+select+clear-query+pos(1)+next-selected+clear-selection,&:execute(ytmp -q t -v $mpvvol -mpv '$mpvargs' -d -C),@:execute(printf '%s+1\n' {+n} | bc | tr '\n' ',' | xargs -I ,, ytmp -q $queue -v $mpvvol -mpv '$mpvargs' -d ,,)+clear-selection,%:toggle-preview,#:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp -q $queue -te ,, &),|:execute(printf '%s+1\n' {+n} | bc | xargs -I ,, sed -n ,,p $queue >> $tempq)+clear-selection+clear-query+pos(1),\:clear-selection,!:toggle+down,tab:toggle+clear-query+pos(1),{:prev-selected,}:next-selected,ctrl-alt-j:pos($playing),alt-j:pos($mark),ctrl-alt-x:execute(ytmp -q $queue x --startwith {q})+reload($cmd)+last,ctrl-alt-s:execute(ytmp -q $queue s --startwith {q})+reload($cmd)+last,alt-p:execute(ytmp -q $queue sp --startwith {q})+reload($cmd)+last,alt-z:execute(ytmp -q $queue z --startwith {q})+reload($cmd)+last,alt-s:execute(ytmp -q $queue --startwith {q})+reload($cmd)+last,ctrl-alt-f:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp -q $queue -af ,,),ctrl-g:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp -q $queue m ,, m)+reload($cmd),ctrl-l:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp -q $queue m l ,,)+reload($cmd),ctrl-alt-b:execute(ytmp -q $queue -m)+reload($cmd),alt-space:execute(echo {n}+1 | bc | xargs -I ,, ytmp -q $queue m x x ,,)+reload($cmd),alt-c:execute(echo {n}+1 | bc | xargs -I ,, ytmp -q $queue m c x x ,,)+reload($cmd),alt-bspace:execute(echo {n}+1 | bc | xargs -I ,, ytmp -q $queue m c x ,,)+reload($cmd),ctrl-space:execute(echo {n}+1 | bc | xargs -I ,, ytmp -q $queue m x ,,)+reload($cmd),ctrl-alt-m:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp -q $queue m s ,,)+reload($cmd),alt-up:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp -q $queue m ,, 0)+reload($cmd),alt-down:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp -q $queue m ,, l)+reload($cmd),ctrl-]:execute-silent(ytmp -q $queue w),ctrl-r:replace-query,home:clear-query+first,end:clear-query+reload-sync($cmd)+last,alt-r:reload($cmd),ctrl-alt-d:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp -q $queue -dl ,,),ctrl-z:execute-silent(setsid -f ytmp -q $queue z {q}),ctrl-s:execute-silent(setsid -f ytmp -q $queue {q}),ctrl-j:down,ctrl-j:jump,R:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp -q $queue m r ,,)+reload($cmd),/:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp -q $queue m ,, -2)+reload($cmd)+up,-:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp -q $queue m ,, +1)+reload($cmd)+down,ctrl-k:kill-line,P:execute(ytmp -q $queue p)+reload($cmd),N:execute(ytmp -q $queue n)+reload($cmd),L:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp -q $queue m ,, p)+reload($cmd),H:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp -q $queue m r ,,)+reload($cmd),ctrl-v:page-down,alt-v:page-up,ctrl-alt-p:half-page-up,ctrl-alt-n:half-page-down,right-click:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp -q $queue m ,, p)+reload($cmd),ctrl-^:execute-silent(ytmp -q $queue mln)+reload($cmd),ctrl-\:execute(ytmp -q $queue E)+reload($cmd),alt-m:execute(echo {n}+1 | bc | xargs -I ,, ytmp -q $queue m f ,,)+reload($cmd),ctrl-o:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp -q $queue openInBrowser -e ,,),pgup:first,pgdn:last" # --border=bottom --border-label="{   ytmp -q $queue queue   }" | read sels
+	--layout=reverse --cycle --bind="?:execute(echo {n}+1 | bc | xargs -I ,, ytmp -q $queue -tmpvr ,,)+reload($cmd),\":execute(echo {n}+1 | bc | xargs -I ,, ytmp -q $queue -tmpv ,,)+reload($cmd),':execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp -q $queue -mp ,, -np)+reload($cmd),$:execute-silent(ytmp -q t m l p),=:execute(ytmpnotif c),[:execute(printf '%s+1\n' {+n} | bc | xargs -I ,, sed -n ,,p $queue >> $tempq)+execute-silent(ytmp -q t m l p)+clear-selection+clear-query+pos(1),]:execute(printf '%s+1\n' {+n} | bc | xargs -I ,, sed -n ,,p $queue >> $tempq)+execute-silent(ytmp -q t m l p+1)+clear-selection+clear-query+pos(1),@:execute(printf '%s+1\n' {+n} | bc | xargs -I ,, sed -n ,,p $queue >> $tempq)+execute-silent(ytmp -q t m l p+2)+clear-selection+clear-query+pos(1),_:execute(printf '%s+1\n' {+n} | bc | xargs -I ,, sed -n ,,p $queue >> $tempq)+execute-silent(ytmp -q t m l p+3)+clear-selection+clear-query+pos(1),+:execute(printf '%s+1\n' {+n} | bc | xargs -I ,, sed -n ,,p $queue >> $tempq)+execute-silent(ytmp -q t m l p+4)+clear-selection+clear-query+pos(1),&:execute(ytmp -q t -v $mpvvol -mpv '$mpvargs' -d -C),::execute(printf '%s+1\n' {+n} | bc | tr '\n' ',' | xargs -I ,, ytmp -q $queue -v $mpvvol -mpv '$mpvargs' -d ,,)+clear-selection,%:toggle-preview,#:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp -q $queue -te ,, &),|:execute(printf '%s+1\n' {+n} | bc | xargs -I ,, sed -n ,,p $queue >> $tempq)+clear-selection+clear-query+pos(1),\:clear-selection,!:toggle+down,tab:toggle+clear-query+pos(1),{:prev-selected,}:next-selected,ctrl-alt-j:pos($playing),alt-j:pos($mark),ctrl-alt-x:execute(ytmp -q $queue x --startwith {q})+reload($cmd)+last,ctrl-alt-s:execute(ytmp -q $queue s --startwith {q})+reload($cmd)+last,alt-p:execute(ytmp -q $queue sp --startwith {q})+reload($cmd)+last,alt-z:execute(ytmp -q $queue z --startwith {q})+reload($cmd)+last,alt-s:execute(ytmp -q $queue --startwith {q})+reload($cmd)+last,ctrl-alt-f:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp -q $queue -af ,,),ctrl-g:execute-silent(ytmp -q $queue m {n}+1 m)+reload($cmd),ctrl-l:execute-silent(ytmp -q $queue m l {n}+1)+reload($cmd),ctrl-alt-b:execute(ytmp -q $queue -m)+reload($cmd),alt-space:execute(ytmp -q $queue m x x {n}+1)+reload($cmd),alt-c:execute(ytmp -q $queue m c x x {n}+1)+reload($cmd),alt-bspace:execute(ytmp -q $queue m c x {n}+1)+reload($cmd),ctrl-space:execute(ytmp -q $queue m x {n}+1)+reload($cmd),ctrl-alt-m:execute-silent(ytmp -q $queue m s {n}+1)+reload($cmd),alt-up:execute-silent(ytmp -q $queue m {n}+1 0)+reload($cmd),alt-down:execute-silent(ytmp -q $queue m {n}+1 l)+reload($cmd),ctrl-]:execute-silent(ytmp -q $queue w),ctrl-r:replace-query,home:clear-query+first,end:clear-query+reload-sync($cmd)+last,alt-r:reload($cmd),ctrl-alt-d:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp -q $queue -dl ,,),ctrl-z:execute-silent(setsid -f ytmp -q $queue z {q}),ctrl-s:execute-silent(setsid -f ytmp -q $queue {q}),ctrl-j:down,ctrl-j:jump,R:execute-silent(ytmp -q $queue m r {n}+1)+reload($cmd),/:execute-silent(ytmp -q $queue m {n}+1 -2)+reload($cmd)+up,-:execute-silent(ytmp -q $queue m {n}+1 +1)+reload($cmd)+down,ctrl-k:kill-line,P:execute(ytmp -q $queue p)+reload($cmd),N:execute(ytmp -q $queue n)+reload($cmd),L:execute-silent(ytmp -q $queue m {n}+1 p)+reload($cmd),H:execute-silent(ytmp -q $queue m r {n}+1)+reload($cmd),ctrl-v:page-down,alt-v:page-up,ctrl-alt-p:half-page-up,ctrl-alt-n:half-page-down,right-click:execute-silent(ytmp -q $queue m {n}+1 p)+reload($cmd),ctrl-^:execute-silent(ytmp -q $queue mln)+reload($cmd),ctrl-\:execute(ytmp -q $queue E)+reload($cmd),alt-m:execute(echo {n}+1 | bc | xargs -I ,, ytmp -q $queue m f ,,)+reload($cmd),ctrl-o:execute-silent(echo {n}+1 | bc | xargs -I ,, ytmp -q $queue openInBrowser -e ,,),pgup:first,pgdn:last" # --border=bottom --border-label="{   ytmp -q $queue queue   }" | read sels
 	[ "$dasho" = y ] && [ -s "$cache_dir/sels" ] && while read s; do sed -n "${s}p" "$queue"; done <$cache_dir/sels
 	return 0
 }
@@ -1393,7 +1407,9 @@ parseopts () {
 		a) shift; add "$@" ;;
 		n) markAsPlaying 'p+1' ;;
 		p) markAsPlaying 'p-1' ;;
-		e) markAsPlaying "$2" ;;
+		#e) markAsPlaying "$2" ;;
+		e) sed -n "${2}p" $queue > $tempq && queue=$tempq && daemon 1 ;;
+		-mp) markAsPlaying "$2" "$3" ;;
 		P) shift; fuzzyPlay "$@" ;;
 		l) playFromHistory "$2" ;;
 		m) shift; move "$@" ;;
@@ -1412,6 +1428,8 @@ parseopts () {
 		-rd) transferQDiscards "$2" ;;
 		-i) shift; addToDest "$@" ;;
 		-te) shift; tagEntry "$@" ;;
+		-tmpv) shift; input="$(printf '' | fzf -q '<MPV: --start=' --bind='enter:print-query')" && sed -i "${1}s/$/ $input/" "$queue" ;;
+		-tmpvr) sed -i "${2}s/\? ${tag_char}MPV: \?\([^${closing_tag_char}]*\)${closing_tag_char}//" "$queue" ;;
 		-dl) shift; dlSong "$@" ;;
 		# -d) pgrep -f 'ytmp.*(-d|-r)+' | grep -v $$ | xargs kill >/dev/null 2>&1; shift; daemon "$@" ;;
 		# -r) pgrep -f 'ytmp.*(-d|-r)+' | grep -v $$ | xargs kill >/dev/null 2>&1; shift; randomDaemon "$@" ;;
